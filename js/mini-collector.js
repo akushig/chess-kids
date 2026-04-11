@@ -121,7 +121,7 @@ function collectorClick(r,c) {
 
     // 적에게 잡혔는지
     if (cl.enemies.some(e=>e.pos[0]===r&&e.pos[1]===c)) { cl.failed=true; cl.failMsg=t('collectorCaught'); }
-    else if (cl.starsLeft===0) { cl.clear=true; spawnParticles(); }
+    else if (cl.starsLeft===0) { cl.clear=true; saveMiniGameStars('collector', cl.levelIdx||0, cl.turnsLeft>3?3:cl.turnsLeft>0?2:1); spawnParticles(); }
     else if (cl.turnsLeft<=0) { cl.failed=true; cl.failMsg=t('collectorTimeout'); }
 
     renderCollector();

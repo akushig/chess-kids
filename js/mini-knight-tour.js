@@ -187,6 +187,9 @@ function knightTourClick(r, c) {
 
     if (kt.visited === kt.total) {
       kt.clear = true;
+      const pct = kt.visited / kt.total;
+      const stars = pct >= 1 ? 3 : pct >= 0.8 ? 2 : 1;
+      saveMiniGameStars('knighttour', kt.levelIdx || 0, stars);
       spawnParticles();
     } else {
       const next = getKnightMoves(r, c, kt.size, kt.board);

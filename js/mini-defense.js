@@ -168,6 +168,7 @@ function defenseClick(r,c) {
         defenseSpawnWave(df);
       } else {
         df.clear = true;
+        saveMiniGameStars('defense', df.levelIdx||0, df.breached===0?3:df.breached<=1?2:1);
         spawnParticles();
       }
     }

@@ -130,7 +130,7 @@ function bombClick(r,c) {
 
     // 폭발 체크
     if (bm.bombs.some(b=>!b.defused&&b.timer<=0)) { bm.failed=true; }
-    else if (bm.bombs.every(b=>b.defused)) { bm.clear=true; spawnParticles(); }
+    else if (bm.bombs.every(b=>b.defused)) { bm.clear=true; saveMiniGameStars('bomb', bm.levelIdx||0, bm.moves<=bm.bombs.length?3:bm.moves<=bm.bombs.length+2?2:1); spawnParticles(); }
 
     renderBomb();
   },bm.size);

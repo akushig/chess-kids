@@ -156,6 +156,7 @@ function puzzleClick(r, c) {
         // 모든 solution 스텝을 완료했거나 체크메이트 달성
         if (state.puzzleSolutionStep >= puzzle.solution.length || game.status === 'checkmate') {
           state.puzzleSolved = true;
+          savePuzzleStars(puzzle.level, state.puzzleIndex, 1);
           spawnParticles();
           renderPuzzleBoard();
           return;

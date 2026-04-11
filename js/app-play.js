@@ -117,16 +117,44 @@ function doAiMove() {
 // --- 리워드 ---
 function goReward() {
   showScreen('reward');
-  const totalStars = getTotalStars();
+  const adventureStars = getTotalStars();
+  const puzzleStars = getTotalPuzzleStars();
+  const miniStars = getTotalMiniGameStars();
+  const allStars = getAllStars();
 
-  let pieceCards = PIECE_ORDER.map(key => {
-    const stars = getPieceTotalStars(key);
-    const maxStars = MISSIONS[key].length * 3;
+  // 별 출처별 카드
+  const sourceCards = `
+    <div class="reward-sources">
+      <div class="reward-source"><span class="reward-source-icon">🗺️</span><span>${t('rewardAdventure')}</span><span class="reward-source-val">⭐ ${adventureStars}</span></div>
+      <div class="reward-source"><span class="reward-source-icon">🧩</span><span>${t('rewardPuzzle')}</span><span class="reward-source-val">⭐ ${puzzleStars}</span></div>
+      <div class="reward-source"><span class="reward-source-icon">🎮</span><span>${t('rewardMiniGame')}</span><span class="reward-source-val">⭐ ${miniStars}</span></div>
+    </div>
+  `;
+
+  // 스킨 보상 로드맵
+  const sortedSkins = Object.entries(SKIN_UNLOCK).sort((a,b) => a[1] - b[1]);
+  const roadmap = sortedSkins.map(([name, req]) => {
+    const unlocked = allStars >= req;
+    const isActive = currentSkin === name;
+    const meta = SKIN_META[name];
+    const pct = req === 0 ? 100 : Math.min(100, Math.round(allStars / req * 100));
+    const preview = ['wK','bK'].map(p => getPieceSVGForSkin(name, p, 24)).join('');
+
     return `
-      <div class="reward-piece">
-        ${getPieceSVG(PIECE_ICONS[key], 36)}
-        <span class="reward-piece-name">${t(PIECE_NAMES[key])}</span>
-        <span class="reward-piece-stars">⭐ ${stars}/${maxStars}</span>
+      <div class="roadmap-item ${unlocked ? 'unlocked' : 'locked'} ${isActive ? 'active' : ''}">
+        <div class="roadmap-star-req">${req === 0 ? '🎁' : '⭐ ' + req}</div>
+        <div class="roadmap-connector"><div class="roadmap-line"></div><div class="roadmap-dot ${unlocked ? 'dot-unlocked' : ''}"></div></div>
+        <div class="roadmap-card ${unlocked ? '' : 'roadmap-card-locked'}">
+          <div class="roadmap-preview ${unlocked ? '' : 'skin-blur'}">${preview}</div>
+          <div class="roadmap-info">
+            <div class="roadmap-name">${t(meta.nameKey)}</div>
+            ${unlocked
+              ? `<div class="roadmap-status unlocked">${isActive ? t('skinCurrent') : t('rewardUnlocked')}</div>`
+              : `<div class="roadmap-progress-bar"><div class="roadmap-progress-fill" style="width:${pct}%"></div></div>
+                 <div class="roadmap-status locked">⭐ ${allStars}/${req}</div>`
+            }
+          </div>
+        </div>
       </div>
     `;
   }).join('');
@@ -138,9 +166,11 @@ function goReward() {
         <h2>${t('rewardTitle')}</h2>
       </div>
       <div class="reward-wrap">
-        <div class="reward-big">⭐ ${totalStars}</div>
+        <div class="reward-big">⭐ ${allStars}</div>
         <div class="reward-label">${t('rewardTotal')}</div>
-        <div class="reward-grid">${pieceCards}</div>
+        ${sourceCards}
+        <div class="roadmap-title">${t('rewardRoadmap')}</div>
+        <div class="roadmap-list">${roadmap}</div>
       </div>
     </div>
   `;

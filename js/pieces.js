@@ -35,6 +35,42 @@ const SKIN_META = {
 
 const SKIN_ORDER = ['cute', 'classic', 'hellocarbot', 'dino', 'tiniping', 'robot', 'baemin'];
 
+// ===== 스킨 해금 시스템 =====
+const SKIN_UNLOCK = {
+  cute: 0,
+  classic: 5,
+  dino: 15,
+  robot: 30,
+  tiniping: 50,
+  hellocarbot: 75,
+  baemin: 100
+};
+
+function isSkinUnlocked(name) {
+  if (name === 'cute') return true;
+  const required = SKIN_UNLOCK[name];
+  if (required === undefined) return false;
+  return getAllStars() >= required;
+}
+
+function getUnlockedSkins() {
+  return SKIN_ORDER.filter(name => isSkinUnlocked(name));
+}
+
+function getNextLockedSkin() {
+  const stars = getAllStars();
+  let next = null;
+  let minRequired = Infinity;
+  for (const name of SKIN_ORDER) {
+    const req = SKIN_UNLOCK[name];
+    if (req > stars && req < minRequired) {
+      minRequired = req;
+      next = { name, required: req, remaining: req - stars };
+    }
+  }
+  return next;
+}
+
 // ===== cute 스킨 — 체스 기물 실루엣 + 귀여운 얼굴 =====
 const SKINS = {
   cute: {

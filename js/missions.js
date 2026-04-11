@@ -273,3 +273,36 @@ function calculateStars(moveCount, minMoves) {
   if (moveCount <= minMoves + 1) return 2;
   return 1;
 }
+
+// ===== 퍼즐 별 관리 =====
+function getPuzzleProgress() {
+  try { return JSON.parse(localStorage.getItem('puzzle_stars')) || {}; } catch { return {}; }
+}
+function savePuzzleStars(level, puzzleIdx, stars) {
+  const p = getPuzzleProgress();
+  const key = level + '_' + puzzleIdx;
+  p[key] = Math.max(p[key] || 0, stars);
+  localStorage.setItem('puzzle_stars', JSON.stringify(p));
+}
+function getTotalPuzzleStars() {
+  return Object.values(getPuzzleProgress()).reduce((a, b) => a + b, 0);
+}
+
+// ===== 미니게임 별 관리 =====
+function getMiniGameProgress() {
+  try { return JSON.parse(localStorage.getItem('minigame_stars')) || {}; } catch { return {}; }
+}
+function saveMiniGameStars(gameType, levelOrId, stars) {
+  const p = getMiniGameProgress();
+  const key = gameType + '_' + levelOrId;
+  p[key] = Math.max(p[key] || 0, stars);
+  localStorage.setItem('minigame_stars', JSON.stringify(p));
+}
+function getTotalMiniGameStars() {
+  return Object.values(getMiniGameProgress()).reduce((a, b) => a + b, 0);
+}
+
+// ===== 전체 별 합산 =====
+function getAllStars() {
+  return getTotalStars() + getTotalPuzzleStars() + getTotalMiniGameStars();
+}

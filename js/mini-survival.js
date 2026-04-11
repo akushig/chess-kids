@@ -243,6 +243,10 @@ function survivalClick(r, c) {
       sv.record = sv.turn;
       localStorage.setItem('survival_record_' + sv.levelIdx, sv.turn);
     }
+    if (sv.gameOver) {
+      const stars = sv.turn >= 15 ? 3 : sv.turn >= 10 ? 2 : sv.turn >= 5 ? 1 : 0;
+      if (stars > 0) saveMiniGameStars('survival', sv.levelIdx, stars);
+    }
 
     renderSurvival();
   }, sv.size);
