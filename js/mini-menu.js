@@ -7,6 +7,7 @@ function goMiniMenu() {
 function renderMiniMenu() {
   const games = [
     { name: t('knightTourTitle'), desc: t('knightTourDesc'), icon: getPieceSVG('wN', 42), onclick: 'goKnightTour(0)', color: 'mini-green' },
+    { name: t('survivalTitle'), desc: t('survivalDesc'), icon: getPieceSVG('wK', 42), onclick: 'goSurvival(0)', color: 'mini-red' },
   ];
 
   const cards = games.map(g => `
