@@ -24,20 +24,20 @@ const MISSIONS = {
       type: 'reach',
       piece: 'wP',
       start: [4, 2],
-      goals: [[2, 2]],
+      goals: [[2, 3]],
       blocks: [[3, 2]],
       enemies: [],
-      targets: [],
-      desc: { ko: '장애물을 피해 목표 칸에 도달하세요!', en: 'Avoid the obstacle and reach the goal!' }
+      targets: [[3, 3, 'bP']],
+      desc: { ko: '장애물을 피해 상대를 잡으며 목표에 도달하세요!', en: 'Capture the enemy to get around the obstacle!' }
     },
     {
       type: 'capture',
       piece: 'wP',
-      start: [3, 2],
+      start: [4, 2],
       goals: [],
       blocks: [],
       enemies: [],
-      targets: [[2, 1, 'bP'], [2, 3, 'bP']],
+      targets: [[3, 3, 'bP'], [2, 2, 'bP']],
       desc: { ko: '병사는 대각선으로 상대를 잡아요! 모두 잡으세요!', en: 'Pawns capture diagonally! Capture all enemies!' }
     }
   ],
