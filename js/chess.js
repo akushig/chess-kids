@@ -241,10 +241,16 @@ const PIECE_LEARN = [
   { symbol: '♙', nameKey: 'piecePawn', desc: { ko: '병사는 앞으로 한 칸, 처음에는 두 칸 갈 수 있어요. 대각선으로 상대를 잡아요!', en: 'The Pawn moves forward one square, or two on its first move. It captures diagonally!' }, moves: [[-1,0],[-2,0]] },
 ];
 
-// 퍼즐 데이터 (1수 체크메이트)
+// ===== 퍼즐 데이터 (4레벨 × 3개 = 12개) =====
+
+// 레벨 1: 1수 체크메이트
+// 레벨 2: 기물 잡기
+// 레벨 3: 포크/핀
+// 레벨 4: 2수 체크메이트
+
 const PUZZLES = [
-  {
-    title: '퍼즐 1',
+  // === 레벨 1: 1수 체크메이트 ===
+  { level:1, type:'checkmate',
     board: [
       [null,null,null,null,'bK',null,null,null],
       [null,null,null,null,null,null,null,null],
@@ -254,12 +260,10 @@ const PUZZLES = [
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       ['wR',null,null,null,'wK',null,null,'wQ']
-    ],
-    turn: 'w',
-    solution: [[7,7,0,7]] // Qh8#
-  },
-  {
-    title: '퍼즐 2',
+    ], turn:'w', solution:[[7,7,0,7]],
+    desc:{ ko:'퀸으로 체크메이트!', en:'Checkmate with the Queen!' }},
+
+  { level:1, type:'checkmate',
     board: [
       [null,null,null,null,'bK',null,null,null],
       [null,null,null,null,'bP',null,null,null],
@@ -269,12 +273,10 @@ const PUZZLES = [
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,'wQ',null,null,null,'wK']
-    ],
-    turn: 'w',
-    solution: [[7,3,0,3]] // Qd8#
-  },
-  {
-    title: '퍼즐 3',
+    ], turn:'w', solution:[[7,3,0,3]],
+    desc:{ ko:'퀸으로 체크메이트!', en:'Checkmate with the Queen!' }},
+
+  { level:1, type:'checkmate',
     board: [
       [null,null,null,null,null,null,'bK',null],
       [null,null,null,null,null,null,'bP','bP'],
@@ -284,8 +286,126 @@ const PUZZLES = [
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,null,null,null,null],
       [null,null,null,null,'wK',null,null,'wR']
-    ],
-    turn: 'w',
-    solution: [[7,7,0,7]] // Rh8#
-  }
+    ], turn:'w', solution:[[7,7,0,7]],
+    desc:{ ko:'룩으로 체크메이트!', en:'Checkmate with the Rook!' }},
+
+  // === 레벨 2: 기물 잡기 (보호 안 된 기물 캡처) ===
+  { level:2, type:'capture',
+    board: [
+      ['bR',null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,'wK',null,null,'wQ']
+    ], turn:'w', solution:[[7,7,0,0]],
+    desc:{ ko:'보호 안 된 룩을 잡으세요!', en:'Capture the undefended Rook!' }},
+
+  { level:2, type:'capture',
+    board: [
+      [null,null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,'bN',null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,'wR',null,'wK',null,null]
+    ], turn:'w', solution:[[7,3,3,3]],
+    desc:{ ko:'보호 안 된 나이트를 잡으세요!', en:'Capture the undefended Knight!' }},
+
+  { level:2, type:'capture',
+    board: [
+      [null,null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,'bB',null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,'wK',null,null,null,null,null,'wB']
+    ], turn:'w', solution:[[7,7,4,2]],
+    desc:{ ko:'보호 안 된 비숍을 잡으세요!', en:'Capture the undefended Bishop!' }},
+
+  // === 레벨 3: 포크 (두 기물 동시 위협) ===
+  { level:3, type:'fork',
+    board: [
+      [null,null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,'bR'],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,'wK',null,'wN',null]
+    ], turn:'w', solution:[[7,6,5,5]],
+    desc:{ ko:'나이트로 킹과 룩을 동시에 위협하세요!', en:'Fork the King and Rook with the Knight!' }},
+
+  { level:3, type:'fork',
+    board: [
+      ['bR',null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,'wK',null,null,'wQ']
+    ], turn:'w', solution:[[7,7,0,7]],
+    desc:{ ko:'퀸으로 킹과 룩을 동시에 위협하세요!', en:'Fork the King and Rook with the Queen!' }},
+
+  { level:3, type:'fork',
+    board: [
+      [null,null,null,'bR','bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,'wN',null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,'wK',null,null,null]
+    ], turn:'w', solution:[[5,2,3,3]],
+    desc:{ ko:'나이트 포크! 킹과 룩을 동시에!', en:'Knight fork! King and Rook at once!' }},
+
+  // === 레벨 4: 2수 체크메이트 ===
+  { level:4, type:'checkmate2',
+    board: [
+      [null,null,null,null,null,null,'bK',null],
+      [null,null,null,null,null,null,'bP',null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,'wK',null,'wQ','wR']
+    ], turn:'w', solution:[[7,6,1,6],[7,7,0,7]],
+    desc:{ ko:'2수 만에 체크메이트를 만드세요!', en:'Checkmate in 2 moves!' }},
+
+  { level:4, type:'checkmate2',
+    board: [
+      [null,null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ['wR',null,null,null,null,null,null,null],
+      [null,null,null,null,'wK',null,null,'wR']
+    ], turn:'w', solution:[[6,0,0,0],[7,7,0,7]],
+    desc:{ ko:'두 룩으로 2수 체크메이트!', en:'Checkmate in 2 with two Rooks!' }},
+
+  { level:4, type:'checkmate2',
+    board: [
+      [null,null,null,null,null,'bK',null,null],
+      [null,null,null,null,null,'bP',null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ['wR',null,null,null,'wK',null,'wQ',null]
+    ], turn:'w', solution:[[7,6,1,6],[7,0,0,0]],
+    desc:{ ko:'퀸과 룩으로 2수 체크메이트!', en:'Checkmate in 2 with Queen and Rook!' }},
 ];
