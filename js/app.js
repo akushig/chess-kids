@@ -13,6 +13,14 @@ const state = {
 function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, callback) {
   state.animating = true;
   const cellSize = boardEl.offsetWidth / 8;
+
+  // 같은 칸이면 애니메이션 스킵
+  if (fromR === toR && fromC === toC) {
+    state.animating = false;
+    callback();
+    return;
+  }
+
   const ghost = document.createElement('div');
   ghost.className = 'move-anim';
   ghost.innerHTML = `<span class="${pieceColorClass}">${symbol}</span>`;
@@ -25,18 +33,27 @@ function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, c
   // 출발 칸의 기물 숨기기
   const fromIdx = fromR * 8 + fromC;
   const fromCell = boardEl.children[fromIdx];
-  if (fromCell) fromCell.querySelector('span').style.visibility = 'hidden';
+  if (fromCell && fromCell.querySelector('span')) {
+    fromCell.querySelector('span').style.visibility = 'hidden';
+  }
+
+  let done = false;
+  function finish() {
+    if (done) return;
+    done = true;
+    if (ghost.parentNode) ghost.remove();
+    state.animating = false;
+    callback();
+  }
+
+  ghost.addEventListener('transitionend', finish, { once: true });
+  // fallback: transitionend가 안 불리는 디바이스 대비
+  setTimeout(finish, 400);
 
   requestAnimationFrame(() => {
     ghost.style.top = (toR * cellSize) + 'px';
     ghost.style.left = (toC * cellSize) + 'px';
   });
-
-  ghost.addEventListener('transitionend', () => {
-    ghost.remove();
-    state.animating = false;
-    callback();
-  }, { once: true });
 }
 
 // ===== 화면 전환 =====
