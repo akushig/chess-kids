@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chess-kids-v23';
+const CACHE_NAME = 'chess-kids-v24';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './js/chess.js',
   './js/pieces.js',
   './js/skin-classic.js',
+  './js/skin-hellocarbot.js',
   './js/missions.js',
   './js/app-core.js',
   './js/app-home.js',

@@ -24,11 +24,12 @@ function getPieceSVGForSkin(skinName, piece, size) {
 }
 
 const SKIN_META = {
-  cute:    { nameKey: 'skinCute' },
-  classic: { nameKey: 'skinClassic' },
+  cute:        { nameKey: 'skinCute' },
+  classic:     { nameKey: 'skinClassic' },
+  hellocarbot: { nameKey: 'skinHellocarbot' },
 };
 
-const SKIN_ORDER = ['cute', 'classic'];
+const SKIN_ORDER = ['cute', 'classic', 'hellocarbot'];
 
 // ===== cute 스킨 — 체스 기물 실루엣 + 귀여운 얼굴 =====
 const SKINS = {
