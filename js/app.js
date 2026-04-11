@@ -1,5 +1,5 @@
 // ===== 앱 상태 =====
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '260411.1807';
 const state = {
   screen: 'home', // home | learn | puzzle | play | reward
   stars: parseInt(localStorage.getItem('stars') || '0'),
@@ -70,22 +70,22 @@ function renderHome() {
   document.getElementById('screen-home').innerHTML = `
     <div class="home-wrap">
       <div class="app-title">${t('appName')}</div>
-      <div class="chess-icon">${getPieceSVG('wN', 80)}</div>
+      <div class="chess-icon">${getPieceSVG('wK', 90)}</div>
       <div class="menu-grid">
-        <button class="menu-btn" onclick="goLearn()">
-          <span class="menu-icon">📖</span>
+        <button class="menu-btn menu-learn" onclick="goLearn()">
+          <span class="menu-icon">${getPieceSVG('wB', 52)}</span>
           <span>${t('menuLearn')}</span>
         </button>
-        <button class="menu-btn" onclick="goPuzzle()">
-          <span class="menu-icon">🧩</span>
+        <button class="menu-btn menu-puzzle" onclick="goPuzzle()">
+          <span class="menu-icon">${getPieceSVG('wQ', 52)}</span>
           <span>${t('menuPuzzle')}</span>
         </button>
-        <button class="menu-btn" onclick="goPlay()">
-          <span class="menu-icon">⚔️</span>
+        <button class="menu-btn menu-play" onclick="goPlay()">
+          <span class="menu-icon">${getPieceSVG('wN', 52)}</span>
           <span>${t('menuPlay')}</span>
         </button>
-        <button class="menu-btn reward-btn" onclick="goReward()">
-          <span class="menu-icon">⭐</span>
+        <button class="menu-btn menu-reward" onclick="goReward()">
+          <span class="menu-icon">${getPieceSVG('wK', 44)}</span>
           <span>${t('menuReward')} ${state.stars}</span>
         </button>
       </div>

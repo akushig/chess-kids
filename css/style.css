@@ -99,7 +99,7 @@ body {
   padding: 20px 12px;
   font-size: 1.1rem;
   font-weight: 800;
-  color: var(--text);
+  color: #fff;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -115,27 +115,31 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);
+  background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent);
   border-radius: 24px 24px 0 0;
   pointer-events: none;
 }
 
-.menu-btn:active {
-  transform: translateY(3px) scale(0.97);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.menu-learn {
+  background: linear-gradient(145deg, #55EFC4, #00B894);
+  box-shadow: 0 6px 16px rgba(0, 184, 148, 0.35);
 }
-
-.menu-icon {
-  font-size: 2.4rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+.menu-puzzle {
+  background: linear-gradient(145deg, #A29BFE, #6C5CE7);
+  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.35);
 }
-
-.reward-btn {
+.menu-play {
+  background: linear-gradient(145deg, #FF7675, #D63031);
+  box-shadow: 0 6px 16px rgba(214, 48, 49, 0.35);
+}
+.menu-reward {
   grid-column: span 2;
   flex-direction: row;
   justify-content: center;
   padding: 16px 12px;
-  background: linear-gradient(145deg, #FFFDE7, #FFF8E1);
+  background: linear-gradient(145deg, #FFEAA7, #FDCB6E);
+  color: #7C5C00;
+  box-shadow: 0 6px 16px rgba(253, 203, 110, 0.35);
 }
 
 /* ===== 공통 화면 레이아웃 ===== */
