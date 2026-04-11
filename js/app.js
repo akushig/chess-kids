@@ -1,5 +1,5 @@
 // ===== 앱 상태 =====
-const APP_VERSION = '260411.1807';
+const APP_VERSION = '260411.1814';
 const state = {
   screen: 'home', // home | learn | puzzle | play | reward
   stars: parseInt(localStorage.getItem('stars') || '0'),
@@ -652,7 +652,18 @@ function goReward() {
 // ===== 초기화 =====
 document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        if (newSW) {
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'activated' && navigator.serviceWorker.controller) {
+              window.location.reload();
+            }
+          });
+        }
+      });
+    }).catch(() => {});
   }
   renderHome();
   showScreen('home');
