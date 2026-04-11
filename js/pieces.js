@@ -29,9 +29,10 @@ const SKIN_META = {
   hellocarbot: { nameKey: 'skinHellocarbot' },
   dino:        { nameKey: 'skinDino' },
   tiniping:    { nameKey: 'skinTiniping' },
+  robot:       { nameKey: 'skinRobot' },
 };
 
-const SKIN_ORDER = ['cute', 'classic', 'hellocarbot', 'dino', 'tiniping'];
+const SKIN_ORDER = ['cute', 'classic', 'hellocarbot', 'dino', 'tiniping', 'robot'];
 
 // ===== cute 스킨 — 체스 기물 실루엣 + 귀여운 얼굴 =====
 const SKINS = {

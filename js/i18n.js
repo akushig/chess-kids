@@ -61,6 +61,7 @@ const I18N = {
     skinKongsuni: '콩순이',
     skinClassic: '클래식',
     skinDino: '공룡',
+    skinRobot: '로봇',
     // 공통
     btnBack: '뒤로',
     btnNext: '다음',
@@ -164,6 +165,7 @@ const I18N = {
     skinKongsuni: 'Kongsuni',
     skinClassic: 'Classic',
     skinDino: 'Dinosaur',
+    skinRobot: 'Robot',
     btnBack: 'Back',
     btnNext: 'Next',
     btnStart: 'Start!',
