@@ -29,6 +29,7 @@ class ChessGame {
     this.status = 'playing'; // playing | check | checkmate | draw
     this.enPassant = null;
     this.castling = { wK: true, wR_a: true, wR_h: true, bK: true, bR_a: true, bR_h: true };
+    this.captured = { w: [], b: [] }; // w: 백이 잡은 기물, b: 흑이 잡은 기물
   }
 
   color(piece) { return piece ? piece[0] : null; }
@@ -154,7 +155,15 @@ class ChessGame {
     // 앙파상
     if (type === 'P' && this.enPassant && toR === this.enPassant[0] && toC === this.enPassant[1]) {
       const captureRow = color === 'w' ? toR + 1 : toR - 1;
+      const epCaptured = this.board[captureRow][toC];
+      if (epCaptured) this.captured[color].push(epCaptured);
       this.board[captureRow][toC] = null;
+    }
+
+    // 일반 캡처
+    const target = this.board[toR][toC];
+    if (target && this.color(target) !== color) {
+      this.captured[color].push(target);
     }
 
     // 앙파상 설정

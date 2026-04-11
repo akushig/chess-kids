@@ -1,4 +1,5 @@
 // ===== 앱 상태 =====
+const APP_VERSION = '1.0.0';
 const state = {
   screen: 'home', // home | learn | puzzle | play | reward
   stars: parseInt(localStorage.getItem('stars') || '0'),
@@ -88,6 +89,7 @@ function renderHome() {
           <span>${t('menuReward')} ${state.stars}</span>
         </button>
       </div>
+      <div class="app-version">v${APP_VERSION}</div>
     </div>
   `;
 }
@@ -295,7 +297,9 @@ function renderPlay() {
         <h2>${t('playTitle')}</h2>
       </div>
       ${statusMsg}
+      <div class="captured-pieces">${game.captured.b.map(p => `<span class="white-piece">${PIECES[p]}</span>`).join('')}</div>
       <div class="chess-board">${cells}</div>
+      <div class="captured-pieces">${game.captured.w.map(p => `<span class="black-piece">${PIECES[p]}</span>`).join('')}</div>
       <button class="action-btn" onclick="goPlay()">${t('playRestart')}</button>
     </div>
   `;

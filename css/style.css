@@ -295,3 +295,22 @@ body {
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
+
+/* ===== 잡힌 기물 ===== */
+.captured-pieces {
+  width: 100%;
+  max-width: 400px;
+  min-height: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px 8px;
+  font-size: 1.2rem;
+}
+
+/* ===== 앱 버전 ===== */
+.app-version {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 8px;
+}
