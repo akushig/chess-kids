@@ -1,5 +1,5 @@
 // ===== 앱 상태 =====
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 const state = {
   screen: 'home', // home | learn | puzzle | play | reward
   stars: parseInt(localStorage.getItem('stars') || '0'),
