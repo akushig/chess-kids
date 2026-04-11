@@ -34,6 +34,14 @@ function renderHome() {
           </div>
           <span class="menu-arrow">›</span>
         </button>
+        <button class="menu-btn menu-mini" onclick="goMiniMenu()">
+          <span class="menu-icon">${getPieceSVG('wB', 42)}</span>
+          <div class="menu-label">
+            <div>${t('menuMini')}</div>
+            <div class="menu-sub">${t('miniSub')}</div>
+          </div>
+          <span class="menu-arrow">›</span>
+        </button>
       </div>
       <div class="app-version">v${APP_VERSION}</div>
     </div>

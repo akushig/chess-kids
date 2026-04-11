@@ -808,3 +808,95 @@ body {
   border: 2px solid var(--accent);
   animation: bubblePop 0.3s ease;
 }
+
+/* ===== 미니게임 메뉴 버튼 색상 ===== */
+.menu-mini {
+  background: linear-gradient(135deg, #FFEAA7, #FDCB6E);
+  box-shadow: 0 6px 0 #D4A017, 0 8px 20px rgba(253,203,110,0.3);
+  color: #7C5C00;
+  text-shadow: none;
+}
+.mini-green {
+  background: linear-gradient(135deg, #55EFC4, #00B894);
+  box-shadow: 0 6px 0 #00896B, 0 8px 20px rgba(0,184,148,0.3);
+}
+.mini-red {
+  background: linear-gradient(135deg, #FF7675, #D63031);
+  box-shadow: 0 6px 0 #B52526, 0 8px 20px rgba(214,48,49,0.3);
+}
+.mini-purple {
+  background: linear-gradient(135deg, #A29BFE, #6C5CE7);
+  box-shadow: 0 6px 0 #5241C5, 0 8px 20px rgba(108,92,231,0.3);
+}
+.mini-orange {
+  background: linear-gradient(135deg, #FFEAA7, #E17055);
+  box-shadow: 0 6px 0 #C44536, 0 8px 20px rgba(225,112,85,0.3);
+}
+.mini-blue {
+  background: linear-gradient(135deg, #74B9FF, #0984E3);
+  box-shadow: 0 6px 0 #0767B5, 0 8px 20px rgba(9,132,227,0.3);
+}
+
+/* ===== 나이트 투어 ===== */
+.kt-visited {
+  background: rgba(78,205,196,0.3) !important;
+}
+.kt-check {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--secondary);
+}
+
+/* ===== 폭탄 ===== */
+.bomb-cell {
+  background: #FFF3E0 !important;
+}
+.bomb-urgent {
+  background: #FFCDD2 !important;
+  animation: bombPulse 0.5s ease infinite;
+}
+@keyframes bombPulse {
+  0%, 100% { background-color: #FFCDD2; }
+  50% { background-color: #EF9A9A; }
+}
+.bomb-icon {
+  position: relative;
+  font-size: 1.4rem;
+}
+.bomb-timer {
+  position: absolute;
+  top: -4px; right: -8px;
+  background: #D63031;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 900;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.bomb-defused {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--secondary);
+}
+
+/* ===== 기물 수집 ===== */
+.collector-star {
+  font-size: 1.4rem;
+  animation: starBounce 1s ease infinite;
+}
+@keyframes starBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.enemy-cell {
+  box-shadow: inset 0 0 0 2px rgba(214,48,49,0.4) !important;
+}
+
+/* ===== 체스 디펜스 ===== */
+.defense-endline {
+  border-bottom: 3px solid var(--primary) !important;
+}
