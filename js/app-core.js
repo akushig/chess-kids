@@ -1,5 +1,5 @@
 // ===== 앱 코어: 상태, 화면전환, 애니메이션, 파티클, 초기화 =====
-const APP_VERSION = '260411.1900';
+const APP_VERSION = '260411.1935';
 
 const state = {
   screen: 'home',
@@ -17,10 +17,12 @@ const state = {
   puzzleLevel: null,
   puzzleIndex: 0,
   puzzleSolved: false,
+  puzzleFailed: false,
   puzzleGame: null,
   puzzleSelected: null,
   puzzleValidMoves: [],
   puzzleMoveCount: 0,
+  puzzleSolutionStep: 0,
   // 대전
   game: null,
 };

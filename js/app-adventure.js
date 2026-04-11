@@ -348,14 +348,60 @@ function showMissionHint() {
   const hint = mission.hint;
   if (!hint) return;
 
-  const [, , toR, toC] = hint;
+  const [fromR, fromC, toR, toC] = hint;
   const boardEl = document.querySelector('#screen-learn .mission-board');
   if (!boardEl) return;
 
-  const idx = toR * MISSION_BOARD_SIZE + toC;
-  const cell = boardEl.children[idx];
-  if (cell) {
-    cell.classList.add('hint-highlight');
-    setTimeout(() => cell.classList.remove('hint-highlight'), 2500);
+  const size = MISSION_BOARD_SIZE;
+  const cellSize = boardEl.offsetWidth / size;
+
+  // 출발칸 하이라이트
+  const fromIdx = fromR * size + fromC;
+  const fromCell = boardEl.children[fromIdx];
+  if (fromCell) fromCell.classList.add('hint-highlight');
+
+  // 도착칸 하이라이트
+  const toIdx = toR * size + toC;
+  const toCell = boardEl.children[toIdx];
+  if (toCell) toCell.classList.add('hint-highlight');
+
+  // 화살표 SVG 오버레이
+  const arrow = document.createElement('div');
+  arrow.className = 'hint-arrow';
+  const fromX = (fromC + 0.5) * cellSize;
+  const fromY = (fromR + 0.5) * cellSize;
+  const toX = (toC + 0.5) * cellSize;
+  const toY = (toR + 0.5) * cellSize;
+  const svgW = boardEl.offsetWidth;
+  const svgH = boardEl.offsetHeight;
+  arrow.innerHTML = `
+    <svg width="${svgW}" height="${svgH}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;">
+      <defs>
+        <marker id="hintHead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B"/>
+        </marker>
+      </defs>
+      <line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}"
+        stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"
+        marker-end="url(#hintHead)" opacity="0.85"
+        class="hint-arrow-line"/>
+    </svg>
+  `;
+  boardEl.appendChild(arrow);
+
+  // 힌트 텍스트 표시
+  const desc = mission.desc[currentLang] || mission.desc['ko'];
+  const speechEl = document.querySelector('.mission-speech');
+  if (speechEl) {
+    speechEl.innerHTML = `💡 ${desc}`;
+    speechEl.classList.add('hint-active');
   }
+
+  // 3초 후 제거
+  setTimeout(() => {
+    if (fromCell) fromCell.classList.remove('hint-highlight');
+    if (toCell) toCell.classList.remove('hint-highlight');
+    if (arrow.parentNode) arrow.remove();
+    if (speechEl) speechEl.classList.remove('hint-active');
+  }, 3000);
 }

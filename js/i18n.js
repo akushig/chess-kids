@@ -7,12 +7,12 @@ const I18N = {
     menuPlay: '대전',
     menuReward: '내 별',
     // 기물 이름
-    pieceKing: '왕',
-    pieceQueen: '여왕',
-    pieceRook: '성',
-    pieceBishop: '주교',
-    pieceKnight: '말',
-    piecePawn: '병사',
+    pieceKing: '킹',
+    pieceQueen: '퀸',
+    pieceRook: '룩',
+    pieceBishop: '비숍',
+    pieceKnight: '나이트',
+    piecePawn: '폰',
     // 모험
     adventureTitle: '모험의 세계',
     worldTitle: '의 모험',

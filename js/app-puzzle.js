@@ -3,7 +3,7 @@
 const PUZZLE_LEVELS = [
   { level: 1, name: { ko: '1수 체크메이트', en: 'Mate in 1' } },
   { level: 2, name: { ko: '기물 잡기', en: 'Capture' } },
-  { level: 3, name: { ko: '포크/핀', en: 'Fork/Pin' } },
+  { level: 3, name: { ko: '동시 공격', en: 'Fork' } },
   { level: 4, name: { ko: '2수 체크메이트', en: 'Mate in 2' } },
 ];
 
@@ -55,7 +55,9 @@ function renderPuzzle() {
   state.puzzleSelected = null;
   state.puzzleValidMoves = [];
   state.puzzleSolved = false;
+  state.puzzleFailed = false;
   state.puzzleMoveCount = 0;
+  state.puzzleSolutionStep = 0;
   renderPuzzleBoard();
 }
 
@@ -76,15 +78,15 @@ function renderPuzzleBoard() {
     }
   }
 
-  // 퍼즐 타입별 안내 메시지
-  let instruction = t('puzzleInstruction');
-  if (puzzle.type === 'capture') instruction = t('puzzleCaptureInstruction');
-  else if (puzzle.type === 'fork') instruction = t('puzzleForkInstruction');
-
   const desc = puzzle.desc[currentLang] || puzzle.desc['ko'];
-  const msg = state.puzzleSolved
-    ? `<div class="status-msg success">${t('puzzleSuccess')}</div>`
-    : `<div class="status-msg">${desc}</div>`;
+  let msg;
+  if (state.puzzleSolved) {
+    msg = `<div class="status-msg success">${t('puzzleSuccess')}</div>`;
+  } else if (state.puzzleFailed) {
+    msg = `<div class="status-msg fail">${t('puzzleFail')}</div>`;
+  } else {
+    msg = `<div class="status-msg">${desc}</div>`;
+  }
 
   // 같은 레벨의 퍼즐 목록에서 현재 위치
   const levelPuzzles = PUZZLES.filter(p => p.level === puzzle.level);
@@ -93,6 +95,9 @@ function renderPuzzleBoard() {
   const nextInLevel = levelPuzzles[posInLevel];
   const nextBtn = state.puzzleSolved && nextInLevel
     ? `<button class="action-btn green" onclick="state.puzzleIndex = ${PUZZLES.indexOf(nextInLevel)}; renderPuzzle()">${t('btnNext')}</button>`
+    : '';
+  const retryBtn = state.puzzleFailed
+    ? `<button class="action-btn" onclick="renderPuzzle()">🔄 ${t('missionRetryBtn')}</button>`
     : '';
 
   document.getElementById('screen-puzzle').innerHTML = `
@@ -104,7 +109,8 @@ function renderPuzzleBoard() {
       ${msg}
       <div class="chess-board">${cells}</div>
       <div class="mission-actions">
-        ${state.puzzleSolved ? '' : `<button class="icon-btn reset-btn" onclick="renderPuzzle()">🔄 ${t('resetBtn')}</button>`}
+        ${state.puzzleSolved || state.puzzleFailed ? '' : `<button class="icon-btn reset-btn" onclick="renderPuzzle()">🔄 ${t('resetBtn')}</button>`}
+        ${retryBtn}
         ${nextBtn}
       </div>
     </div>
@@ -112,7 +118,7 @@ function renderPuzzleBoard() {
 }
 
 function puzzleClick(r, c) {
-  if (state.puzzleSolved || state.animating) return;
+  if (state.puzzleSolved || state.puzzleFailed || state.animating) return;
   const game = state.puzzleGame;
   const puzzle = PUZZLES[state.puzzleIndex];
 
@@ -122,35 +128,41 @@ function puzzleClick(r, c) {
       const piece = game.board[fr][fc];
       const boardEl = document.querySelector('#screen-puzzle .chess-board');
 
+      // solution 기반 판정: 현재 스텝의 정답과 비교
+      const step = state.puzzleSolutionStep;
+      const sol = puzzle.solution[step];
+      const isCorrect = sol && sol[0] === fr && sol[1] === fc && sol[2] === r && sol[3] === c;
+
+      if (!isCorrect) {
+        // 틀린 수 → 실패
+        game.move(fr, fc, r, c);
+        state.puzzleSelected = null;
+        state.puzzleValidMoves = [];
+        animateMove(boardEl, fr, fc, r, c, piece, () => {
+          state.puzzleFailed = true;
+          renderPuzzleBoard();
+        });
+        return;
+      }
+
+      // 정답 수
       game.move(fr, fc, r, c);
       state.puzzleSelected = null;
       state.puzzleValidMoves = [];
       state.puzzleMoveCount++;
+      state.puzzleSolutionStep++;
 
       animateMove(boardEl, fr, fc, r, c, piece, () => {
-        // 체크메이트 판정
-        if (game.status === 'checkmate') {
+        // 모든 solution 스텝을 완료했거나 체크메이트 달성
+        if (state.puzzleSolutionStep >= puzzle.solution.length || game.status === 'checkmate') {
           state.puzzleSolved = true;
           spawnParticles();
           renderPuzzleBoard();
           return;
         }
-        // 포크: 상대 턴에서 두 기물 이상 위협 확인 (간단 판정)
-        if (puzzle.type === 'fork') {
-          state.puzzleSolved = true;
-          spawnParticles();
-          renderPuzzleBoard();
-          return;
-        }
-        // 캡처: 목표 기물 잡았는지
-        if (puzzle.type === 'capture') {
-          state.puzzleSolved = true;
-          spawnParticles();
-          renderPuzzleBoard();
-          return;
-        }
-        // 2수 체크메이트: AI 응수 후 계속
-        if (puzzle.type === 'checkmate2' && game.turn === 'b') {
+
+        // 다수 체크메이트: AI 응수 후 계속
+        if (game.turn === 'b') {
           setTimeout(() => {
             doPuzzleAiMove();
             renderPuzzleBoard();

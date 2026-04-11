@@ -233,12 +233,12 @@ class ChessGame {
 
 // 배우기 데이터
 const PIECE_LEARN = [
-  { symbol: '♔', nameKey: 'pieceKing', desc: { ko: '왕은 모든 방향으로 한 칸씩 움직여요. 가장 소중한 기물이에요!', en: 'The King moves one square in any direction. Protect your King!' }, moves: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
-  { symbol: '♕', nameKey: 'pieceQueen', desc: { ko: '여왕은 가로, 세로, 대각선 어디든 원하는 만큼 갈 수 있어요. 가장 강한 기물이에요!', en: 'The Queen moves any number of squares in any direction. The most powerful piece!' }, moves: 'queen' },
-  { symbol: '♖', nameKey: 'pieceRook', desc: { ko: '성은 가로와 세로로 원하는 만큼 움직여요.', en: 'The Rook moves any number of squares horizontally or vertically.' }, moves: 'rook' },
-  { symbol: '♗', nameKey: 'pieceBishop', desc: { ko: '주교는 대각선으로 원하는 만큼 움직여요.', en: 'The Bishop moves any number of squares diagonally.' }, moves: 'bishop' },
-  { symbol: '♘', nameKey: 'pieceKnight', desc: { ko: '말은 L자 모양으로 움직여요. 다른 기물을 뛰어넘을 수 있어요!', en: 'The Knight moves in an L-shape and can jump over other pieces!' }, moves: [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]] },
-  { symbol: '♙', nameKey: 'piecePawn', desc: { ko: '병사는 앞으로 한 칸, 처음에는 두 칸 갈 수 있어요. 대각선으로 상대를 잡아요!', en: 'The Pawn moves forward one square, or two on its first move. It captures diagonally!' }, moves: [[-1,0],[-2,0]] },
+  { symbol: '♔', nameKey: 'pieceKing', desc: { ko: '킹은 모든 방향으로 한 칸씩 움직여요. 가장 소중한 기물이에요!', en: 'The King moves one square in any direction. Protect your King!' }, moves: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
+  { symbol: '♕', nameKey: 'pieceQueen', desc: { ko: '퀸은 가로, 세로, 대각선 어디든 원하는 만큼 갈 수 있어요. 가장 강한 기물이에요!', en: 'The Queen moves any number of squares in any direction. The most powerful piece!' }, moves: 'queen' },
+  { symbol: '♖', nameKey: 'pieceRook', desc: { ko: '룩은 가로와 세로로 원하는 만큼 움직여요.', en: 'The Rook moves any number of squares horizontally or vertically.' }, moves: 'rook' },
+  { symbol: '♗', nameKey: 'pieceBishop', desc: { ko: '비숍은 대각선으로 원하는 만큼 움직여요.', en: 'The Bishop moves any number of squares diagonally.' }, moves: 'bishop' },
+  { symbol: '♘', nameKey: 'pieceKnight', desc: { ko: '나이트는 L자 모양으로 움직여요. 다른 기물을 뛰어넘을 수 있어요!', en: 'The Knight moves in an L-shape and can jump over other pieces!' }, moves: [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]] },
+  { symbol: '♙', nameKey: 'piecePawn', desc: { ko: '폰은 앞으로 한 칸, 처음에는 두 칸 갈 수 있어요. 대각선으로 상대를 잡아요!', en: 'The Pawn moves forward one square, or two on its first move. It captures diagonally!' }, moves: [[-1,0],[-2,0]] },
 ];
 
 // ===== 퍼즐 데이터 (4레벨 × 3개 = 12개) =====
