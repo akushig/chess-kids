@@ -6,21 +6,28 @@
 }
 
 :root {
-  --primary: #FF6B35;
-  --primary-dark: #e55a25;
-  --bg: #FFF8E7;
-  --board-light: #F0D9B5;
-  --board-dark: #B58863;
-  --selected: #7FC97F;
-  --hint: rgba(100, 200, 100, 0.5);
-  --text: #333;
-  --white-piece: #fff;
-  --black-piece: #222;
+  --primary: #FF6B6B;
+  --primary-dark: #E55656;
+  --primary-light: #FFE0E0;
+  --secondary: #4ECDC4;
+  --secondary-dark: #3AB5AD;
+  --accent: #FFD93D;
+  --bg: linear-gradient(180deg, #E8F8FF 0%, #FFF0F5 50%, #F0F0FF 100%);
+  --board-light: #C8E6C9;
+  --board-dark: #66BB6A;
+  --selected: #FFD93D;
+  --hint: rgba(255, 217, 61, 0.7);
+  --text: #4A4A4A;
+  --text-light: #888;
+  --card-bg: #fff;
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --card-radius: 20px;
 }
 
 body {
   font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   background: var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
   display: flex;
@@ -44,6 +51,11 @@ body {
 }
 .screen.active {
   display: block;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== 홈 화면 ===== */
@@ -51,55 +63,60 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 24px 32px;
-  gap: 16px;
+  padding: 40px 24px 32px;
+  gap: 12px;
 }
 
 .app-title {
-  font-size: 2.2rem;
+  font-size: 2.4rem;
   font-weight: 900;
-  color: var(--primary);
+  background: linear-gradient(135deg, #FF6B6B, #FFD93D, #4ECDC4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   letter-spacing: -1px;
 }
 
 .chess-icon {
-  font-size: 5rem;
+  font-size: 4rem;
   line-height: 1;
-  margin: 8px 0;
+  margin: 4px 0;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
 }
 
 .menu-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
   margin-top: 8px;
 }
 
 .menu-btn {
-  background: #fff;
-  border: 3px solid var(--primary);
-  border-radius: 20px;
-  padding: 24px 12px;
-  font-size: 1.1rem;
+  background: var(--card-bg);
+  border: none;
+  border-radius: var(--card-radius);
+  padding: 22px 12px;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  transition: transform 0.1s, background 0.1s;
-  box-shadow: 0 4px 0 var(--primary-dark);
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--card-shadow);
 }
 
 .menu-btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--primary-dark);
+  transform: translateY(2px) scale(0.97);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .menu-icon {
-  font-size: 2rem;
+  font-size: 2.2rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .reward-btn {
@@ -107,6 +124,7 @@ body {
   flex-direction: row;
   justify-content: center;
   padding: 16px 12px;
+  background: linear-gradient(135deg, #FFF8E1, #FFFDE7);
 }
 
 /* ===== 공통 화면 레이아웃 ===== */
@@ -132,16 +150,19 @@ body {
 }
 
 .back-btn {
-  background: none;
-  border: 2px solid var(--primary);
-  border-radius: 10px;
-  padding: 6px 12px;
+  background: var(--card-bg);
+  border: none;
+  border-radius: 12px;
+  padding: 8px 14px;
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--primary);
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: transform 0.1s;
 }
+.back-btn:active { transform: scale(0.95); }
 
 /* ===== 체스 보드 ===== */
 .chess-board, .learn-board {
@@ -150,19 +171,24 @@ body {
   width: 100%;
   max-width: 400px;
   aspect-ratio: 1;
-  border: 3px solid #8B6914;
-  border-radius: 4px;
+  border: 4px solid #43A047;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
 }
 
 .board-cell, .learn-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1.4rem, 5vw, 2rem);
   cursor: pointer;
   position: relative;
   aspect-ratio: 1;
+}
+
+.board-cell svg, .learn-cell svg {
+  width: 80%;
+  height: 80%;
 }
 
 /* ===== 이동 애니메이션 ===== */
@@ -175,10 +201,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1.4rem, 5vw, 2rem);
   z-index: 10;
   pointer-events: none;
   transition: top 0.3s ease, left 0.3s ease;
+}
+.move-anim svg {
+  width: 80%;
+  height: 80%;
 }
 
 .board-cell.light, .learn-cell.light { background: var(--board-light); }
@@ -190,20 +219,13 @@ body {
 .learn-cell.move-hint::after {
   content: '';
   position: absolute;
-  width: 36%;
-  height: 36%;
+  width: 32%;
+  height: 32%;
   border-radius: 50%;
-  background: rgba(80, 180, 80, 0.65);
+  background: var(--hint);
   pointer-events: none;
+  box-shadow: 0 0 6px rgba(255, 217, 61, 0.5);
 }
-
-.piece-symbol {
-  font-size: clamp(1.6rem, 6vw, 2.4rem);
-  line-height: 1;
-}
-
-.white-piece { color: var(--white-piece); text-shadow: 0 0 3px #000, 0 0 6px #000; }
-.black-piece { color: var(--black-piece); text-shadow: 0 0 2px #fff; }
 
 /* ===== 배우기 화면 ===== */
 .piece-card-grid {
@@ -214,36 +236,38 @@ body {
 }
 
 .piece-card {
-  background: #fff;
-  border: 3px solid #ddd;
-  border-radius: 16px;
-  padding: 16px 12px;
+  background: var(--card-bg);
+  border: none;
+  border-radius: var(--card-radius);
+  padding: 18px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: transform 0.15s;
+  box-shadow: var(--card-shadow);
 }
-.piece-card:active { transform: translateY(2px); }
+.piece-card:active { transform: translateY(2px) scale(0.97); }
 
 .piece-card-icon { font-size: 2.2rem; }
+.piece-card-icon svg { width: 48px; height: 48px; }
 .piece-card-name { font-size: 1rem; font-weight: 800; color: var(--text); }
 
 .piece-card-bar {
   width: 100%;
-  height: 6px;
+  height: 8px;
   background: #eee;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .piece-card-fill {
   height: 100%;
-  background: var(--primary);
-  border-radius: 3px;
+  background: linear-gradient(90deg, var(--secondary), var(--accent));
+  border-radius: 4px;
   transition: width 0.3s;
 }
-.piece-card-progress { font-size: 0.8rem; color: #999; }
+.piece-card-progress { font-size: 0.8rem; color: var(--text-light); }
 
 /* ===== 미션 목록 ===== */
 .mission-list {
@@ -254,9 +278,9 @@ body {
 }
 
 .mission-item {
-  background: #fff;
-  border: 2px solid #ddd;
-  border-radius: 14px;
+  background: var(--card-bg);
+  border: none;
+  border-radius: 16px;
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -264,9 +288,10 @@ body {
   cursor: pointer;
   text-align: left;
   transition: transform 0.1s;
+  box-shadow: var(--card-shadow);
 }
 .mission-item:active { transform: translateY(2px); }
-.mission-item.cleared { border-color: #7FC97F; background: #f0fff0; }
+.mission-item.cleared { background: linear-gradient(135deg, #E8F8E8, #F0FFF0); }
 .mission-item.locked { opacity: 0.4; cursor: not-allowed; }
 
 .mission-num { font-size: 1.2rem; white-space: nowrap; }
@@ -278,49 +303,56 @@ body {
   grid-template-columns: repeat(6, 1fr) !important;
 }
 
-.block-cell { background: #d4c4a8 !important; }
-.block-mark { font-size: 1.2rem; color: #a0522d; font-weight: 900; }
+.block-cell { background: #BCAAA4 !important; }
+.block-mark { font-size: 1.2rem; color: #6D4C41; font-weight: 900; }
 
-.goal-cell { background: #ffe082 !important; }
-.goal-mark { font-size: 1.4rem; color: #f9a825; }
+.goal-cell { background: #FFE082 !important; animation: goalPulse 1.5s ease infinite; }
+.goal-mark { font-size: 1.4rem; color: #F9A825; }
+
+@keyframes goalPulse {
+  0%, 100% { background-color: #FFE082; }
+  50% { background-color: #FFD54F; }
+}
 
 /* ===== 상태 메시지 ===== */
 .status-msg {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   padding: 10px 20px;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
 }
-.status-msg.success { background: #E8F8E8; color: #2a7a2a; }
-.status-msg.fail    { background: #FFE8E8; color: #c0392b; }
-.status-msg.warn    { background: #FFF3CD; color: #856404; }
-.status-msg.dim     { color: #888; }
+.status-msg.success { background: linear-gradient(135deg, #C8E6C9, #E8F5E9); color: #2E7D32; }
+.status-msg.fail    { background: linear-gradient(135deg, #FFCDD2, #FFEBEE); color: #C62828; }
+.status-msg.warn    { background: linear-gradient(135deg, #FFF9C4, #FFFDE7); color: #F57F17; }
+.status-msg.dim     { color: var(--text-light); }
 
 /* ===== 버튼 ===== */
 .action-btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #FF8E8E);
   color: #fff;
   border: none;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 14px 36px;
   font-size: 1.1rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 0 var(--primary-dark);
-  transition: transform 0.1s;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  transition: transform 0.15s;
 }
 .action-btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--primary-dark);
+  transform: translateY(2px) scale(0.97);
 }
 
 /* ===== 리워드 화면 ===== */
 .reward-count {
   font-size: 3rem;
   font-weight: 900;
-  color: var(--primary);
+  background: linear-gradient(135deg, var(--accent), var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .stars-display {
@@ -330,9 +362,9 @@ body {
   max-width: 360px;
   word-break: break-all;
   padding: 16px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
 }
 
 /* ===== 잡힌 기물 ===== */
@@ -345,8 +377,12 @@ body {
   flex-wrap: nowrap;
   gap: 2px;
   padding: 4px 8px;
-  font-size: 1.2rem;
   overflow: hidden;
+  align-items: center;
+}
+.captured-pieces svg {
+  width: 24px;
+  height: 24px;
 }
 
 .captured-pieces .captured-new {
@@ -362,6 +398,6 @@ body {
 /* ===== 앱 버전 ===== */
 .app-version {
   font-size: 0.75rem;
-  color: #aaa;
+  color: var(--text-light);
   margin-top: 8px;
 }

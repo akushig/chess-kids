@@ -1,5 +1,5 @@
 // ===== 앱 상태 =====
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '2.0.0';
 const state = {
   screen: 'home', // home | learn | puzzle | play | reward
   stars: parseInt(localStorage.getItem('stars') || '0'),
@@ -11,12 +11,11 @@ const state = {
 };
 
 // ===== 이동 애니메이션 =====
-function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, callback, gridSize) {
+function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSize) {
   state.animating = true;
   const cols = gridSize || 8;
   const cellSize = boardEl.offsetWidth / cols;
 
-  // 같은 칸이면 애니메이션 스킵
   if (fromR === toR && fromC === toC) {
     state.animating = false;
     callback();
@@ -25,18 +24,18 @@ function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, c
 
   const ghost = document.createElement('div');
   ghost.className = 'move-anim';
-  ghost.innerHTML = `<span class="${pieceColorClass}">${symbol}</span>`;
+  ghost.innerHTML = getPieceSVG(pieceKey, Math.round(cellSize * 0.8));
   ghost.style.width = cellSize + 'px';
   ghost.style.height = cellSize + 'px';
   ghost.style.top = (fromR * cellSize) + 'px';
   ghost.style.left = (fromC * cellSize) + 'px';
   boardEl.appendChild(ghost);
 
-  // 출발 칸의 기물 숨기기
   const fromIdx = fromR * cols + fromC;
   const fromCell = boardEl.children[fromIdx];
-  if (fromCell && fromCell.querySelector('span')) {
-    fromCell.querySelector('span').style.visibility = 'hidden';
+  if (fromCell) {
+    const inner = fromCell.querySelector('svg') || fromCell.querySelector('span');
+    if (inner) inner.style.visibility = 'hidden';
   }
 
   let done = false;
@@ -71,7 +70,7 @@ function renderHome() {
   document.getElementById('screen-home').innerHTML = `
     <div class="home-wrap">
       <div class="app-title">${t('appName')}</div>
-      <div class="chess-icon">♟</div>
+      <div class="chess-icon">${getPieceSVG('wN', 80)}</div>
       <div class="menu-grid">
         <button class="menu-btn" onclick="goLearn()">
           <span class="menu-icon">📖</span>
@@ -97,7 +96,7 @@ function renderHome() {
 
 // ===== 배우기 화면 (기물별 미션 학습) =====
 const PIECE_ORDER = ['P', 'N', 'B', 'R', 'Q', 'K'];
-const PIECE_ICONS = { P: '♙', N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' };
+const PIECE_ICONS = { P: 'wP', N: 'wN', B: 'wB', R: 'wR', Q: 'wQ', K: 'wK' };
 const PIECE_NAMES = { P: 'piecePawn', N: 'pieceKnight', B: 'pieceBishop', R: 'pieceRook', Q: 'pieceQueen', K: 'pieceKing' };
 const MISSION_BOARD_SIZE = 6;
 
@@ -114,7 +113,7 @@ function renderPieceSelect() {
     const pct = Math.round((cleared / total) * 100);
     return `
       <button class="piece-card" onclick="goMissionList('${key}')">
-        <span class="piece-card-icon">${PIECE_ICONS[key]}</span>
+        <span class="piece-card-icon">${getPieceSVG(PIECE_ICONS[key], 48)}</span>
         <span class="piece-card-name">${t(PIECE_NAMES[key])}</span>
         <div class="piece-card-bar"><div class="piece-card-fill" style="width:${pct}%"></div></div>
         <span class="piece-card-progress">${cleared}/${total}</span>
@@ -160,7 +159,7 @@ function renderMissionList() {
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="renderPieceSelect()">← ${t('btnBack')}</button>
-        <h2>${PIECE_ICONS[key]} ${t(PIECE_NAMES[key])}</h2>
+        <h2>${getPieceSVG(PIECE_ICONS[key], 24)} ${t(PIECE_NAMES[key])}</h2>
       </div>
       <div class="mission-list">${items}</div>
     </div>
@@ -296,9 +295,7 @@ function renderMissionBoard() {
       // 기물
       const piece = board[r][c];
       if (piece) {
-        const sym = PIECES[piece];
-        const pColor = piece[0] === 'w' ? 'white-piece' : 'black-piece';
-        content = `<span class="${pColor}">${sym}</span>`;
+        content = getPieceSVG(piece, 36);
       }
 
       // 선택된 기물
@@ -350,7 +347,6 @@ function missionClick(r, c) {
   if (!validMoves.some(([mr, mc]) => mr === r && mc === c)) return;
 
   const piece = board[pr][pc];
-  const symbol = PIECES[piece];
   const boardEl = document.querySelector('#screen-learn .mission-board');
 
   // 이동 실행
@@ -358,7 +354,7 @@ function missionClick(r, c) {
   board[pr][pc] = null;
   state.missionPlayerPos = [r, c];
 
-  animateMove(boardEl, pr, pc, r, c, symbol, 'white-piece', () => {
+  animateMove(boardEl, pr, pc, r, c, piece, () => {
     // 클리어 판정
     if (mission.type === 'reach') {
       if (mission.goals.some(([gr, gc]) => gr === r && gc === c)) {
@@ -426,9 +422,8 @@ function renderPuzzleBoard() {
       let cls = 'board-cell ' + (isLight ? 'light' : 'dark');
       if (state.puzzleSelected && state.puzzleSelected[0] === r && state.puzzleSelected[1] === c) cls += ' selected';
       if (state.puzzleValidMoves && state.puzzleValidMoves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
-      const symbol = piece ? PIECES[piece] : '';
-      const pieceColor = piece ? (piece[0] === 'w' ? 'white-piece' : 'black-piece') : '';
-      cells += `<div class="${cls}" onclick="puzzleClick(${r},${c})"><span class="${pieceColor}">${symbol}</span></div>`;
+      const pieceContent = piece ? getPieceSVG(piece) : '';
+      cells += `<div class="${cls}" onclick="puzzleClick(${r},${c})">${pieceContent}</div>`;
     }
   }
 
@@ -460,15 +455,13 @@ function puzzleClick(r, c) {
     const [fr, fc] = state.puzzleSelected;
     if (state.puzzleValidMoves.some(([mr, mc]) => mr === r && mc === c)) {
       const piece = game.board[fr][fc];
-      const symbol = PIECES[piece];
-      const pieceColor = piece[0] === 'w' ? 'white-piece' : 'black-piece';
       const boardEl = document.querySelector('#screen-puzzle .chess-board');
 
       game.move(fr, fc, r, c);
       state.puzzleSelected = null;
       state.puzzleValidMoves = [];
 
-      animateMove(boardEl, fr, fc, r, c, symbol, pieceColor, () => {
+      animateMove(boardEl, fr, fc, r, c, piece, () => {
         if (game.status === 'checkmate') {
           state.puzzleSolved = true;
           state.stars++;
@@ -492,7 +485,7 @@ function puzzleClick(r, c) {
 }
 
 // ===== 캡처 애니메이션 =====
-function animateCapture(boardEl, toR, toC, capturedSymbol, capturedColorClass, targetId) {
+function animateCapture(boardEl, toR, toC, capturedPieceKey, targetId) {
   const cellSize = boardEl.offsetWidth / 8;
   const boardRect = boardEl.getBoundingClientRect();
   const targetEl = document.getElementById(targetId);
@@ -501,9 +494,8 @@ function animateCapture(boardEl, toR, toC, capturedSymbol, capturedColorClass, t
 
   const ghost = document.createElement('div');
   ghost.className = 'capture-anim';
-  ghost.innerHTML = `<span class="${capturedColorClass}">${capturedSymbol}</span>`;
+  ghost.innerHTML = getPieceSVG(capturedPieceKey, 24);
   ghost.style.position = 'fixed';
-  ghost.style.fontSize = 'clamp(1.4rem, 5vw, 2rem)';
   ghost.style.zIndex = '20';
   ghost.style.pointerEvents = 'none';
   ghost.style.transition = 'top 0.4s ease, left 0.4s ease, transform 0.4s ease, opacity 0.4s ease';
@@ -544,9 +536,8 @@ function renderPlay() {
       let cls = 'board-cell ' + (isLight ? 'light' : 'dark');
       if (game.selected && game.selected[0] === r && game.selected[1] === c) cls += ' selected';
       if (game.validMoves && game.validMoves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
-      const symbol = piece ? PIECES[piece] : '';
-      const pieceColor = piece ? (piece[0] === 'w' ? 'white-piece' : 'black-piece') : '';
-      cells += `<div class="${cls}" onclick="playClick(${r},${c})"><span class="${pieceColor}">${symbol}</span></div>`;
+      const pieceContent = piece ? getPieceSVG(piece) : '';
+      cells += `<div class="${cls}" onclick="playClick(${r},${c})">${pieceContent}</div>`;
     }
   }
 
@@ -572,9 +563,9 @@ function renderPlay() {
         <h2>${t('playTitle')}</h2>
       </div>
       ${statusMsg}
-      <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => `<span class="white-piece">${PIECES[p]}</span>`).join('')}</div>
+      <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => getPieceSVG(p, 24)).join('')}</div>
       <div class="chess-board">${cells}</div>
-      <div class="captured-pieces" id="captured-bottom">${game.captured.w.map(p => `<span class="black-piece">${PIECES[p]}</span>`).join('')}</div>
+      <div class="captured-pieces" id="captured-bottom">${game.captured.w.map(p => getPieceSVG(p, 24)).join('')}</div>
       <button class="action-btn" onclick="goPlay()">${t('playRestart')}</button>
     </div>
   `;
@@ -589,15 +580,13 @@ function playClick(r, c) {
     const [fr, fc] = game.selected;
     if (game.validMoves.some(([mr, mc]) => mr === r && mc === c)) {
       const piece = game.board[fr][fc];
-      const symbol = PIECES[piece];
-      const pieceColor = piece[0] === 'w' ? 'white-piece' : 'black-piece';
       const captured = game.board[r][c];
       const boardEl = document.querySelector('#screen-play .chess-board');
 
       game.move(fr, fc, r, c);
-      animateMove(boardEl, fr, fc, r, c, symbol, pieceColor, () => {
+      animateMove(boardEl, fr, fc, r, c, piece, () => {
         if (captured) {
-          animateCapture(boardEl, r, c, PIECES[captured], captured[0] === 'w' ? 'white-piece' : 'black-piece', 'captured-bottom');
+          animateCapture(boardEl, r, c, captured, 'captured-bottom');
         }
         renderPlay();
         if (game.turn === 'b' && (game.status === 'playing' || game.status === 'check')) {
@@ -632,14 +621,12 @@ function doAiMove() {
   const [fr, fc, tr, tc] = pick;
   const piece = game.board[fr][fc];
   const captured = game.board[tr][tc];
-  const symbol = PIECES[piece];
-  const pieceColor = 'black-piece';
   const boardEl = document.querySelector('#screen-play .chess-board');
 
   game.move(fr, fc, tr, tc);
-  animateMove(boardEl, fr, fc, tr, tc, symbol, pieceColor, () => {
+  animateMove(boardEl, fr, fc, tr, tc, piece, () => {
     if (captured) {
-      animateCapture(boardEl, tr, tc, PIECES[captured], captured[0] === 'w' ? 'white-piece' : 'black-piece', 'captured-top');
+      animateCapture(boardEl, tr, tc, captured, 'captured-top');
     }
     renderPlay();
   });
