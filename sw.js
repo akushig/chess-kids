@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chess-kids-v21';
+const CACHE_NAME = 'chess-kids-v22';
 const ASSETS = [
   './',
   './index.html',

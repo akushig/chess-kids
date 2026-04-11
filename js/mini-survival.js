@@ -2,10 +2,10 @@
 // 킹으로 적 기물의 공격을 피하며 생존
 
 const SURVIVAL_LEVELS = [
-  { name: '1', spawnRate: 3, pieces: ['bP'], maxEnemies: 6 },
-  { name: '2', spawnRate: 2, pieces: ['bP','bR'], maxEnemies: 7 },
-  { name: '3', spawnRate: 2, pieces: ['bP','bR','bB'], maxEnemies: 8 },
-  { name: '4', spawnRate: 2, pieces: ['bP','bR','bB','bQ'], maxEnemies: 8 },
+  { name: '1', spawnRate: 3, pieces: ['bP'], maxEnemies: 6, initEnemies: 2 },
+  { name: '2', spawnRate: 2, pieces: ['bP','bR'], maxEnemies: 7, initEnemies: 3 },
+  { name: '3', spawnRate: 2, pieces: ['bP','bR','bB'], maxEnemies: 8, initEnemies: 3 },
+  { name: '4', spawnRate: 2, pieces: ['bP','bR','bB','bQ'], maxEnemies: 8, initEnemies: 3 },
 ];
 
 function goSurvival(levelIdx) {
@@ -21,6 +21,8 @@ function goSurvival(levelIdx) {
     record: parseInt(localStorage.getItem('survival_record_' + (levelIdx || 0)) || '0'),
   };
   state.sv.board[state.sv.kingPos[0]][state.sv.kingPos[1]] = 'wK';
+  // 첫 턴부터 적 배치
+  for (let i = 0; i < lv.initEnemies; i++) survivalSpawnEnemy(state.sv);
   showScreen('mini');
   renderSurvival();
 }
@@ -51,8 +53,8 @@ function isSurvivalAttacked(sv, row, col) {
         if (r === row) { let blocked = false; const dir = col > c ? 1 : -1; for (let cc = c + dir; cc !== col; cc += dir) { if (sv.board[r][cc]) { blocked = true; break; } } if (!blocked) return true; }
         if (c === col) { let blocked = false; const dir = row > r ? 1 : -1; for (let rr = r + dir; rr !== row; rr += dir) { if (sv.board[rr][c]) { blocked = true; break; } } if (!blocked) return true; }
       } else if (type === 'B') {
-        const dr = row > r ? 1 : -1, dc = col > c ? 1 : -1;
         if (Math.abs(row - r) === Math.abs(col - c) && Math.abs(row - r) > 0) {
+          const dr = row > r ? 1 : -1, dc = col > c ? 1 : -1;
           let blocked = false; let cr = r + dr, cc = c + dc;
           while (cr !== row || cc !== col) { if (sv.board[cr][cc]) { blocked = true; break; } cr += dr; cc += dc; }
           if (!blocked) return true;
@@ -92,6 +94,63 @@ function survivalSpawnEnemy(sv) {
   sv.board[sr][sc] = piece;
 }
 
+// 적 이동 로직
+function survivalMoveEnemies(sv) {
+  const size = sv.size;
+  const [kr, kc] = sv.kingPos;
+  const enemies = [];
+  for (let r = 0; r < size; r++)
+    for (let c = 0; c < size; c++)
+      if (sv.board[r][c] && sv.board[r][c][0] === 'b') enemies.push({r, c, p: sv.board[r][c]});
+
+  for (const e of enemies) {
+    const type = e.p[1];
+    let nr = e.r, nc = e.c;
+
+    if (type === 'P') {
+      // 폰: 아래로 1칸, 끝줄이면 윗줄로 리스폰
+      if (e.r + 1 < size && !sv.board[e.r + 1][e.c]) {
+        nr = e.r + 1;
+      } else if (e.r + 1 >= size) {
+        // 끝줄 도달 → 윗줄 빈칸으로 리스폰
+        sv.board[e.r][e.c] = null;
+        const empties = [];
+        for (let c = 0; c < size; c++) if (!sv.board[0][c]) empties.push(c);
+        if (empties.length > 0) sv.board[0][empties[Math.floor(Math.random() * empties.length)]] = e.p;
+        continue;
+      }
+    } else if (type === 'R') {
+      // 룩: 킹 방향으로 1칸 (가로 또는 세로)
+      if (Math.abs(kr - e.r) >= Math.abs(kc - e.c)) {
+        const dir = kr > e.r ? 1 : kr < e.r ? -1 : 0;
+        if (dir !== 0 && e.r + dir >= 0 && e.r + dir < size && !sv.board[e.r + dir][e.c]) nr = e.r + dir;
+      } else {
+        const dir = kc > e.c ? 1 : kc < e.c ? -1 : 0;
+        if (dir !== 0 && e.c + dir >= 0 && e.c + dir < size && !sv.board[e.r][e.c + dir]) nc = e.c + dir;
+      }
+    } else if (type === 'B') {
+      // 비숍: 킹 방향 대각선 1칸
+      const dr = kr > e.r ? 1 : kr < e.r ? -1 : 0;
+      const dc = kc > e.c ? 1 : kc < e.c ? -1 : 0;
+      if (dr !== 0 && dc !== 0 && e.r + dr >= 0 && e.r + dr < size && e.c + dc >= 0 && e.c + dc < size && !sv.board[e.r + dr][e.c + dc]) {
+        nr = e.r + dr; nc = e.c + dc;
+      }
+    } else if (type === 'Q') {
+      // 퀸: 킹 방향으로 1칸 (8방향)
+      const dr = kr > e.r ? 1 : kr < e.r ? -1 : 0;
+      const dc = kc > e.c ? 1 : kc < e.c ? -1 : 0;
+      if ((dr !== 0 || dc !== 0) && e.r + dr >= 0 && e.r + dr < size && e.c + dc >= 0 && e.c + dc < size && !sv.board[e.r + dr][e.c + dc]) {
+        nr = e.r + dr; nc = e.c + dc;
+      }
+    }
+
+    if (nr !== e.r || nc !== e.c) {
+      sv.board[e.r][e.c] = null;
+      sv.board[nr][nc] = e.p;
+    }
+  }
+}
+
 function renderSurvival() {
   const sv = state.sv;
   const size = sv.size;
@@ -106,6 +165,7 @@ function renderSurvival() {
       let content = '';
       const p = sv.board[r][c];
       if (p) content = getPieceSVG(p, 36);
+      if (p && p[0] === 'b') cls += ' enemy-cell';
       if (r === kr && c === kc) cls += ' selected';
       if (safeMoves.some(([mr, mc]) => mr === r && mc === c) && !(r === kr && c === kc)) cls += ' move-hint';
       cells += `<div class="${cls}" onclick="survivalClick(${r},${c})">${content}</div>`;
@@ -161,17 +221,29 @@ function survivalClick(r, c) {
   sv.turn++;
 
   animateMove(boardEl, kr, kc, r, c, 'wK', () => {
+    // 적 이동
+    survivalMoveEnemies(sv);
+
+    // 새 적 스폰
     const lv = SURVIVAL_LEVELS[sv.levelIdx];
     if (sv.turn % lv.spawnRate === 0) survivalSpawnEnemy(sv);
 
+    // 킹이 적에게 잡혔는지 (적이 킹 위치로 이동했을 수 있음)
+    if (sv.board[sv.kingPos[0]][sv.kingPos[1]] !== 'wK') {
+      sv.gameOver = true;
+    }
+
+    // 안전한 이동이 없는지
     const nextSafe = getSurvivalSafeMoves(sv);
     if (nextSafe.length === 0) {
       sv.gameOver = true;
-      if (sv.turn > sv.record) {
-        sv.record = sv.turn;
-        localStorage.setItem('survival_record_' + sv.levelIdx, sv.turn);
-      }
     }
+
+    if (sv.gameOver && sv.turn > sv.record) {
+      sv.record = sv.turn;
+      localStorage.setItem('survival_record_' + sv.levelIdx, sv.turn);
+    }
+
     renderSurvival();
   }, sv.size);
 }
@@ -180,7 +252,7 @@ function survivalHint() {
   const sv = state.sv;
   const safeMoves = getSurvivalSafeMoves(sv);
   if (safeMoves.length === 0) return;
-  // 가장 안전한 칸: 주변에 적이 가장 적은 곳
+  // 가장 안전한 칸: 이동 후 미래 안전 칸이 가장 많은 곳
   let best = safeMoves[0], bestScore = -1;
   for (const [r, c] of safeMoves) {
     sv.board[sv.kingPos[0]][sv.kingPos[1]] = null;
