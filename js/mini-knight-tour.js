@@ -205,13 +205,5 @@ function knightTourHint() {
   if (!hint) return;
   const [hr, hc] = hint;
   const boardEl = document.querySelector('#screen-mini .chess-board');
-  if (!boardEl) return;
-  const idx = hr * kt.size + hc;
-  const cell = boardEl.children[idx];
-  if (cell) {
-    cell.classList.add('hint-highlight');
-    setTimeout(() => cell.classList.remove('hint-highlight'), 2500);
-  }
-  const speech = document.querySelector('.mission-speech');
-  if (speech) { speech.innerHTML = `💡 ${t('knightTourHint')}`; speech.classList.add('hint-active'); setTimeout(() => speech.classList.remove('hint-active'), 2500); }
+  showHintArrow(boardEl, kt.pos[0], kt.pos[1], hr, hc, kt.size, t('knightTourHint'));
 }

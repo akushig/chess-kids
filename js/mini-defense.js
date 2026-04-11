@@ -180,16 +180,10 @@ function defenseClick(r,c) {
 function defenseHint() {
   const df = state.df;
   if (df.enemies.length === 0) return;
-  // 가장 끝줄에 가까운 적
   let closest = df.enemies[0];
   for (const e of df.enemies) {
     if (e.pos[0] > closest.pos[0]) closest = e;
   }
   const boardEl = document.querySelector('#screen-mini .chess-board');
-  if (!boardEl) return;
-  const idx = closest.pos[0] * df.size + closest.pos[1];
-  const cell = boardEl.children[idx];
-  if (cell) { cell.classList.add('hint-highlight'); setTimeout(()=>cell.classList.remove('hint-highlight'),2500); }
-  const speech = document.querySelector('.mission-speech');
-  if (speech) { speech.innerHTML=`💡 ${t('defenseHint')}`; speech.classList.add('hint-active'); setTimeout(()=>speech.classList.remove('hint-active'),2500); }
+  showHintArrow(boardEl, df.pos[0], df.pos[1], closest.pos[0], closest.pos[1], df.size, t('defenseHint'));
 }

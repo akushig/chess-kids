@@ -131,7 +131,6 @@ function collectorClick(r,c) {
 function collectorHint() {
   const cl=state.cl;
   if (cl.stars.length===0) return;
-  // 가장 가까운 별 위치 하이라이트
   const [pr,pc]=cl.pos;
   let closest=cl.stars[0], minDist=Infinity;
   for (const s of cl.stars) {
@@ -139,10 +138,5 @@ function collectorHint() {
     if (d<minDist) { minDist=d; closest=s; }
   }
   const boardEl=document.querySelector('#screen-mini .chess-board');
-  if (!boardEl) return;
-  const idx=closest[0]*cl.size+closest[1];
-  const cell=boardEl.children[idx];
-  if (cell) { cell.classList.add('hint-highlight'); setTimeout(()=>cell.classList.remove('hint-highlight'),2500); }
-  const speech=document.querySelector('.mission-speech');
-  if (speech) { speech.innerHTML=`💡 ${t('collectorHint')}`; speech.classList.add('hint-active'); setTimeout(()=>speech.classList.remove('hint-active'),2500); }
+  showHintArrow(boardEl, pr, pc, closest[0], closest[1], cl.size, t('collectorHint'));
 }

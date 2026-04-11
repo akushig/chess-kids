@@ -140,6 +140,73 @@ function spawnParticles() {
   setTimeout(() => { if (container.parentNode) container.remove(); }, 3000);
 }
 
+// ===== 공통 힌트 화살표 유틸리티 =====
+function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
+  if (!boardEl) return;
+  const cols = gridSize || 8;
+  const cellSize = boardEl.offsetWidth / cols;
+
+  // 출발칸 하이라이트
+  const fromIdx = fromR * cols + fromC;
+  const fromCell = boardEl.children[fromIdx];
+  if (fromCell) fromCell.classList.add('hint-highlight');
+
+  // 도착칸 하이라이트
+  const toIdx = toR * cols + toC;
+  const toCell = boardEl.children[toIdx];
+  if (toCell) toCell.classList.add('hint-highlight');
+
+  // 화살표 SVG
+  const arrow = document.createElement('div');
+  arrow.className = 'hint-arrow';
+  const fx = (fromC + 0.5) * cellSize;
+  const fy = (fromR + 0.5) * cellSize;
+  const tx = (toC + 0.5) * cellSize;
+  const ty = (toR + 0.5) * cellSize;
+  arrow.innerHTML = `
+    <svg width="${boardEl.offsetWidth}" height="${boardEl.offsetHeight}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;">
+      <defs><marker id="hintHead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B"/>
+      </marker></defs>
+      <line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" marker-end="url(#hintHead)" opacity="0.85" class="hint-arrow-line"/>
+    </svg>`;
+  boardEl.appendChild(arrow);
+
+  // 텍스트 표시
+  const speech = document.querySelector('.mission-speech');
+  if (speech && text) {
+    speech.innerHTML = '💡 ' + text;
+    speech.classList.add('hint-active');
+  }
+
+  // 3초 후 제거
+  setTimeout(() => {
+    if (fromCell) fromCell.classList.remove('hint-highlight');
+    if (toCell) toCell.classList.remove('hint-highlight');
+    if (arrow.parentNode) arrow.remove();
+    if (speech) speech.classList.remove('hint-active');
+  }, 3000);
+}
+
+function showHintTarget(boardEl, targetR, targetC, gridSize, text) {
+  if (!boardEl) return;
+  const cols = gridSize || 8;
+  const idx = targetR * cols + targetC;
+  const cell = boardEl.children[idx];
+  if (cell) cell.classList.add('hint-highlight');
+
+  const speech = document.querySelector('.mission-speech');
+  if (speech && text) {
+    speech.innerHTML = '💡 ' + text;
+    speech.classList.add('hint-active');
+  }
+
+  setTimeout(() => {
+    if (cell) cell.classList.remove('hint-highlight');
+    if (speech) speech.classList.remove('hint-active');
+  }, 3000);
+}
+
 // ===== 초기화 =====
 document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {

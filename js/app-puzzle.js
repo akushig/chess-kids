@@ -108,8 +108,9 @@ function renderPuzzleBoard() {
       </div>
       ${msg}
       <div class="chess-board">${cells}</div>
+      <div class="mission-speech"></div>
       <div class="mission-actions">
-        ${state.puzzleSolved || state.puzzleFailed ? '' : `<button class="icon-btn reset-btn" onclick="renderPuzzle()">🔄 ${t('resetBtn')}</button>`}
+        ${state.puzzleSolved || state.puzzleFailed ? '' : `<button class="icon-btn hint-btn" onclick="puzzleHint()">💡 ${t('hintBtn')}</button><button class="icon-btn reset-btn" onclick="renderPuzzle()">🔄 ${t('resetBtn')}</button>`}
         ${retryBtn}
         ${nextBtn}
       </div>
@@ -185,6 +186,22 @@ function puzzleClick(r, c) {
     state.puzzleValidMoves = [];
   }
   renderPuzzleBoard();
+}
+
+function puzzleHint() {
+  if (state.puzzleSolved || state.puzzleFailed) return;
+  const puzzle = PUZZLES[state.puzzleIndex];
+  const step = state.puzzleSolutionStep;
+  const sol = puzzle.solution[step];
+  if (!sol) return;
+  const [fr, fc, tr, tc] = sol;
+  const boardEl = document.querySelector('#screen-puzzle .chess-board');
+  const game = state.puzzleGame;
+  const piece = game.board[fr][fc];
+  const pName = piece ? {wK:'King',wQ:'Queen',wR:'Rook',wB:'Bishop',wN:'Knight',wP:'Pawn',bK:'King',bQ:'Queen',bR:'Rook',bB:'Bishop',bN:'Knight',bP:'Pawn'}[piece] || '' : '';
+  const cols = 'abcdefgh';
+  const text = pName + ' → ' + cols[tc] + (8 - tr);
+  showHintArrow(boardEl, fr, fc, tr, tc, 8, text);
 }
 
 function doPuzzleAiMove() {

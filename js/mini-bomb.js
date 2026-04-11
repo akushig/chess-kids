@@ -140,14 +140,8 @@ function bombHint() {
   const bm=state.bm;
   const remaining=bm.bombs.filter(b=>!b.defused);
   if (remaining.length===0) return;
-  // 가장 급한 폭탄
   remaining.sort((a,b)=>a.timer-b.timer);
   const urgent=remaining[0];
   const boardEl=document.querySelector('#screen-mini .chess-board');
-  if (!boardEl) return;
-  const idx=urgent.pos[0]*bm.size+urgent.pos[1];
-  const cell=boardEl.children[idx];
-  if (cell) { cell.classList.add('hint-highlight'); setTimeout(()=>cell.classList.remove('hint-highlight'),2500); }
-  const speech=document.querySelector('.mission-speech');
-  if (speech) { speech.innerHTML=`💡 ${t('bombHint')}`; speech.classList.add('hint-active'); setTimeout(()=>speech.classList.remove('hint-active'),2500); }
+  showHintArrow(boardEl, bm.pos[0], bm.pos[1], urgent.pos[0], urgent.pos[1], bm.size, t('bombHint') + ' (' + urgent.timer + ')');
 }

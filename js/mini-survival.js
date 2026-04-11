@@ -256,7 +256,6 @@ function survivalHint() {
   const sv = state.sv;
   const safeMoves = getSurvivalSafeMoves(sv);
   if (safeMoves.length === 0) return;
-  // 가장 안전한 칸: 이동 후 미래 안전 칸이 가장 많은 곳
   let best = safeMoves[0], bestScore = -1;
   for (const [r, c] of safeMoves) {
     sv.board[sv.kingPos[0]][sv.kingPos[1]] = null;
@@ -270,10 +269,5 @@ function survivalHint() {
     if (futureSafe > bestScore) { bestScore = futureSafe; best = [r, c]; }
   }
   const boardEl = document.querySelector('#screen-mini .chess-board');
-  if (!boardEl) return;
-  const idx = best[0] * sv.size + best[1];
-  const cell = boardEl.children[idx];
-  if (cell) { cell.classList.add('hint-highlight'); setTimeout(() => cell.classList.remove('hint-highlight'), 2500); }
-  const speech = document.querySelector('.mission-speech');
-  if (speech) { speech.innerHTML = `💡 ${t('survivalHint')}`; speech.classList.add('hint-active'); setTimeout(() => speech.classList.remove('hint-active'), 2500); }
+  showHintArrow(boardEl, sv.kingPos[0], sv.kingPos[1], best[0], best[1], sv.size, t('survivalHint'));
 }
