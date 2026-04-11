@@ -2,7 +2,7 @@
   "name": "어린이체스",
   "short_name": "어린이체스",
   "description": "5~7세를 위한 어린이 체스 학습 앱",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#FFF8E7",
   "theme_color": "#FF6B35",
