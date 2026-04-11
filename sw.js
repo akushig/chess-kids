@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chess-kids-v20';
+const CACHE_NAME = 'chess-kids-v21';
 const ASSETS = [
   './',
   './index.html',
@@ -14,7 +14,10 @@ const ASSETS = [
   './js/app-play.js',
   './js/mini-menu.js',
   './js/mini-knight-tour.js',
-  './js/mini-survival.js'
+  './js/mini-survival.js',
+  './js/mini-collector.js',
+  './js/mini-bomb.js',
+  './js/mini-defense.js'
 ];
 
 self.addEventListener('install', e => {
