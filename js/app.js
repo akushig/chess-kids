@@ -252,7 +252,7 @@ function playClick(r, c) {
   const result = game.select(r, c);
   renderPlay();
 
-  if (result === 'moved' && game.turn === 'b' && game.status === 'playing') {
+  if (result === 'moved' && game.turn === 'b' && (game.status === 'playing' || game.status === 'check')) {
     setTimeout(() => {
       game.aiMove();
       renderPlay();
@@ -272,7 +272,7 @@ function goReward() {
         <h2>${t('rewardTitle')}</h2>
       </div>
       <div class="reward-count">${stars} ${t('rewardStars')}</div>
-      <div class="stars-display">${display || '아직 별이 없어요. 퍼즐을 풀어보세요!'}</div>
+      <div class="stars-display">${display || t('rewardEmpty')}</div>
     </div>
   `;
 }

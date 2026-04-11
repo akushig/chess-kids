@@ -30,6 +30,7 @@ const I18N = {
     btnBack: '뒤로',
     btnNext: '다음',
     btnStart: '시작!',
+    rewardEmpty: '아직 별이 없어요. 퍼즐을 풀어보세요!',
   },
   en: {
     appName: 'Kids Chess',
@@ -62,6 +63,7 @@ const I18N = {
     btnBack: 'Back',
     btnNext: 'Next',
     btnStart: 'Start!',
+    rewardEmpty: 'No stars yet. Try solving a puzzle!',
   }
 };
 
