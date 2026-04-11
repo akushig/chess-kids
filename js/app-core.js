@@ -1,5 +1,5 @@
 // ===== 앱 코어: 상태, 화면전환, 애니메이션, 파티클, 초기화 =====
-const APP_VERSION = '260411.1945';
+const APP_VERSION = '260411.2104';
 
 const state = {
   screen: 'home',
