@@ -31,6 +31,10 @@ const I18N = {
     btnNext: '다음',
     btnStart: '시작!',
     rewardEmpty: '아직 별이 없어요. 퍼즐을 풀어보세요!',
+    missionTitle: '미션',
+    missionClear: '미션 클리어! ⭐',
+    missionRetry: '다시 해봐요!',
+    missionRetryBtn: '다시 도전',
   },
   en: {
     appName: 'Kids Chess',
@@ -64,6 +68,10 @@ const I18N = {
     btnNext: 'Next',
     btnStart: 'Start!',
     rewardEmpty: 'No stars yet. Try solving a puzzle!',
+    missionTitle: 'Mission',
+    missionClear: 'Mission Clear! ⭐',
+    missionRetry: 'Try again!',
+    missionRetryBtn: 'Retry',
   }
 };
 

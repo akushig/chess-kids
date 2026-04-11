@@ -206,44 +206,83 @@ body {
 .black-piece { color: var(--black-piece); text-shadow: 0 0 2px #fff; }
 
 /* ===== 배우기 화면 ===== */
-.piece-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+.piece-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
 }
 
-.piece-tab {
+.piece-card {
+  background: #fff;
+  border: 3px solid #ddd;
+  border-radius: 16px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.piece-card:active { transform: translateY(2px); }
+
+.piece-card-icon { font-size: 2.2rem; }
+.piece-card-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+
+.piece-card-bar {
+  width: 100%;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.piece-card-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.piece-card-progress { font-size: 0.8rem; color: #999; }
+
+/* ===== 미션 목록 ===== */
+.mission-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mission-item {
   background: #fff;
   border: 2px solid #ddd;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 1.4rem;
-  cursor: pointer;
-  transition: border-color 0.1s;
-}
-
-.piece-tab.active {
-  border-color: var(--primary);
-  background: #FFF0E8;
-}
-
-.piece-name {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: var(--primary);
-}
-
-.piece-desc {
-  font-size: 1rem;
-  line-height: 1.6;
-  text-align: center;
-  background: #fff;
   border-radius: 14px;
-  padding: 14px 18px;
-  max-width: 400px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.1s;
 }
+.mission-item:active { transform: translateY(2px); }
+.mission-item.cleared { border-color: #7FC97F; background: #f0fff0; }
+.mission-item.locked { opacity: 0.4; cursor: not-allowed; }
+
+.mission-num { font-size: 1.2rem; white-space: nowrap; }
+.mission-desc { flex: 1; font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.mission-star { font-size: 1.2rem; }
+
+/* ===== 미션 보드 ===== */
+.mission-board {
+  grid-template-columns: repeat(6, 1fr) !important;
+}
+
+.block-cell { background: #d4c4a8 !important; }
+.block-mark { font-size: 1.2rem; color: #a0522d; font-weight: 900; }
+
+.goal-cell { background: #ffe082 !important; }
+.goal-mark { font-size: 1.4rem; color: #f9a825; }
 
 /* ===== 상태 메시지 ===== */
 .status-msg {
