@@ -76,8 +76,8 @@ function openSkinSelector() {
 
     return `
       <button class="skin-card ${isActive ? 'active' : ''} ${!unlocked ? 'locked' : ''}"
-        onclick="${unlocked ? `openSkinDetail('${name}')` : ''}">
-        <div class="skin-preview ${!unlocked ? 'skin-blur' : ''}">${preview}</div>
+        onclick="openSkinDetail('${name}')">
+        <div class="skin-preview">${preview}</div>
         <div class="skin-name">${t(meta.nameKey)}</div>
         ${badge}
         ${progress}
@@ -110,6 +110,9 @@ function openSkinDetail(name) {
   closeSkinSelector();
   const meta = SKIN_META[name];
   const isActive = currentSkin === name;
+  const unlocked = isSkinUnlocked(name);
+  const required = SKIN_UNLOCK[name] || 0;
+  const allStars = getAllStars();
   const pieces = ['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP'];
   const pieceNames = {wK:'King',wQ:'Queen',wR:'Rook',wB:'Bishop',wN:'Knight',wP:'Pawn',
     bK:'King',bQ:'Queen',bR:'Rook',bB:'Bishop',bN:'Knight',bP:'Pawn'};
@@ -121,9 +124,22 @@ function openSkinDetail(name) {
     </div>
   `).join('');
 
-  const actionBtn = isActive
-    ? `<div class="skin-badge skin-badge-active" style="font-size:16px;padding:8px 20px">${t('skinCurrent')}</div>`
-    : `<button class="detail-equip-btn" onclick="selectSkin('${name}')">${t('skinEquip')}</button>`;
+  let actionBtn;
+  if (!unlocked) {
+    const pct = Math.min(100, Math.round(allStars / required * 100));
+    actionBtn = `<div class="detail-lock-info">
+      <div class="detail-lock-icon">🔒</div>
+      <div class="detail-lock-text">${t('skinUnlockAt').replace('{n}', required)}</div>
+      <div class="skin-progress-wrap" style="width:80%;margin:6px auto 0">
+        <div class="skin-progress-bar" style="height:6px"><div class="skin-progress-fill" style="width:${pct}%"></div></div>
+        <div class="skin-progress-text" style="font-size:0.72rem">⭐ ${allStars} / ${required}</div>
+      </div>
+    </div>`;
+  } else if (isActive) {
+    actionBtn = `<div class="skin-badge skin-badge-active" style="font-size:16px;padding:8px 20px">${t('skinCurrent')}</div>`;
+  } else {
+    actionBtn = `<button class="detail-equip-btn" onclick="selectSkin('${name}')">${t('skinEquip')}</button>`;
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'skin-overlay';

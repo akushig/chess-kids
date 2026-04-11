@@ -1137,6 +1137,19 @@ body {
 }
 .detail-equip-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2BA09B; }
 .detail-action { margin-top: 8px; }
+.detail-lock-info {
+  text-align: center;
+  padding: 8px 0;
+}
+.detail-lock-icon {
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+.detail-lock-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #999;
+}
 
 /* ===== 보상 로드맵 ===== */
 .reward-sources {
