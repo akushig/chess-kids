@@ -55,22 +55,58 @@ function getKnightMoves(row, col, size, board) {
   return moves;
 }
 
-// Warnsdorff 힌트: 별이 있는 칸 우선, 없으면 가장 적은 선택지
+// Warnsdorff + 백트래킹 솔버: 현재 상태에서 완주 가능한 경로의 첫 수를 반환
 function getKnightTourHint(kt) {
   const moves = getKnightMoves(kt.pos[0], kt.pos[1], kt.size, kt.board);
   if (moves.length === 0) return null;
-  // 별이 있는 칸 우선
-  const starMoves = moves.filter(([r, c]) => kt.stars.some(([sr, sc]) => sr === r && sc === c));
-  if (starMoves.length > 0) return starMoves[0];
-  // Warnsdorff
-  let best = null, bestCount = Infinity;
-  for (const [r, c] of moves) {
+  if (moves.length === 1) return moves[0];
+
+  // Warnsdorff 정렬 (적은 선택지 우선)
+  const sorted = moves.map(([r, c]) => {
     kt.board[r][c] = true;
     const next = getKnightMoves(r, c, kt.size, kt.board).length;
     kt.board[r][c] = false;
-    if (next < bestCount) { bestCount = next; best = [r, c]; }
+    return { r, c, next };
+  }).sort((a, b) => a.next - b.next);
+
+  // 각 후보에 대해 백트래킹으로 완주 가능한지 검증
+  const remaining = kt.total - kt.visited;
+  const maxDepth = Math.min(remaining, 12); // 탐색 깊이 제한
+
+  for (const move of sorted) {
+    kt.board[move.r][move.c] = true;
+    const canFinish = ktCanComplete(kt.board, move.r, move.c, kt.size, remaining - 1, maxDepth);
+    kt.board[move.r][move.c] = false;
+    if (canFinish) return [move.r, move.c];
   }
-  return best;
+
+  // 완주 가능한 수가 없으면 Warnsdorff 최선 수 반환
+  return [sorted[0].r, sorted[0].c];
+}
+
+// 백트래킹: depth 단계까지 막히지 않고 진행 가능한지 확인
+function ktCanComplete(board, row, col, size, remaining, maxDepth) {
+  if (remaining <= 0) return true;
+  if (maxDepth <= 0) return true; // 깊이 제한 도달 시 통과로 간주
+
+  const moves = getKnightMoves(row, col, size, board);
+  if (moves.length === 0) return false;
+
+  // Warnsdorff 정렬
+  const sorted = moves.map(([r, c]) => {
+    board[r][c] = true;
+    const next = getKnightMoves(r, c, size, board).length;
+    board[r][c] = false;
+    return { r, c, next };
+  }).sort((a, b) => a.next - b.next);
+
+  for (const m of sorted) {
+    board[m.r][m.c] = true;
+    const ok = ktCanComplete(board, m.r, m.c, size, remaining - 1, maxDepth - 1);
+    board[m.r][m.c] = false;
+    if (ok) return true;
+  }
+  return false;
 }
 
 function renderKnightTour() {
