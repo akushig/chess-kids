@@ -1,0 +1,281 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --primary: #FF6B35;
+  --primary-dark: #e55a25;
+  --bg: #FFF8E7;
+  --board-light: #F0D9B5;
+  --board-dark: #B58863;
+  --selected: #7FC97F;
+  --hint: rgba(100, 200, 100, 0.5);
+  --text: #333;
+  --white-piece: #fff;
+  --black-piece: #222;
+}
+
+body {
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-x: hidden;
+}
+
+#app {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ===== 화면 전환 ===== */
+.screen {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+}
+.screen.active {
+  display: block;
+}
+
+/* ===== 홈 화면 ===== */
+.home-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 32px;
+  gap: 16px;
+}
+
+.app-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--primary);
+  letter-spacing: -1px;
+}
+
+.chess-icon {
+  font-size: 5rem;
+  line-height: 1;
+  margin: 8px 0;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.menu-btn {
+  background: #fff;
+  border: 3px solid var(--primary);
+  border-radius: 20px;
+  padding: 24px 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.1s, background 0.1s;
+  box-shadow: 0 4px 0 var(--primary-dark);
+}
+
+.menu-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--primary-dark);
+}
+
+.menu-icon {
+  font-size: 2rem;
+}
+
+.reward-btn {
+  grid-column: span 2;
+  flex-direction: row;
+  justify-content: center;
+  padding: 16px 12px;
+}
+
+/* ===== 공통 화면 레이아웃 ===== */
+.screen-wrap {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.screen-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screen-header h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.back-btn {
+  background: none;
+  border: 2px solid var(--primary);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ===== 체스 보드 ===== */
+.chess-board, .learn-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1;
+  border: 3px solid #8B6914;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.board-cell, .learn-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  cursor: pointer;
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.board-cell.light, .learn-cell.light { background: var(--board-light); }
+.board-cell.dark, .learn-cell.dark { background: var(--board-dark); }
+
+.board-cell.selected { background: var(--selected) !important; }
+
+.board-cell.move-hint::after,
+.learn-cell.move-hint::after {
+  content: '';
+  position: absolute;
+  width: 36%;
+  height: 36%;
+  border-radius: 50%;
+  background: rgba(80, 180, 80, 0.65);
+  pointer-events: none;
+}
+
+.piece-symbol {
+  font-size: clamp(1.6rem, 6vw, 2.4rem);
+  line-height: 1;
+}
+
+.white-piece { color: var(--white-piece); text-shadow: 0 0 3px #000, 0 0 6px #000; }
+.black-piece { color: var(--black-piece); text-shadow: 0 0 2px #fff; }
+
+/* ===== 배우기 화면 ===== */
+.piece-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.piece-tab {
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+
+.piece-tab.active {
+  border-color: var(--primary);
+  background: #FFF0E8;
+}
+
+.piece-name {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.piece-desc {
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 18px;
+  max-width: 400px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* ===== 상태 메시지 ===== */
+.status-msg {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.status-msg.success { background: #E8F8E8; color: #2a7a2a; }
+.status-msg.fail    { background: #FFE8E8; color: #c0392b; }
+.status-msg.warn    { background: #FFF3CD; color: #856404; }
+.status-msg.dim     { color: #888; }
+
+/* ===== 버튼 ===== */
+.action-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 36px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--primary-dark);
+  transition: transform 0.1s;
+}
+.action-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--primary-dark);
+}
+
+/* ===== 리워드 화면 ===== */
+.reward-count {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.stars-display {
+  font-size: 1.6rem;
+  line-height: 1.8;
+  text-align: center;
+  max-width: 360px;
+  word-break: break-all;
+  padding: 16px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}

@@ -1,0 +1,272 @@
+// 체스 기물 유니코드
+const PIECES = {
+  wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
+  bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟'
+};
+
+// 초기 보드 상태
+const INIT_BOARD = [
+  ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+  ['bP','bP','bP','bP','bP','bP','bP','bP'],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  ['wP','wP','wP','wP','wP','wP','wP','wP'],
+  ['wR','wN','wB','wQ','wK','wB','wN','wR']
+];
+
+class ChessGame {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.board = INIT_BOARD.map(r => [...r]);
+    this.turn = 'w';
+    this.selected = null;
+    this.validMoves = [];
+    this.status = 'playing'; // playing | check | checkmate | draw
+    this.enPassant = null;
+    this.castling = { wK: true, wR_a: true, wR_h: true, bK: true, bR_a: true, bR_h: true };
+  }
+
+  color(piece) { return piece ? piece[0] : null; }
+  type(piece) { return piece ? piece[1] : null; }
+
+  inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+
+  // 특정 색의 킹 위치
+  findKing(color) {
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (this.board[r][c] === color + 'K') return [r, c];
+    return null;
+  }
+
+  // 해당 칸이 color에게 공격받는지
+  isAttacked(board, row, col, byColor) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (!p || this.color(p) !== byColor) continue;
+        const moves = this.rawMoves(board, r, c, null);
+        if (moves.some(([mr, mc]) => mr === row && mc === col)) return true;
+      }
+    }
+    return false;
+  }
+
+  // 이동 후 자기 킹이 체크인지
+  moveLeavesCheck(fromR, fromC, toR, toC) {
+    const b = this.board.map(r => [...r]);
+    b[toR][toC] = b[fromR][fromC];
+    b[fromR][fromC] = null;
+    const color = this.color(b[toR][toC]);
+    const [kr, kc] = this.findKingOnBoard(b, color);
+    return this.isAttacked(b, kr, kc, color === 'w' ? 'b' : 'w');
+  }
+
+  findKingOnBoard(board, color) {
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (board[r][c] === color + 'K') return [r, c];
+    return null;
+  }
+
+  // 원시 이동 (체크 무시)
+  rawMoves(board, row, col, enPassant) {
+    const piece = board[row][col];
+    if (!piece) return [];
+    const color = this.color(piece);
+    const type = this.type(piece);
+    const opp = color === 'w' ? 'b' : 'w';
+    const moves = [];
+
+    const add = (r, c) => {
+      if (this.inBounds(r, c) && this.color(board[r][c]) !== color) moves.push([r, c]);
+    };
+    const slide = (dr, dc) => {
+      let r = row + dr, c = col + dc;
+      while (this.inBounds(r, c)) {
+        if (board[r][c]) { if (this.color(board[r][c]) === opp) moves.push([r, c]); break; }
+        moves.push([r, c]);
+        r += dr; c += dc;
+      }
+    };
+
+    if (type === 'P') {
+      const dir = color === 'w' ? -1 : 1;
+      const startRow = color === 'w' ? 6 : 1;
+      if (this.inBounds(row + dir, col) && !board[row + dir][col]) {
+        moves.push([row + dir, col]);
+        if (row === startRow && !board[row + 2 * dir][col]) moves.push([row + 2 * dir, col]);
+      }
+      for (const dc of [-1, 1]) {
+        if (this.inBounds(row + dir, col + dc)) {
+          if (this.color(board[row + dir][col + dc]) === opp) moves.push([row + dir, col + dc]);
+          if (enPassant && enPassant[0] === row + dir && enPassant[1] === col + dc) moves.push([row + dir, col + dc]);
+        }
+      }
+    } else if (type === 'N') {
+      for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) add(row+dr, col+dc);
+    } else if (type === 'B') {
+      for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) slide(dr, dc);
+    } else if (type === 'R') {
+      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) slide(dr, dc);
+    } else if (type === 'Q') {
+      for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]) slide(dr, dc);
+    } else if (type === 'K') {
+      for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) add(row+dr, col+dc);
+    }
+    return moves;
+  }
+
+  // 합법 이동
+  legalMoves(row, col) {
+    const raw = this.rawMoves(this.board, row, col, this.enPassant);
+    return raw.filter(([r, c]) => !this.moveLeavesCheck(row, col, r, c));
+  }
+
+  select(row, col) {
+    const piece = this.board[row][col];
+    if (piece && this.color(piece) === this.turn) {
+      this.selected = [row, col];
+      this.validMoves = this.legalMoves(row, col);
+      return 'selected';
+    }
+    if (this.selected) {
+      const [fr, fc] = this.selected;
+      if (this.validMoves.some(([r, c]) => r === row && c === col)) {
+        return this.move(fr, fc, row, col);
+      }
+    }
+    this.selected = null;
+    this.validMoves = [];
+    return 'none';
+  }
+
+  move(fromR, fromC, toR, toC) {
+    const piece = this.board[fromR][fromC];
+    const color = this.color(piece);
+    const type = this.type(piece);
+
+    // 앙파상
+    if (type === 'P' && this.enPassant && toR === this.enPassant[0] && toC === this.enPassant[1]) {
+      const captureRow = color === 'w' ? toR + 1 : toR - 1;
+      this.board[captureRow][toC] = null;
+    }
+
+    // 앙파상 설정
+    this.enPassant = null;
+    if (type === 'P' && Math.abs(toR - fromR) === 2) {
+      this.enPassant = [(fromR + toR) / 2, toC];
+    }
+
+    this.board[toR][toC] = piece;
+    this.board[fromR][fromC] = null;
+
+    // 폰 프로모션 (자동으로 퀸)
+    if (type === 'P' && (toR === 0 || toR === 7)) {
+      this.board[toR][toC] = color + 'Q';
+    }
+
+    this.selected = null;
+    this.validMoves = [];
+    this.turn = this.turn === 'w' ? 'b' : 'w';
+    this.updateStatus();
+    return 'moved';
+  }
+
+  updateStatus() {
+    const color = this.turn;
+    const opp = color === 'w' ? 'b' : 'w';
+    const [kr, kc] = this.findKing(color);
+    const inCheck = this.isAttacked(this.board, kr, kc, opp);
+
+    // 합법 이동이 있는지 확인
+    let hasLegal = false;
+    outer: for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (this.color(this.board[r][c]) === color) {
+          if (this.legalMoves(r, c).length > 0) { hasLegal = true; break outer; }
+        }
+      }
+    }
+
+    if (!hasLegal) {
+      this.status = inCheck ? 'checkmate' : 'draw';
+    } else {
+      this.status = inCheck ? 'check' : 'playing';
+    }
+  }
+
+  // 간단한 AI: 랜덤 합법 이동
+  aiMove() {
+    const moves = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (this.color(this.board[r][c]) === this.turn) {
+          const legal = this.legalMoves(r, c);
+          legal.forEach(([tr, tc]) => moves.push([r, c, tr, tc]));
+        }
+      }
+    }
+    if (moves.length === 0) return;
+    // 캡처 우선, 없으면 랜덤
+    const captures = moves.filter(([,, tr, tc]) => this.board[tr][tc]);
+    const pick = captures.length > 0
+      ? captures[Math.floor(Math.random() * captures.length)]
+      : moves[Math.floor(Math.random() * moves.length)];
+    this.move(pick[0], pick[1], pick[2], pick[3]);
+  }
+}
+
+// 퍼즐 데이터 (1수 체크메이트)
+const PUZZLES = [
+  {
+    title: '퍼즐 1',
+    board: [
+      [null,null,null,null,'bK',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ['wR',null,null,null,'wK',null,null,'wQ']
+    ],
+    turn: 'w',
+    solution: [[7,7,0,7]] // Qh8#
+  },
+  {
+    title: '퍼즐 2',
+    board: [
+      [null,null,null,null,'bK',null,null,null],
+      [null,null,null,null,'bP',null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,'wQ',null,null,null,'wK']
+    ],
+    turn: 'w',
+    solution: [[7,3,0,3]] // Qd8#
+  },
+  {
+    title: '퍼즐 3',
+    board: [
+      ['bR',null,null,'bQ','bK',null,null,'bR'],
+      ['bP','bP',null,null,null,'bP','bP','bP'],
+      [null,null,'bN',null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null],
+      ['wP','wP','wP',null,null,'wP','wP','wP'],
+      ['wR',null,null,null,'wK',null,null,'wR']
+    ],
+    turn: 'w',
+    solution: [[7,3,0,3]] // Qd8# placeholder
+  }
+];
