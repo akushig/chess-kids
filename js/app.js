@@ -491,6 +491,41 @@ function puzzleClick(r, c) {
   renderPuzzleBoard();
 }
 
+// ===== 캡처 애니메이션 =====
+function animateCapture(boardEl, toR, toC, capturedSymbol, capturedColorClass, targetId) {
+  const cellSize = boardEl.offsetWidth / 8;
+  const boardRect = boardEl.getBoundingClientRect();
+  const targetEl = document.getElementById(targetId);
+  if (!targetEl) return;
+  const targetRect = targetEl.getBoundingClientRect();
+
+  const ghost = document.createElement('div');
+  ghost.className = 'capture-anim';
+  ghost.innerHTML = `<span class="${capturedColorClass}">${capturedSymbol}</span>`;
+  ghost.style.position = 'fixed';
+  ghost.style.fontSize = 'clamp(1.4rem, 5vw, 2rem)';
+  ghost.style.zIndex = '20';
+  ghost.style.pointerEvents = 'none';
+  ghost.style.transition = 'top 0.4s ease, left 0.4s ease, transform 0.4s ease, opacity 0.4s ease';
+  ghost.style.top = (boardRect.top + toR * cellSize) + 'px';
+  ghost.style.left = (boardRect.left + toC * cellSize) + 'px';
+  ghost.style.width = cellSize + 'px';
+  ghost.style.height = cellSize + 'px';
+  ghost.style.display = 'flex';
+  ghost.style.alignItems = 'center';
+  ghost.style.justifyContent = 'center';
+  document.body.appendChild(ghost);
+
+  requestAnimationFrame(() => {
+    ghost.style.top = targetRect.top + 'px';
+    ghost.style.left = (targetRect.left + targetRect.width - 24) + 'px';
+    ghost.style.transform = 'scale(0.6)';
+    ghost.style.opacity = '0.6';
+  });
+
+  setTimeout(() => { if (ghost.parentNode) ghost.remove(); }, 500);
+}
+
 // ===== 대전 화면 =====
 function goPlay() {
   state.game = new ChessGame();
@@ -537,9 +572,9 @@ function renderPlay() {
         <h2>${t('playTitle')}</h2>
       </div>
       ${statusMsg}
-      <div class="captured-pieces">${game.captured.b.map(p => `<span class="white-piece">${PIECES[p]}</span>`).join('')}</div>
+      <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => `<span class="white-piece">${PIECES[p]}</span>`).join('')}</div>
       <div class="chess-board">${cells}</div>
-      <div class="captured-pieces">${game.captured.w.map(p => `<span class="black-piece">${PIECES[p]}</span>`).join('')}</div>
+      <div class="captured-pieces" id="captured-bottom">${game.captured.w.map(p => `<span class="black-piece">${PIECES[p]}</span>`).join('')}</div>
       <button class="action-btn" onclick="goPlay()">${t('playRestart')}</button>
     </div>
   `;
@@ -556,10 +591,14 @@ function playClick(r, c) {
       const piece = game.board[fr][fc];
       const symbol = PIECES[piece];
       const pieceColor = piece[0] === 'w' ? 'white-piece' : 'black-piece';
+      const captured = game.board[r][c];
       const boardEl = document.querySelector('#screen-play .chess-board');
 
       game.move(fr, fc, r, c);
       animateMove(boardEl, fr, fc, r, c, symbol, pieceColor, () => {
+        if (captured) {
+          animateCapture(boardEl, r, c, PIECES[captured], captured[0] === 'w' ? 'white-piece' : 'black-piece', 'captured-bottom');
+        }
         renderPlay();
         if (game.turn === 'b' && (game.status === 'playing' || game.status === 'check')) {
           setTimeout(() => doAiMove(), 300);
@@ -575,7 +614,6 @@ function playClick(r, c) {
 
 function doAiMove() {
   const game = state.game;
-  // AI 이동 전 좌표 기록
   const moves = [];
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -593,12 +631,16 @@ function doAiMove() {
 
   const [fr, fc, tr, tc] = pick;
   const piece = game.board[fr][fc];
+  const captured = game.board[tr][tc];
   const symbol = PIECES[piece];
   const pieceColor = 'black-piece';
   const boardEl = document.querySelector('#screen-play .chess-board');
 
   game.move(fr, fc, tr, tc);
   animateMove(boardEl, fr, fc, tr, tc, symbol, pieceColor, () => {
+    if (captured) {
+      animateCapture(boardEl, tr, tc, PIECES[captured], captured[0] === 'w' ? 'white-piece' : 'black-piece', 'captured-top');
+    }
     renderPlay();
   });
 }

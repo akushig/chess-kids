@@ -339,12 +339,24 @@ body {
 .captured-pieces {
   width: 100%;
   max-width: 400px;
-  min-height: 28px;
+  min-height: 32px;
+  height: 32px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
   padding: 4px 8px;
   font-size: 1.2rem;
+  overflow: hidden;
+}
+
+.captured-pieces .captured-new {
+  animation: capturedPop 0.4s ease;
+}
+
+@keyframes capturedPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* ===== 앱 버전 ===== */
