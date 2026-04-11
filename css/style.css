@@ -165,6 +165,22 @@ body {
   aspect-ratio: 1;
 }
 
+/* ===== 이동 애니메이션 ===== */
+.chess-board {
+  position: relative;
+}
+
+.move-anim {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  z-index: 10;
+  pointer-events: none;
+  transition: top 0.3s ease, left 0.3s ease;
+}
+
 .board-cell.light, .learn-cell.light { background: var(--board-light); }
 .board-cell.dark, .learn-cell.dark { background: var(--board-dark); }
 

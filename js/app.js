@@ -6,7 +6,38 @@ const state = {
   puzzleSolved: false,
   game: null,
   learnIndex: 0,
+  animating: false,
 };
+
+// ===== 이동 애니메이션 =====
+function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, callback) {
+  state.animating = true;
+  const cellSize = boardEl.offsetWidth / 8;
+  const ghost = document.createElement('div');
+  ghost.className = 'move-anim';
+  ghost.innerHTML = `<span class="${pieceColorClass}">${symbol}</span>`;
+  ghost.style.width = cellSize + 'px';
+  ghost.style.height = cellSize + 'px';
+  ghost.style.top = (fromR * cellSize) + 'px';
+  ghost.style.left = (fromC * cellSize) + 'px';
+  boardEl.appendChild(ghost);
+
+  // 출발 칸의 기물 숨기기
+  const fromIdx = fromR * 8 + fromC;
+  const fromCell = boardEl.children[fromIdx];
+  if (fromCell) fromCell.querySelector('span').style.visibility = 'hidden';
+
+  requestAnimationFrame(() => {
+    ghost.style.top = (toR * cellSize) + 'px';
+    ghost.style.left = (toC * cellSize) + 'px';
+  });
+
+  ghost.addEventListener('transitionend', () => {
+    ghost.remove();
+    state.animating = false;
+    callback();
+  }, { once: true });
+}
 
 // ===== 화면 전환 =====
 function showScreen(name) {
@@ -162,22 +193,30 @@ function renderPuzzleBoard() {
 }
 
 function puzzleClick(r, c) {
-  if (state.puzzleSolved) return;
+  if (state.puzzleSolved || state.animating) return;
   const game = state.puzzleGame;
   const puzzle = PUZZLES[state.puzzleIndex];
 
   if (state.puzzleSelected) {
     const [fr, fc] = state.puzzleSelected;
     if (state.puzzleValidMoves.some(([mr, mc]) => mr === r && mc === c)) {
+      const piece = game.board[fr][fc];
+      const symbol = PIECES[piece];
+      const pieceColor = piece[0] === 'w' ? 'white-piece' : 'black-piece';
+      const boardEl = document.querySelector('#screen-puzzle .chess-board');
+
       game.move(fr, fc, r, c);
       state.puzzleSelected = null;
       state.puzzleValidMoves = [];
-      if (game.status === 'checkmate') {
-        state.puzzleSolved = true;
-        state.stars++;
-        localStorage.setItem('stars', state.stars);
-      }
-      renderPuzzleBoard();
+
+      animateMove(boardEl, fr, fc, r, c, symbol, pieceColor, () => {
+        if (game.status === 'checkmate') {
+          state.puzzleSolved = true;
+          state.stars++;
+          localStorage.setItem('stars', state.stars);
+        }
+        renderPuzzleBoard();
+      });
       return;
     }
   }
@@ -247,17 +286,60 @@ function renderPlay() {
 
 function playClick(r, c) {
   const game = state.game;
+  if (state.animating) return;
   if (game.turn !== 'w' || game.status === 'checkmate' || game.status === 'draw') return;
 
-  const result = game.select(r, c);
-  renderPlay();
+  if (game.selected) {
+    const [fr, fc] = game.selected;
+    if (game.validMoves.some(([mr, mc]) => mr === r && mc === c)) {
+      const piece = game.board[fr][fc];
+      const symbol = PIECES[piece];
+      const pieceColor = piece[0] === 'w' ? 'white-piece' : 'black-piece';
+      const boardEl = document.querySelector('#screen-play .chess-board');
 
-  if (result === 'moved' && game.turn === 'b' && (game.status === 'playing' || game.status === 'check')) {
-    setTimeout(() => {
-      game.aiMove();
-      renderPlay();
-    }, 400);
+      game.move(fr, fc, r, c);
+      animateMove(boardEl, fr, fc, r, c, symbol, pieceColor, () => {
+        renderPlay();
+        if (game.turn === 'b' && (game.status === 'playing' || game.status === 'check')) {
+          setTimeout(() => doAiMove(), 300);
+        }
+      });
+      return;
+    }
   }
+
+  game.select(r, c);
+  renderPlay();
+}
+
+function doAiMove() {
+  const game = state.game;
+  // AI 이동 전 좌표 기록
+  const moves = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (game.color(game.board[r][c]) === game.turn) {
+        const legal = game.legalMoves(r, c);
+        legal.forEach(([tr, tc]) => moves.push([r, c, tr, tc]));
+      }
+    }
+  }
+  if (moves.length === 0) return;
+  const captures = moves.filter(([,, tr, tc]) => game.board[tr][tc]);
+  const pick = captures.length > 0
+    ? captures[Math.floor(Math.random() * captures.length)]
+    : moves[Math.floor(Math.random() * moves.length)];
+
+  const [fr, fc, tr, tc] = pick;
+  const piece = game.board[fr][fc];
+  const symbol = PIECES[piece];
+  const pieceColor = 'black-piece';
+  const boardEl = document.querySelector('#screen-play .chess-board');
+
+  game.move(fr, fc, tr, tc);
+  animateMove(boardEl, fr, fc, tr, tc, symbol, pieceColor, () => {
+    renderPlay();
+  });
 }
 
 // ===== 리워드 화면 =====
