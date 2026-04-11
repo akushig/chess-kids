@@ -159,6 +159,7 @@ function openSkinDetail(name) {
 function closeSkinDetail() {
   const el = document.getElementById('skin-detail-overlay');
   if (el) el.remove();
+  openSkinSelector();
 }
 
 function selectSkin(name) {
