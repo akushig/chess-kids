@@ -11,9 +11,10 @@ const state = {
 };
 
 // ===== 이동 애니메이션 =====
-function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, callback) {
+function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, callback, gridSize) {
   state.animating = true;
-  const cellSize = boardEl.offsetWidth / 8;
+  const cols = gridSize || 8;
+  const cellSize = boardEl.offsetWidth / cols;
 
   // 같은 칸이면 애니메이션 스킵
   if (fromR === toR && fromC === toC) {
@@ -32,7 +33,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, symbol, pieceColorClass, c
   boardEl.appendChild(ghost);
 
   // 출발 칸의 기물 숨기기
-  const fromIdx = fromR * 8 + fromC;
+  const fromIdx = fromR * cols + fromC;
   const fromCell = boardEl.children[fromIdx];
   if (fromCell && fromCell.querySelector('span')) {
     fromCell.querySelector('span').style.visibility = 'hidden';
@@ -364,12 +365,10 @@ function missionClick(r, c) {
         missionClear();
       }
     } else if (mission.type === 'capture') {
-      // 잡은 기물 카운트
       let remaining = 0;
       for (let rr = 0; rr < MISSION_BOARD_SIZE; rr++)
         for (let cc = 0; cc < MISSION_BOARD_SIZE; cc++)
           if (board[rr][cc] && board[rr][cc][0] === 'b') remaining++;
-      // escape 미션의 enemy는 제외
       if (mission.enemies) {
         remaining -= mission.enemies.filter(([er, ec, ep]) => board[er][ec] === ep).length;
       }
@@ -383,7 +382,7 @@ function missionClick(r, c) {
       }
     }
     renderMissionBoard();
-  });
+  }, MISSION_BOARD_SIZE);
 }
 
 function missionClear() {
