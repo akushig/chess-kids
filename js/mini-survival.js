@@ -254,8 +254,21 @@ function survivalClick(r, c) {
 
 function survivalHint() {
   const sv = state.sv;
+  if (sv.gameOver) return;
   const safeMoves = getSurvivalSafeMoves(sv);
-  if (safeMoves.length === 0) return;
+  const boardEl = document.querySelector('#screen-mini .chess-board');
+  if (!boardEl) return;
+
+  if (safeMoves.length === 0) {
+    const speech = document.querySelector('.mission-speech');
+    if (speech) {
+      speech.innerHTML = '⚠️ ' + t('hintUnsolvable');
+      speech.classList.add('hint-active', 'hint-unsolvable');
+    }
+    return;
+  }
+
+  // 2턴 선읽기: 각 이동 후 적 이동까지 시뮬레이션해서 가장 많은 안전칸을 확보하는 수 선택
   let best = safeMoves[0], bestScore = -1;
   for (const [r, c] of safeMoves) {
     sv.board[sv.kingPos[0]][sv.kingPos[1]] = null;
@@ -268,6 +281,5 @@ function survivalHint() {
     sv.kingPos = oldPos;
     if (futureSafe > bestScore) { bestScore = futureSafe; best = [r, c]; }
   }
-  const boardEl = document.querySelector('#screen-mini .chess-board');
   showHintArrow(boardEl, sv.kingPos[0], sv.kingPos[1], best[0], best[1], sv.size, t('survivalHint'));
 }

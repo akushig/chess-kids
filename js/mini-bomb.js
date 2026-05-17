@@ -136,12 +136,63 @@ function bombClick(r,c) {
   },bm.size);
 }
 
+// BFS로 모든 폭탄 해제 경로 탐색
+function findBombSolvePath() {
+  const bm = state.bm;
+  const bombs = bm.bombs.map((b, i) => ({...b, idx: i})).filter(b => !b.defused);
+  if (bombs.length === 0) return [];
+
+  // 상태: (row, col, defusedMask)
+  const queue = [[bm.pos[0], bm.pos[1], 0, 0, [bm.pos]]];
+  const visited = new Set();
+  visited.add(bm.pos[0] + ',' + bm.pos[1] + ',0');
+
+  while (queue.length > 0) {
+    const [row, col, mask, moveCount, path] = queue.shift();
+    const tempBm = {...bm, pos: [row, col]};
+    const moves = getBombMoves(tempBm);
+
+    for (const [r, c] of moves) {
+      let newMask = mask;
+      const mc = moveCount + 1;
+      for (let i = 0; i < bombs.length; i++) {
+        if (!(mask & (1 << i)) && bombs[i].pos[0] === r && bombs[i].pos[1] === c) newMask |= (1 << i);
+      }
+      // 폭발 체크
+      let exploded = false;
+      for (let i = 0; i < bombs.length; i++) {
+        if (!(newMask & (1 << i)) && bombs[i].timer - mc <= 0) { exploded = true; break; }
+      }
+      if (exploded) continue;
+
+      const key = r + ',' + c + ',' + newMask;
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const newPath = [...path, [r, c]];
+      if (newMask === (1 << bombs.length) - 1) return newPath;
+      queue.push([r, c, newMask, mc, newPath]);
+    }
+  }
+  return null;
+}
+
 function bombHint() {
-  const bm=state.bm;
-  const remaining=bm.bombs.filter(b=>!b.defused);
-  if (remaining.length===0) return;
-  remaining.sort((a,b)=>a.timer-b.timer);
-  const urgent=remaining[0];
-  const boardEl=document.querySelector('#screen-mini .chess-board');
-  showHintArrow(boardEl, bm.pos[0], bm.pos[1], urgent.pos[0], urgent.pos[1], bm.size, t('bombHint') + ' (' + urgent.timer + ')');
+  const bm = state.bm;
+  if (bm.clear || bm.failed) return;
+  const remaining = bm.bombs.filter(b => !b.defused);
+  if (remaining.length === 0) return;
+  const boardEl = document.querySelector('#screen-mini .chess-board');
+  if (!boardEl) return;
+
+  const path = findBombSolvePath();
+  if (!path) {
+    const speech = document.querySelector('.mission-speech');
+    if (speech) {
+      speech.innerHTML = '⚠️ ' + t('bombUnsolvable');
+      speech.classList.add('hint-active', 'hint-unsolvable');
+    }
+    return;
+  }
+  showHintPath(boardEl, path, bm.size, t('bombHintPath'));
 }

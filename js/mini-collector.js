@@ -128,15 +128,71 @@ function collectorClick(r,c) {
   },cl.size);
 }
 
-function collectorHint() {
-  const cl=state.cl;
-  if (cl.stars.length===0) return;
-  const [pr,pc]=cl.pos;
-  let closest=cl.stars[0], minDist=Infinity;
-  for (const s of cl.stars) {
-    const d=Math.abs(s[0]-pr)+Math.abs(s[1]-pc);
-    if (d<minDist) { minDist=d; closest=s; }
+// BFS로 모든 별을 수집하는 전체 경로 탐색
+function findCollectorSolvePath() {
+  const cl = state.cl;
+  const size = cl.size;
+  const stars = cl.stars.map(s => [...s]);
+  if (stars.length === 0) return [];
+
+  const enemies = cl.enemies;
+  const startEIdx = enemies.map(e => e.pathIdx);
+
+  // 상태: (row, col, collectedMask, enemyPathIndices...)
+  function stateKey(r, c, mask, eIdx) {
+    return r + ',' + c + ',' + mask + ',' + eIdx.join(',');
   }
-  const boardEl=document.querySelector('#screen-mini .chess-board');
-  showHintArrow(boardEl, pr, pc, closest[0], closest[1], cl.size, t('collectorHint'));
+
+  const queue = [[cl.pos[0], cl.pos[1], 0, [...startEIdx], cl.turnsLeft, [cl.pos]]];
+  const visited = new Set();
+  visited.add(stateKey(cl.pos[0], cl.pos[1], 0, startEIdx));
+
+  while (queue.length > 0) {
+    const [row, col, mask, eIdx, turnsLeft, path] = queue.shift();
+    if (turnsLeft <= 0) continue;
+
+    const tempCl = { ...cl, pos: [row, col],
+      enemies: enemies.map((e, i) => ({...e, pos: [...e.path[eIdx[i]]]})) };
+    const moves = getCollectorMoves(tempCl);
+
+    for (const [r, c] of moves) {
+      let newMask = mask;
+      for (let i = 0; i < stars.length; i++) {
+        if (!(mask & (1 << i)) && stars[i][0] === r && stars[i][1] === c) newMask |= (1 << i);
+      }
+      const newEIdx = eIdx.map((idx, i) => (idx + 1) % enemies[i].path.length);
+      if (enemies.some((e, i) => {
+        const ep = e.path[newEIdx[i]];
+        return ep[0] === r && ep[1] === c;
+      })) continue;
+
+      const key = stateKey(r, c, newMask, newEIdx);
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const newPath = [...path, [r, c]];
+      if (newMask === (1 << stars.length) - 1) return newPath;
+      queue.push([r, c, newMask, newEIdx, turnsLeft - 1, newPath]);
+    }
+  }
+  return null;
+}
+
+function collectorHint() {
+  const cl = state.cl;
+  if (cl.clear || cl.failed) return;
+  if (cl.stars.length === 0) return;
+  const boardEl = document.querySelector('#screen-mini .chess-board');
+  if (!boardEl) return;
+
+  const path = findCollectorSolvePath();
+  if (!path) {
+    const speech = document.querySelector('.mission-speech');
+    if (speech) {
+      speech.innerHTML = '⚠️ ' + t('collectorUnsolvable');
+      speech.classList.add('hint-active', 'hint-unsolvable');
+    }
+    return;
+  }
+  showHintPath(boardEl, path, cl.size, t('collectorHintPath'));
 }

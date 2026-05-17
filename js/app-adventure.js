@@ -97,7 +97,6 @@ function goMissionPlay(pieceKey, missionIdx) {
   state.missionSolved = false;
   state.missionFailed = false;
   state.missionMoveCount = 0;
-  state.missionHintShown = false;
   showScreen('learn');
   renderMissionBoard();
 }
@@ -341,67 +340,79 @@ function closeClearPopup() {
   if (overlay) overlay.remove();
 }
 
-function showMissionHint() {
-  if (state.missionHintShown) return;
-  state.missionHintShown = true;
+// BFS로 현재 상태에서 클리어까지의 최단 경로 탐색
+function findMissionSolvePath() {
   const mission = MISSIONS[state.missionPiece][state.missionIdx];
-  const hint = mission.hint;
-  if (!hint) return;
+  const origBoard = state.missionBoard;
+  const [pr, pc] = state.missionPlayerPos;
+  const size = MISSION_BOARD_SIZE;
 
-  const [fromR, fromC, toR, toC] = hint;
+  function cloneBoard(b) { return b.map(row => [...row]); }
+  function boardKey(b, r, c) {
+    let k = r + ',' + c;
+    for (let i = 0; i < size; i++)
+      for (let j = 0; j < size; j++)
+        if (b[i][j]) k += ',' + i + j + b[i][j];
+    return k;
+  }
+
+  function isGoal(b, r, c) {
+    if (mission.type === 'reach') {
+      return mission.goals.some(([gr, gc]) => gr === r && gc === c);
+    } else if (mission.type === 'capture') {
+      // targets에서 온 적만 세기
+      let remaining = 0;
+      for (let i = 0; i < size; i++)
+        for (let j = 0; j < size; j++)
+          if (b[i][j] && b[i][j][0] === 'b') remaining++;
+      if (mission.enemies) {
+        remaining -= mission.enemies.filter(([er, ec, ep]) => b[er][ec] === ep).length;
+      }
+      return remaining === 0;
+    } else if (mission.type === 'escape') {
+      return mission.goals.some(([gr, gc]) => gr === r && gc === c) &&
+             !isSquareAttacked(b, r, c, 'b', mission);
+    }
+    return false;
+  }
+
+  const startBoard = cloneBoard(origBoard);
+  const queue = [[startBoard, pr, pc, [[pr, pc]]]];
+  const visited = new Set();
+  visited.add(boardKey(startBoard, pr, pc));
+
+  while (queue.length > 0) {
+    const [b, row, col, path] = queue.shift();
+    if (path.length > 20) continue;
+    const moves = getMissionValidMoves(b, row, col, mission);
+
+    for (const [r, c] of moves) {
+      // escape 타입: 공격받는 칸 제외
+      const nb = cloneBoard(b);
+      nb[r][c] = nb[row][col];
+      nb[row][col] = null;
+      if (mission.type === 'escape' && isSquareAttacked(nb, r, c, 'b', mission)) continue;
+
+      const key = boardKey(nb, r, c);
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const newPath = [...path, [r, c]];
+      if (isGoal(nb, r, c)) return newPath;
+      queue.push([nb, r, c, newPath]);
+    }
+  }
+  return null;
+}
+
+function showMissionHint() {
   const boardEl = document.querySelector('#screen-learn .mission-board');
   if (!boardEl) return;
 
-  const size = MISSION_BOARD_SIZE;
-  const cellSize = boardEl.offsetWidth / size;
-
-  // 출발칸 하이라이트
-  const fromIdx = fromR * size + fromC;
-  const fromCell = boardEl.children[fromIdx];
-  if (fromCell) fromCell.classList.add('hint-highlight');
-
-  // 도착칸 하이라이트
-  const toIdx = toR * size + toC;
-  const toCell = boardEl.children[toIdx];
-  if (toCell) toCell.classList.add('hint-highlight');
-
-  // 화살표 SVG 오버레이
-  const arrow = document.createElement('div');
-  arrow.className = 'hint-arrow';
-  const fromX = (fromC + 0.5) * cellSize;
-  const fromY = (fromR + 0.5) * cellSize;
-  const toX = (toC + 0.5) * cellSize;
-  const toY = (toR + 0.5) * cellSize;
-  const svgW = boardEl.offsetWidth;
-  const svgH = boardEl.offsetHeight;
-  arrow.innerHTML = `
-    <svg width="${svgW}" height="${svgH}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;">
-      <defs>
-        <marker id="hintHead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B"/>
-        </marker>
-      </defs>
-      <line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}"
-        stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"
-        marker-end="url(#hintHead)" opacity="0.85"
-        class="hint-arrow-line"/>
-    </svg>
-  `;
-  boardEl.appendChild(arrow);
-
-  // 힌트 텍스트 표시
-  const desc = mission.desc[currentLang] || mission.desc['ko'];
-  const speechEl = document.querySelector('.mission-speech');
-  if (speechEl) {
-    speechEl.innerHTML = `💡 ${desc}`;
-    speechEl.classList.add('hint-active');
+  const path = findMissionSolvePath();
+  if (!path) {
+    showHintUnsolvable();
+    return;
   }
-
-  // 3초 후 제거
-  setTimeout(() => {
-    if (fromCell) fromCell.classList.remove('hint-highlight');
-    if (toCell) toCell.classList.remove('hint-highlight');
-    if (arrow.parentNode) arrow.remove();
-    if (speechEl) speechEl.classList.remove('hint-active');
-  }, 3000);
+  showHintPath(boardEl, path, MISSION_BOARD_SIZE, t('hintFullPath'));
 }

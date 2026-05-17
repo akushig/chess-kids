@@ -12,7 +12,6 @@ const state = {
   missionSolved: false,
   missionFailed: false,
   missionMoveCount: 0,
-  missionHintShown: false,
   // 퍼즐
   puzzleLevel: null,
   puzzleIndex: 0,
@@ -205,6 +204,128 @@ function showHintTarget(boardEl, targetR, targetC, gridSize, text) {
     if (cell) cell.classList.remove('hint-highlight');
     if (speech) speech.classList.remove('hint-active');
   }, 3000);
+}
+
+// ===== 전체 경로 힌트 표시 =====
+// path: [[r,c], ...] 순서대로 이동할 위치 배열 (첫 번째는 현재 위치)
+function showHintPath(boardEl, path, gridSize, text) {
+  if (!boardEl || !path || path.length < 2) return;
+  const cols = gridSize || 8;
+  const cellSize = boardEl.offsetWidth / cols;
+
+  // 경로 셀 하이라이트
+  for (let i = 0; i < path.length; i++) {
+    const [r, c] = path[i];
+    const idx = r * cols + c;
+    const cell = boardEl.children[idx];
+    if (cell) cell.classList.add(i === 0 ? 'hint-path-start' : 'hint-path-cell');
+  }
+
+  // 화살표 SVG
+  let lines = '';
+  for (let i = 0; i < path.length - 1; i++) {
+    const [fr, fc] = path[i];
+    const [tr, tc] = path[i + 1];
+    const fx = (fc + 0.5) * cellSize, fy = (fr + 0.5) * cellSize;
+    const tx = (tc + 0.5) * cellSize, ty = (tr + 0.5) * cellSize;
+    lines += `<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}"
+      stroke="#43A047" stroke-width="3" stroke-linecap="round"
+      marker-end="url(#pathHead)" opacity="0.7" class="hint-path-line"/>`;
+  }
+  const arrowEl = document.createElement('div');
+  arrowEl.className = 'hint-arrow hint-path-overlay';
+  arrowEl.innerHTML = `
+    <svg width="${boardEl.offsetWidth}" height="${boardEl.offsetHeight}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;">
+      <defs><marker id="pathHead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#43A047"/>
+      </marker></defs>
+      ${lines}
+    </svg>`;
+  boardEl.appendChild(arrowEl);
+
+  // 번호 마커
+  const markerEl = document.createElement('div');
+  markerEl.className = 'hint-path-overlay';
+  markerEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:16;';
+  for (let i = 1; i < path.length; i++) {
+    const [r, c] = path[i];
+    const badge = document.createElement('div');
+    badge.className = 'hint-step-badge';
+    badge.style.left = ((c + 0.5) * cellSize) + 'px';
+    badge.style.top = ((r + 0.5) * cellSize) + 'px';
+    badge.textContent = i;
+    markerEl.appendChild(badge);
+  }
+  boardEl.appendChild(markerEl);
+
+  // 텍스트
+  const speech = document.querySelector('.mission-speech');
+  if (speech && text) {
+    speech.innerHTML = '💡 ' + text;
+    speech.classList.add('hint-active');
+  }
+}
+
+// moves: [[fromR, fromC, toR, toC], ...] 각 수의 출발/도착 배열 (퍼즐용)
+function showHintMoves(boardEl, moves, gridSize, text) {
+  if (!boardEl || !moves || moves.length === 0) return;
+  const cols = gridSize || 8;
+  const cellSize = boardEl.offsetWidth / cols;
+
+  let lines = '';
+  for (let i = 0; i < moves.length; i++) {
+    const [fr, fc, tr, tc] = moves[i];
+    const fx = (fc + 0.5) * cellSize, fy = (fr + 0.5) * cellSize;
+    const tx = (tc + 0.5) * cellSize, ty = (tr + 0.5) * cellSize;
+    // 출발/도착 하이라이트
+    const fromIdx = fr * cols + fc, toIdx = tr * cols + tc;
+    const fromCell = boardEl.children[fromIdx], toCell = boardEl.children[toIdx];
+    if (fromCell) fromCell.classList.add('hint-path-start');
+    if (toCell) toCell.classList.add('hint-path-cell');
+    lines += `<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}"
+      stroke="#43A047" stroke-width="3" stroke-linecap="round"
+      marker-end="url(#pathHead2)" opacity="0.75" class="hint-path-line"/>`;
+  }
+
+  const arrowEl = document.createElement('div');
+  arrowEl.className = 'hint-arrow hint-path-overlay';
+  arrowEl.innerHTML = `
+    <svg width="${boardEl.offsetWidth}" height="${boardEl.offsetHeight}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;">
+      <defs><marker id="pathHead2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#43A047"/>
+      </marker></defs>
+      ${lines}
+    </svg>`;
+  boardEl.appendChild(arrowEl);
+
+  // 번호 마커 (도착칸에 표시)
+  const markerEl = document.createElement('div');
+  markerEl.className = 'hint-path-overlay';
+  markerEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:16;';
+  for (let i = 0; i < moves.length; i++) {
+    const [, , tr, tc] = moves[i];
+    const badge = document.createElement('div');
+    badge.className = 'hint-step-badge';
+    badge.style.left = ((tc + 0.5) * cellSize) + 'px';
+    badge.style.top = ((tr + 0.5) * cellSize) + 'px';
+    badge.textContent = i + 1;
+    markerEl.appendChild(badge);
+  }
+  boardEl.appendChild(markerEl);
+
+  const speech = document.querySelector('.mission-speech');
+  if (speech && text) {
+    speech.innerHTML = '💡 ' + text;
+    speech.classList.add('hint-active');
+  }
+}
+
+function showHintUnsolvable() {
+  const speech = document.querySelector('.mission-speech');
+  if (speech) {
+    speech.innerHTML = '⚠️ ' + t('hintUnsolvable');
+    speech.classList.add('hint-active', 'hint-unsolvable');
+  }
 }
 
 // ===== 초기화 =====

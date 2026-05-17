@@ -124,6 +124,14 @@ const I18N = {
     defenseBreached: '적이 통과했어요!',
     defenseClear: '모든 적을 막았어요!',
     defenseHint: '이 적을 먼저 잡으세요!',
+    hintFullPath: '번호 순서대로 이동하세요!',
+    hintUnsolvable: '현재 상태에서는 클리어할 수 없어요. 다시 시작해보세요!',
+    knightTourHintPath: '이 순서대로 이동하면 완주할 수 있어요!',
+    knightTourUnsolvable: '여기서는 완주가 불가능해요. 다시 시작해보세요!',
+    collectorHintPath: '이 순서대로 별을 모으세요!',
+    collectorUnsolvable: '남은 턴으로는 별을 다 모을 수 없어요. 다시 시작해보세요!',
+    bombHintPath: '이 순서대로 폭탄을 해제하세요!',
+    bombUnsolvable: '시간 안에 모든 폭탄을 해제할 수 없어요. 다시 시작해보세요!',
   },
   en: {
     appName: 'Kids Chess',
@@ -236,6 +244,14 @@ const I18N = {
     defenseBreached: 'Enemy got through!',
     defenseClear: 'All enemies stopped!',
     defenseHint: 'Capture this enemy first!',
+    hintFullPath: 'Follow the numbers in order!',
+    hintUnsolvable: "Can't clear from here. Try restarting!",
+    knightTourHintPath: 'Follow this path to complete the tour!',
+    knightTourUnsolvable: "Can't complete from here. Try restarting!",
+    collectorHintPath: 'Collect stars in this order!',
+    collectorUnsolvable: "Not enough turns. Try restarting!",
+    bombHintPath: 'Defuse bombs in this order!',
+    bombUnsolvable: "Can't defuse all in time. Try restarting!",
   }
 };
 

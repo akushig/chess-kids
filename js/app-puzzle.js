@@ -192,16 +192,27 @@ function puzzleHint() {
   if (state.puzzleSolved || state.puzzleFailed) return;
   const puzzle = PUZZLES[state.puzzleIndex];
   const step = state.puzzleSolutionStep;
-  const sol = puzzle.solution[step];
-  if (!sol) return;
-  const [fr, fc, tr, tc] = sol;
+  const remaining = puzzle.solution.slice(step);
+  if (remaining.length === 0) return;
+
   const boardEl = document.querySelector('#screen-puzzle .chess-board');
-  const game = state.puzzleGame;
-  const piece = game.board[fr][fc];
-  const pName = piece ? {wK:'King',wQ:'Queen',wR:'Rook',wB:'Bishop',wN:'Knight',wP:'Pawn',bK:'King',bQ:'Queen',bR:'Rook',bB:'Bishop',bN:'Knight',bP:'Pawn'}[piece] || '' : '';
+  if (!boardEl) return;
+
   const cols = 'abcdefgh';
-  const text = pName + ' → ' + cols[tc] + (8 - tr);
-  showHintArrow(boardEl, fr, fc, tr, tc, 8, text);
+  const game = state.puzzleGame;
+
+  // 남은 모든 수를 화살표로 표시
+  const pNames = {wK:'King',wQ:'Queen',wR:'Rook',wB:'Bishop',wN:'Knight',wP:'Pawn',
+                  bK:'King',bQ:'Queen',bR:'Rook',bB:'Bishop',bN:'Knight',bP:'Pawn'};
+  let textParts = [];
+  for (let i = 0; i < remaining.length; i++) {
+    const [fr, fc, tr, tc] = remaining[i];
+    const piece = i === 0 ? game.board[fr][fc] : null;
+    const pName = piece ? (pNames[piece] || '') : '';
+    textParts.push((i + 1) + '. ' + (pName ? pName + ' ' : '') + cols[tc] + (8 - tr));
+  }
+
+  showHintMoves(boardEl, remaining, 8, textParts.join(' → '));
 }
 
 function doPuzzleAiMove() {

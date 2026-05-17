@@ -179,11 +179,32 @@ function defenseClick(r,c) {
 
 function defenseHint() {
   const df = state.df;
+  if (df.clear || df.failed) return;
   if (df.enemies.length === 0) return;
-  let closest = df.enemies[0];
-  for (const e of df.enemies) {
-    if (e.pos[0] > closest.pos[0]) closest = e;
-  }
   const boardEl = document.querySelector('#screen-mini .chess-board');
-  showHintArrow(boardEl, df.pos[0], df.pos[1], closest.pos[0], closest.pos[1], df.size, t('defenseHint'));
+  if (!boardEl) return;
+
+  const moves = getDefenseMoves(df);
+  // 잡을 수 있는 적 중 가장 위험한(끝줄에 가까운) 적 우선
+  const capturable = df.enemies
+    .filter(e => moves.some(([mr, mc]) => mr === e.pos[0] && mc === e.pos[1]))
+    .sort((a, b) => b.pos[0] - a.pos[0]);
+
+  if (capturable.length > 0) {
+    const target = capturable[0];
+    showHintArrow(boardEl, df.pos[0], df.pos[1], target.pos[0], target.pos[1], df.size, t('defenseHint'));
+  } else {
+    // 잡을 수 없으면 가장 위험한 적 방향으로 이동
+    let closest = df.enemies[0];
+    for (const e of df.enemies) {
+      if (e.pos[0] > closest.pos[0]) closest = e;
+    }
+    // 가장 가까운 유효 이동
+    let best = moves[0], bestDist = Infinity;
+    for (const [r, c] of moves) {
+      const d = Math.abs(r - closest.pos[0]) + Math.abs(c - closest.pos[1]);
+      if (d < bestDist) { bestDist = d; best = [r, c]; }
+    }
+    if (best) showHintArrow(boardEl, df.pos[0], df.pos[1], best[0], best[1], df.size, t('defenseHint'));
+  }
 }

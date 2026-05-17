@@ -235,11 +235,65 @@ function knightTourClick(r, c) {
   }, kt.size);
 }
 
+// 전체 경로를 백트래킹으로 탐색 (타임아웃 2초)
+function findKnightTourFullPath(kt) {
+  const size = kt.size;
+  const remaining = kt.total - kt.visited;
+  if (remaining === 0) return [kt.pos];
+
+  const board = kt.board.map(row => [...row]);
+  const path = [[...kt.pos]];
+  const startTime = Date.now();
+  let timedOut = false;
+
+  function solve(row, col, left) {
+    if (Date.now() - startTime > 2000) { timedOut = true; return false; }
+    if (left === 0) return true;
+    const moves = getKnightMoves(row, col, size, board);
+    const sorted = moves.map(([r, c]) => {
+      board[r][c] = true;
+      const next = getKnightMoves(r, c, size, board).length;
+      board[r][c] = false;
+      return [r, c, next];
+    }).sort((a, b) => a[2] - b[2]);
+
+    for (const [r, c] of sorted) {
+      board[r][c] = true;
+      path.push([r, c]);
+      if (solve(r, c, left - 1)) return true;
+      path.pop();
+      board[r][c] = false;
+    }
+    return false;
+  }
+
+  if (solve(kt.pos[0], kt.pos[1], remaining)) return path;
+  return timedOut ? 'timeout' : null;
+}
+
 function knightTourHint() {
   const kt = state.kt;
-  const hint = getKnightTourHint(kt);
-  if (!hint) return;
-  const [hr, hc] = hint;
+  if (kt.clear || kt.stuck) return;
   const boardEl = document.querySelector('#screen-mini .chess-board');
-  showHintArrow(boardEl, kt.pos[0], kt.pos[1], hr, hc, kt.size, t('knightTourHint'));
+  if (!boardEl) return;
+
+  const result = findKnightTourFullPath(kt);
+
+  if (result === null) {
+    // 완주 불가능
+    const speech = document.querySelector('.mission-speech');
+    if (speech) {
+      speech.innerHTML = '⚠️ ' + t('knightTourUnsolvable');
+      speech.classList.add('hint-active', 'hint-unsolvable');
+    }
+    return;
+  }
+  if (result === 'timeout') {
+    // 타임아웃: 기존 단일 힌트 폴백
+    const hint = getKnightTourHint(kt);
+    if (hint) showHintArrow(boardEl, kt.pos[0], kt.pos[1], hint[0], hint[1], kt.size, t('knightTourHint'));
+    return;
+  }
+
+  showHintPath(boardEl, result, kt.size, t('knightTourHintPath'));
 }
