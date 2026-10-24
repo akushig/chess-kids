@@ -21,19 +21,21 @@ const playAiPending = {};
 
 function getPlaySettings() {
   let s = {};
-  try { s = JSON.parse(localStorage.getItem('play_settings')) || {}; } catch { s = {}; }
+  try { s = JSON.parse(safeStore.getItem('play_settings')) || {}; } catch { s = {}; }
   return {
     mode: s.mode === 'friend' ? 'friend' : 'ai',
     level: Number.isInteger(s.level) && AI_LEVELS[s.level] ? s.level : 1,
-    timer: PLAY_TIMER_OPTIONS.includes(s.timer) ? s.timer : 30,
+    timer: PLAY_TIMER_OPTIONS.includes(s.timer) ? s.timer : 0,
+    help:s.help !== false, autoMove:!!s.autoMove, small:!!s.small, face:s.face !== false,
   };
 }
 function savePlaySettings(s) {
-  try { localStorage.setItem('play_settings', JSON.stringify(s)); } catch {}
+  try { safeStore.setItem('play_settings', JSON.stringify(s)); } catch {}
 }
 
 // --- 설정 화면 ---
 function goPlay() {
+  leaveActivity();
   playStop();
   showScreen('play');
   renderPlaySetup();
@@ -77,6 +79,11 @@ function renderPlaySetup() {
       <div class="play-setup">
         <div class="play-modes">${modes}</div>
         ${options}
+        <div class="play-options">
+          <button class="play-chip ${s.help?'active':''}" onclick="playSetOption('help',${!s.help})">🛟 왕 구하기 도움 ${s.help?'켜짐':'꺼짐'}</button>
+          <button class="play-chip ${s.small?'active':''}" onclick="playSetOption('small',${!s.small})">♟ ${s.small?'말이 적은 짧은 판':'모든 말로 한 판'}</button>
+          ${s.mode==='friend'?`<button class="play-chip ${s.face?'active':''}" onclick="playSetOption('face',${!s.face})">${s.face?'마주 보고 두기':'나란히 두기'}</button><button class="play-chip ${s.autoMove?'active':''}" onclick="playSetOption('autoMove',${!s.autoMove})">시간이 끝나면 ${s.autoMove?'도우미가 두기':'천천히 계속하기'}</button>`:''}
+        </div>
       </div>
       <button class="action-btn" onclick="playStart()">${t('btnStart')}</button>
     </div>
@@ -96,11 +103,13 @@ function playSetOption(key, value) {
 
 // --- 대국 시작/종료 ---
 function playStart() {
+  beginActivity('play');
   playStop();
   const s = getPlaySettings();
-  state.game = new ChessGame();
+  state.game = s.small ? ChessGame.fromFEN('3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1') : new ChessGame();
   state.play = {
     mode: s.mode,
+    help:s.help, autoMove:s.autoMove,face:s.face,notice:'',
     level: s.level,
     timer: s.mode === 'friend' ? s.timer : 0,
     deadline: 0,
@@ -125,6 +134,7 @@ function playIsOver() {
 
 // --- 화면 ---
 function renderPlay() {
+  saveActiveSession();
   if (state.play.mode === 'friend') renderPlayFriend();
   else renderPlayAi();
 }
@@ -139,12 +149,19 @@ function playBoardHTML(faceToFace) {
       let cls = 'board-cell ' + (isLight ? 'light' : 'dark');
       if (game.selected && game.selected[0] === r && game.selected[1] === c) cls += ' selected';
       if (game.validMoves && game.validMoves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
+      if (game.lastMove && ((game.lastMove[0]===r&&game.lastMove[1]===c)||(game.lastMove[2]===r&&game.lastMove[3]===c))) cls+=' last-move';
+      if (state.play.help && game.status==='check') {
+        const king=game.findKing(game.turn),attackers=game.attackers(game.board,...king,game.turn==='w'?'b':'w');
+        if(r===king[0]&&c===king[1])cls+=' checked-king';
+        if(attackers.some(([ar,ac])=>ar===r&&ac===c))cls+=' attacking-piece';
+        if(game.board[r][c]?.[0]===game.turn&&game.legalMoves(r,c).length)cls+=' rescue-piece';
+      }
       if (piece) cls += ' pc-' + piece[0];
       const pieceContent = piece ? getPieceSVG(piece) : '';
       cells += `<div class="${cls}" onclick="playClick(${r},${c})">${pieceContent}</div>`;
     }
   }
-  return `<div class="chess-board${faceToFace ? ' face-to-face' : ''}">${cells}</div>`;
+  return `<div class="chess-board${faceToFace ? ' face-to-face' : ''}">${cells}${playAttackOverlay()}</div>`;
 }
 
 function renderPlayAi() {
@@ -174,10 +191,11 @@ function renderPlayAi() {
         <span class="play-badge">${PLAY_LEVEL_ICONS[level]} ${t('playLevel' + level)}</span>
       </div>
       ${statusMsg}
+      ${playGuideHTML()}
       <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => getPieceSVG(p, 24)).join('')}</div>
       ${playBoardHTML(false)}
       <div class="captured-pieces" id="captured-bottom">${game.captured.w.map(p => getPieceSVG(p, 24)).join('')}</div>
-      <button class="action-btn" onclick="playStart()">${t('playRestart')}</button>
+      ${playActionsHTML()}
     </div>
   `;
 }
@@ -233,9 +251,10 @@ function renderPlayFriend() {
         ${p.timer ? `<span class="play-badge">⏱ ${playTimerLabel(p.timer)}</span>` : ''}
       </div>
       ${panel('b')}
-      ${playBoardHTML(true)}
+      ${playGuideHTML()}
+      ${playBoardHTML(p.face !== false)}
       ${panel('w')}
-      <button class="action-btn" onclick="playStart()">${t('playRestart')}</button>
+      ${playActionsHTML()}
     </div>
   `;
   if (playTimerHandle) playTimerPaint();
@@ -256,7 +275,11 @@ function playClick(r, c) {
     }
   }
 
-  game.select(r, c);
+  if(game.selected && game.board[r][c]?.[0] !== game.turn) {
+    p.notice=explainPlayMove(game,...game.selected,r,c);renderPlay();return;
+  }
+  game.select(r,c);
+  p.notice=game.selected&&!game.validMoves.length?(game.status==='check'?'이 말로는 왕을 구할 수 없어요. 방패 표시가 있는 말을 살펴봐요.':'길이 막혀 있어요. 다른 말을 골라볼까요?'):'';
   renderPlay();
 }
 
@@ -268,8 +291,11 @@ function playCommitMove([fr, fc, tr, tc]) {
   const boardEl = document.querySelector('#screen-play .chess-board');
   const token = playToken;
 
+  rememberAction();
+  state.play.notice='';state.play.guideMethod=null;state.play.pausedLeft=null;
   playTimerStop();
   game.move(fr, fc, tr, tc);
+  game.lastMove=[fr,fc,tr,tc];
   animateMove(boardEl, fr, fc, tr, tc, piece, () => {
     if (token !== playToken) return;
     if (captured) {
@@ -369,7 +395,7 @@ function playTimerStart() {
   playTimerStop();
   const p = state.play;
   if (!p || p.mode !== 'friend' || !p.timer || playIsOver()) return;
-  p.deadline = Date.now() + p.timer * 1000;
+  p.deadline = Date.now() + (p.pausedLeft ?? p.timer * 1000);
   p.pausedLeft = null;
   p.buzzed = null;
   playTimerResume();
@@ -390,7 +416,8 @@ function playTimerTick() {
   playTimerPaint();
   if (Date.now() >= state.play.deadline) {
     playTimerStop();
-    playTimeoutMove();
+    if(state.play.autoMove)playTimeoutMove();
+    else { state.play.notice='천천히 생각해도 괜찮아요. 💡 도움을 눌러볼까요?'; state.play.pausedLeft=null;renderPlay(); }
   }
 }
 
@@ -499,4 +526,60 @@ function goReward() {
       </div>
     </div>
   `;
+}
+
+function playRescues(game=state.game) {
+  if(game.status!=='check')return [];
+  const king=game.findKing(game.turn),attackers=game.attackers(game.board,...king,game.turn==='w'?'b':'w');
+  return game.allMoves().map(move=>({move,method:attackers.some(([r,c])=>r===move[2]&&c===move[3])?'capture':game.board[move[0]][move[1]][1]==='K'?'escape':'block'}));
+}
+function playAttackOverlay() {
+  const g=state.game;if(!state.play.help||g.status!=='check')return '';
+  const king=g.findKing(g.turn),attackers=g.attackers(g.board,...king,g.turn==='w'?'b':'w');
+  return `<svg class="attack-overlay" viewBox="0 0 800 800" aria-hidden="true">${attackers.map(([r,c])=>`<line x1="${c*100+50}" y1="${r*100+50}" x2="${king[1]*100+50}" y2="${king[0]*100+50}" stroke="#c83c46" stroke-width="9" stroke-dasharray="12 8" opacity=".7"/>`).join('')}</svg>`;
+}
+function playGuideHTML() {
+  const g=state.game,p=state.play;
+  if(p.notice)return `<div class="guide-card" role="status">${p.notice}</div>`;
+  if(g.status!=='check'||!p.help)return '';
+  if(p.mode==='ai'&&g.turn==='b')return '<div class="guide-card">상대 왕을 공격했어요. 컴퓨터가 어떻게 피하는지 살펴봐요.</div>';
+  const rescues=playRescues(),labels={escape:'👑 왕 피하기',capture:'🎯 공격자 잡기',block:'🛡 길 막기'};
+  return `<div class="guide-card" role="status"><strong>왕이 공격받고 있어요. 먼저 안전하게 해요.</strong><div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small></div>`;
+}
+function playActionsHTML() {
+  return `<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
+}
+function playRestartRequest() {
+  if(playIsOver()||!state.actionHistory?.length){playStart();return;}
+  showChoice('지금 판 대신 새 판을 시작할까요?',[{label:'새 판 시작',action:()=>playStart()},{label:'이어서 두기',action:()=>{}}]);
+}
+function explainPlayMove(g,fr,fc,tr,tc) {
+  const p=g.board[fr][fc];
+  if(!p||p[0]!==g.turn)return '지금 움직일 수 있는 우리 편 말을 골라요.';
+  if(g.board[tr][tc]?.[0]===g.turn)return '우리 편이 있는 칸이에요.';
+  const raw=g.rawMoves(g.board,fr,fc,g.enPassant);
+  if(raw.some(([r,c])=>r===tr&&c===tc))return g.status==='check'?'아직 왕이 위험해요. 공격선을 피하거나 막아야 해요.':'이 말을 옮기면 왕이 공격받아요. 지금은 왕을 지키고 있어요.';
+  const dr=Math.abs(tr-fr),dc=Math.abs(tc-fc),type=p[1];
+  if((type==='R'&&(dr===0||dc===0))||(type==='B'&&dr===dc)||(type==='Q'&&(dr===dc||dr===0||dc===0)))return '다른 말이 길을 막고 있어요. 뛰어넘을 수 없어요.';
+  return ({P:'폰은 앞으로 가고, 대각선으로 잡아요.',N:'나이트는 두 칸, 옆으로 한 칸 뛰어요.',B:'비숍은 대각선으로 가요.',R:'룩은 가로와 세로로 가요.',Q:'퀸은 가로·세로·대각선으로 가요.',K:'왕은 안전한 곳으로 한 칸씩 가요.'})[type];
+}
+function playShowRescue(method) {
+  if(state.play.mode==='ai'&&state.game.turn!=='w')return;
+  const rescue=playRescues().find(r=>r.method===method);if(!rescue)return;
+  playTimerPauseForHelp();renderPlay();showHintArrow(document.querySelector('#screen-play .chess-board'),...rescue.move,8,'이 한 수를 직접 움직여 봐요.');
+}
+function playTimerPauseForHelp() {
+  if(playTimerHandle){state.play.pausedLeft=Math.max(0,state.play.deadline-Date.now());playTimerStop();}
+}
+function playHint() {
+  if(state.animating||playIsOver()||(state.play.mode==='ai'&&state.game.turn!=='w'))return;
+  playTimerPauseForHelp();
+  const move=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),1);
+  if(move){state.play.hintMove=move;renderPlay();showHintArrow(document.querySelector('#screen-play .chess-board'),...move,8,'화살표의 한 수를 직접 움직여 봐요.');}
+}
+function playDemo() {
+  if(state.animating||playIsOver()||(state.play.mode==='ai'&&state.game.turn!=='w'))return;
+  playTimerPauseForHelp();
+  const m=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),1);if(!m)return;
+  animateMove(document.querySelector('#screen-play .chess-board'),...m,state.game.board[m[0]][m[1]],()=>{state.play.notice='이렇게 움직일 수 있어요. 이제 직접 해볼까요?';renderPlay();});
 }

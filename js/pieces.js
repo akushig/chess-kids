@@ -1,10 +1,10 @@
 // ===== 기물 스킨 시스템 =====
-let currentSkin = localStorage.getItem('skin') || 'cute';
+let currentSkin = safeStore.getItem('skin') || 'cute';
 
 function setSkin(name) {
   if (SKINS[name]) {
     currentSkin = name;
-    localStorage.setItem('skin', name);
+    safeStore.setItem('skin', name);
   }
 }
 

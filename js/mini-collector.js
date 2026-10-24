@@ -10,6 +10,7 @@ const COLLECTOR_LEVELS = [
 ];
 
 function goCollector(levelIdx) {
+  beginActivity('collector',{levelIdx});
   const lv = COLLECTOR_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.cl = {
@@ -47,6 +48,7 @@ function getCollectorMoves(cl) {
 }
 
 function renderCollector() {
+  saveActiveSession();
   const cl = state.cl;
   const size = cl.size;
   const [pr,pc] = cl.pos;
@@ -92,7 +94,7 @@ function renderCollector() {
       </div>
       ${msg} ${info}
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${actions} ${retryBtn} ${nextBtn}
+      ${undoButton()} ${actions} ${retryBtn} ${nextBtn}
     </div>`;
 }
 
@@ -103,6 +105,7 @@ function collectorClick(r,c) {
   const moves=getCollectorMoves(cl);
   if (!moves.some(([mr,mc])=>mr===r&&mc===c)) return;
 
+  rememberAction();
   const [pr,pc]=cl.pos;
   const boardEl=document.querySelector('#screen-mini .chess-board');
   cl.pos=[r,c];

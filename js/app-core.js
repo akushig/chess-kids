@@ -1,5 +1,5 @@
 // ===== 앱 코어: 상태, 화면전환, 애니메이션, 파티클, 초기화 =====
-const APP_VERSION = '260411.2115';
+const APP_VERSION = '261025.2';
 
 const state = {
   screen: 'home',
@@ -27,7 +27,7 @@ const state = {
   play: null,
 };
 
-const PIECE_ORDER = ['P', 'R', 'N', 'B', 'Q', 'K'];
+const PIECE_ORDER = ['R', 'B', 'Q', 'P', 'N', 'K'];
 const PIECE_ICONS = { P:'wP', N:'wN', B:'wB', R:'wR', Q:'wQ', K:'wK' };
 const PIECE_NAMES = { P:'piecePawn', N:'pieceKnight', B:'pieceBishop', R:'pieceRook', Q:'pieceQueen', K:'pieceKing' };
 const MISSION_BOARD_SIZE = 6;
@@ -38,6 +38,7 @@ function laterInScreen(callback,delay) { const epoch=screenEpoch; return setTime
 function cancelActivityCallbacks() { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
 function showScreen(name) {
   if (state.screen !== name) { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
+  if (state.screen !== name) saveActiveSession?.();
   state.screen = name;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('screen-' + name);
@@ -78,8 +79,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
     if (done) return;
     done = true;
     if (ghost.parentNode) ghost.remove();
-    state.animating = false;
-    if(epoch === screenEpoch) callback();
+    if(epoch === screenEpoch) { state.animating = false; callback(); }
   }
 
   ghost.addEventListener('transitionend', finish, { once: true });
@@ -353,3 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHome();
   showScreen('home');
 });
+
+function showChoice(message,choices) {
+  const old=document.getElementById('choice-overlay');if(old)old.remove();
+  const overlay=document.createElement('div');overlay.className='clear-overlay';overlay.id='choice-overlay';
+  overlay.innerHTML=`<div class="clear-popup" role="dialog" aria-modal="true" aria-label="선택"><p>${message}</p><div class="clear-btns"></div></div>`;
+  for(const choice of choices){const b=document.createElement('button');b.className='action-btn';b.textContent=choice.label;b.onclick=()=>{overlay.remove();choice.action();};overlay.querySelector('.clear-btns').appendChild(b);}
+  document.body.appendChild(overlay);overlay.querySelector('button')?.focus();
+}

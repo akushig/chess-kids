@@ -10,6 +10,7 @@ const BOMB_LEVELS = [
 ];
 
 function goBomb(levelIdx) {
+  beginActivity('bomb',{levelIdx});
   const lv = BOMB_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.bm = {
@@ -45,6 +46,7 @@ function getBombMoves(bm) {
 }
 
 function renderBomb() {
+  saveActiveSession();
   const bm = state.bm;
   const size = bm.size;
   const [pr,pc] = bm.pos;
@@ -104,7 +106,7 @@ function renderBomb() {
       </div>
       ${msg} ${info}
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${actions} ${retryBtn} ${nextBtn}
+      ${undoButton()} ${actions} ${retryBtn} ${nextBtn}
     </div>`;
 }
 
@@ -115,6 +117,7 @@ function bombClick(r,c) {
   const moves=getBombMoves(bm);
   if (!moves.some(([mr,mc])=>mr===r&&mc===c)) return;
 
+  rememberAction();
   const [pr,pc]=bm.pos;
   const boardEl=document.querySelector('#screen-mini .chess-board');
   bm.pos=[r,c];

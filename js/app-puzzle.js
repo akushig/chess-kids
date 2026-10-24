@@ -41,14 +41,16 @@ function renderPuzzleLevelSelect(){
 }
 function goPuzzleLevel(level){state.puzzleLevel=level;state.puzzleIndex=PUZZLES.findIndex(p=>p.level===level);renderPuzzle();}
 function renderPuzzle(){
+  beginActivity('puzzle',{index:state.puzzleIndex});
   cancelActivityCallbacks();
   const p=PUZZLES[state.puzzleIndex];
   state.puzzleGame=ChessGame.fromFEN(p.fen);state.puzzleSelected=null;state.puzzleValidMoves=[];
   state.puzzleSolved=false;state.puzzleFailed=false;state.puzzleMoveCount=0;state.puzzleWaiting=false;
-  state.puzzleHistory=[];state.puzzleNotice='';state.puzzleRun=(state.puzzleRun||0)+1;
+  state.puzzleNotice='';state.puzzleRun=(state.puzzleRun||0)+1;
   renderPuzzleBoard();
 }
 function renderPuzzleBoard(){
+  saveActiveSession();
   const p=PUZZLES[state.puzzleIndex],g=state.puzzleGame;
   const group=PUZZLES.filter(q=>q.level===p.level),pos=group.indexOf(p),next=group[pos+1];
   let cells='';
@@ -63,7 +65,7 @@ function renderPuzzleBoard(){
   document.getElementById('screen-puzzle').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="state.puzzleRun++;renderPuzzleLevelSelect()">← 장면 고르기</button><h2>한 수 발견 ${pos+1}/${group.length}</h2></div>
     <div class="status-msg ${state.puzzleSolved?'success':''}" role="status">${state.puzzleSolved?'해냈어요! '+p.desc.ko:state.puzzleNotice||p.desc[currentLang]||p.desc.ko}</div>
     <div class="chess-board">${cells}</div><div class="mission-speech" aria-live="polite">${state.puzzleWaiting?'상대가 움직여요. 잠깐 살펴봐요.':''}</div>
-    <div class="mission-actions">${!state.puzzleSolved?`<button class="icon-btn" onclick="puzzleHint()" ${state.puzzleWaiting?'disabled':''}>💡 한 수 보기</button><button class="icon-btn" onclick="puzzleUndo()" ${!state.puzzleHistory.length||state.puzzleWaiting?'disabled':''}>↶ 되돌리기</button>`:''}<button class="icon-btn" onclick="renderPuzzle()">🔄 다시</button></div>
+    <div class="mission-actions">${!state.puzzleSolved?`<button class="icon-btn" onclick="puzzleHint()" ${state.puzzleWaiting?'disabled':''}>💡 한 수 보기</button><button class="icon-btn" onclick="puzzleUndo()" ${!state.actionHistory?.length||state.puzzleWaiting?'disabled':''}>↶ 되돌리기</button>`:''}<button class="icon-btn" onclick="renderPuzzle()">🔄 다시</button></div>
     ${state.puzzleSolved?`<button class="action-btn green" onclick="${next?`state.puzzleIndex=${PUZZLES.indexOf(next)};renderPuzzle()`:'renderPuzzleLevelSelect()'}">${next?'다음 장면':'다른 장면 발견하기'}</button><button class="action-btn secondary" onclick="showScreen('home');renderHome()">여기까지</button>`:''}</div>`;
 }
 function puzzleClick(r,c){
@@ -78,11 +80,12 @@ function puzzleClick(r,c){
         p.type==='fork'?'왕과 다른 말을 동시에 노려야 해요. 다른 칸을 살펴봐요.':p.type==='capture'?'깃발이 있는 상대 말을 찾아봐요.':'아직 왕이 위험해요.';
       state.puzzleSelected=null;state.puzzleValidMoves=[];renderPuzzleBoard();return;
     }
-    state.puzzleHistory.push({game:JSON.parse(JSON.stringify(g)),moves:state.puzzleMoveCount});
+    rememberAction();
+    const before=g.clone();
     const pc=g.board[fr][fc],el=document.querySelector('#screen-puzzle .chess-board');
     g.move(...move);state.puzzleMoveCount++;state.puzzleSelected=null;state.puzzleValidMoves=[];state.puzzleNotice='';
     animateMove(el,fr,fc,r,c,pc,()=>{
-      const before=Object.assign(new ChessGame(),state.puzzleHistory.at(-1).game);
+
       if(puzzleMoveAchieves(before,g,move,p)){
         state.puzzleSolved=true;savePuzzleStars(p.level,state.puzzleIndex,1);spawnParticles();renderPuzzleBoard();
       }else{
@@ -94,12 +97,7 @@ function puzzleClick(r,c){
   const pc=g.board[r][c];state.puzzleSelected=pc?.[0]==='w'?[r,c]:null;
   state.puzzleValidMoves=state.puzzleSelected?g.legalMoves(r,c):[];renderPuzzleBoard();
 }
-function puzzleUndo(){
-  if(state.animating||state.puzzleWaiting)return;
-  const prev=state.puzzleHistory.pop();if(!prev)return;
-  state.puzzleGame=Object.assign(new ChessGame(),prev.game);state.puzzleMoveCount=prev.moves;
-  state.puzzleSolved=false;state.puzzleNotice='다른 방법도 해볼 수 있어요.';state.puzzleSelected=null;state.puzzleValidMoves=[];renderPuzzleBoard();
-}
+function puzzleUndo(){ undoActivity(); }
 function puzzleHint(){
   if(state.puzzleSolved||state.puzzleWaiting)return;
   const p=PUZZLES[state.puzzleIndex],m=puzzleWinningMoves(state.puzzleGame,p,(p.type==='checkmate2'?2:1)-state.puzzleMoveCount)[0];

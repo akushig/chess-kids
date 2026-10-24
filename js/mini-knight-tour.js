@@ -12,13 +12,13 @@ const KT_NODE_LIMIT = 300000;
 // ===== 설정 (크기 · 랜덤 시작 · 갈림길 경고) =====
 function getKnightTourSettings() {
   let s = {};
-  try { s = JSON.parse(localStorage.getItem('knight_tour_settings')) || {}; } catch { s = {}; }
+  try { s = JSON.parse(safeStore.getItem('knight_tour_settings')) || {}; } catch { s = {}; }
   const levelIdx = KNIGHT_TOUR_LEVELS.findIndex(lv => lv.size === s.size);
   return { levelIdx: levelIdx >= 0 ? levelIdx : 0, randomStart: !!s.randomStart, branchWarn: !!s.branchWarn };
 }
 function saveKnightTourSettings(s) {
   try {
-    localStorage.setItem('knight_tour_settings', JSON.stringify({
+    safeStore.setItem('knight_tour_settings', JSON.stringify({
       size: KNIGHT_TOUR_LEVELS[s.levelIdx].size, randomStart: s.randomStart, branchWarn: s.branchWarn,
     }));
   } catch {}
@@ -36,7 +36,7 @@ function ktToggleOption(key) {
   s[key] = !s[key];
   saveKnightTourSettings(s);
   // 랜덤 시작은 다음 판부터 적용 (아직 한 수도 안 뒀으면 바로 새 시작점)
-  if (key === 'randomStart' && state.kt.moveCount === 0) goKnightTour(state.kt.levelIdx);
+  if (key === 'randomStart' && state.kt.moveCount === 0) goKnightTour(state.kt.levelIdx,state.kt.mode);
   else renderKnightTour();
 }
 
@@ -49,7 +49,7 @@ function ktPickStart(size, random, prev) {
     for (let c = 0; c < size; c++)
       if (!(prev && prev[0] === r && prev[1] === c)) cells.push([r, c]);
   for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(activityRandom() * (i + 1));
     [cells[i], cells[j]] = [cells[j], cells[i]];
   }
   for (const [r, c] of cells) {
@@ -67,42 +67,11 @@ function ktPlaceStars(kt) {
       if (!(r === kt.pos[0] && c === kt.pos[1])) empties.push([r, c]);
   // 셔플 후 앞에서 N개 선택
   for (let i = empties.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(activityRandom() * (i + 1));
     [empties[i], empties[j]] = [empties[j], empties[i]];
   }
   const lv = KNIGHT_TOUR_LEVELS[kt.levelIdx];
   kt.stars = empties.slice(0, lv.starCount);
-}
-
-function goKnightTour(levelIdx) {
-  const settings = getKnightTourSettings();
-  if (levelIdx == null) levelIdx = settings.levelIdx;
-  const lv = KNIGHT_TOUR_LEVELS[levelIdx];
-  const size = lv.size;
-  const prev = state.kt && state.kt.size === size ? state.kt.startPos : null;
-  const start = ktPickStart(size, settings.randomStart, prev);
-  state.kt = {
-    levelIdx: levelIdx,
-    size: size,
-    board: Array.from({length: size}, () => Array(size).fill(false)),
-    pos: start,
-    startPos: start,
-    visited: 1,
-    total: size * size,
-    stuck: false,
-    clear: false,
-    doomed: false,
-    analysis: null,
-    stars: [],
-    score: 0,
-    combo: 0,
-    lastWasStar: false,
-    moveCount: 0,
-  };
-  state.kt.board[start[0]][start[1]] = true;
-  ktPlaceStars(state.kt);
-  showScreen('mini');
-  renderKnightTour();
 }
 
 function getKnightMoves(row, col, size, board) {
@@ -132,192 +101,77 @@ function ktAnalyze(kt) {
   return kt.analysis;
 }
 
+function goKnightSetup() {
+  leaveActivity();showScreen('mini');
+  document.getElementById('screen-mini').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="goMiniMenu()">← 놀이터</button><h2>나이트 탐험</h2></div><p class="section-note">짧게 걷거나, 넓게 탐험하거나, 끝까지 도전해요.</p><div class="menu-grid">${[['walk','🚩','산책','몇 번 뛰어서 깃발 찾기'],['explore','👣','탐험','서로 다른 10칸 찾아가기'],['tour','🏁','완주 도전','5×5부터 모든 칸을 한 번씩']].map(([mode,icon,title,desc])=>`<button class="menu-btn mini-green" onclick="goKnightTour(null,'${mode}')"><span class="menu-icon">${icon}</span><span class="menu-label">${title}<span class="menu-sub">${desc}</span></span><span>›</span></button>`).join('')}</div></div>`;
+}
+function goKnightTour(levelIdx,mode='tour') {
+  beginActivity('knight',{levelIdx,mode});
+  const settings=getKnightTourSettings();if(levelIdx==null)levelIdx=settings.levelIdx;
+  if(mode!=='tour')levelIdx=0;
+  const size=KNIGHT_TOUR_LEVELS[levelIdx].size,prev=state.kt?.startPos;
+  const start=ktPickStart(size,settings.randomStart,prev);
+  state.kt={levelIdx,size,mode,startPos:start,pos:start,board:Array.from({length:size},()=>Array(size).fill(false)),visited:1,total:size*size,stuck:false,clear:false,doomed:false,analysis:null,stars:[],score:0,combo:0,lastWasStar:false,moveCount:0,family:false,player:0,footprints:{[start.join(',')]:0}};
+  const kt=state.kt;kt.board[start[0]][start[1]]=true;
+  const route=ktFindPath(kt.board,size,start,KT_NODE_LIMIT).path;
+  kt.goal=mode==='walk'?route[3]:null;kt.visitGoal=mode==='explore'?10:kt.total;
+  showScreen('mini');renderKnightTour();
+}
+function knightGoalPath(kt=state.kt) {
+  if(kt.mode==='tour')return ktFindPath(kt.board,kt.size,kt.pos,KT_NODE_LIMIT);
+  const board=kt.board.map(r=>[...r]);let nodes=0,timeout=false;
+  function visit(pos,path){
+    if(kt.mode==='walk'?(pos[0]===kt.goal[0]&&pos[1]===kt.goal[1]):kt.visited+path.length-1>=kt.visitGoal)return path;
+    if(++nodes>20000){timeout=true;return null;}
+    const moves=getKnightMoves(...pos,kt.size,board).sort((a,b)=>getKnightMoves(...a,kt.size,board).length-getKnightMoves(...b,kt.size,board).length);
+    for(const next of moves){board[next[0]][next[1]]=true;const found=visit(next,[...path,next]);board[next[0]][next[1]]=false;if(found)return found;if(timeout)return null;}
+    return null;
+  }
+  const path=visit(kt.pos,[kt.pos]);return path?{path}:timeout?{timeout:true}:{path:null};
+}
 function renderKnightTour() {
-  const kt = state.kt;
-  const size = kt.size;
-  const [pr, pc] = kt.pos;
-  const moves = kt.clear || kt.stuck ? [] : getKnightMoves(pr, pc, size, kt.board);
-  const settings = getKnightTourSettings();
-
-  let branch = false;
-  if (settings.branchWarn && !kt.clear && !kt.stuck && !kt.doomed) {
-    const a = ktAnalyze(kt);
-    if (a.safe === 0) kt.doomed = true;
-    else branch = a.fatal.length > 0;
+  saveActiveSession();
+  const kt=state.kt,moves=kt.clear||kt.stuck?[]:getKnightMoves(...kt.pos,kt.size,kt.board),settings=getKnightTourSettings();
+  const analysis=settings.branchWarn&&kt.mode==='tour'&&!kt.clear&&!kt.stuck?ktAnalyze(kt):null;
+  let cells='';
+  for(let r=0;r<kt.size;r++)for(let c=0;c<kt.size;c++){
+    let cls='board-cell '+((r+c)%2?'dark':'light'),content='';
+    if(r===kt.pos[0]&&c===kt.pos[1]){cls+=' selected';content=getPieceSVG('wN',36);}
+    else if(kt.board[r][c]){cls+=' kt-visited';content=`<span class="kt-check ${kt.footprints?.[r+','+c]===1?'parent-step':''}">${kt.family&&kt.footprints?.[r+','+c]===1?'◆':'✓'}</span>`;}
+    else if(kt.goal?.[0]===r&&kt.goal?.[1]===c){cls+=' goal-cell';content='🚩';}
+    if(moves.some(([mr,mc])=>mr===r&&mc===c))cls+=' move-hint';
+    cells+=`<div class="${cls}" onclick="knightTourClick(${r},${c})">${content}</div>`;
   }
-
-  let cells = '';
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const isLight = (r + c) % 2 === 0;
-      let cls = 'board-cell ' + (isLight ? 'light' : 'dark');
-      let content = '';
-
-      const isStar = kt.stars.some(([sr, sc]) => sr === r && sc === c);
-
-      if (r === pr && c === pc) {
-        cls += ' selected';
-        content = getPieceSVG('wN', 36);
-      } else if (kt.board[r][c]) {
-        cls += ' kt-visited';
-        content = '<span class="kt-check">✓</span>';
-      } else if (isStar) {
-        content = '<span class="collector-star">⭐</span>';
-        if (moves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
-      } else if (moves.some(([mr, mc]) => mr === r && mc === c)) {
-        cls += ' move-hint';
-      }
-
-      cells += `<div class="${cls}" onclick="knightTourClick(${r},${c})">${content}</div>`;
-    }
-  }
-
-  let msg;
-  if (kt.clear) {
-    msg = `<div class="status-msg success">${t('knightTourClear')} 🎉</div>`;
-  } else if (kt.stuck) {
-    msg = `<div class="status-msg fail">${t('knightTourStuck')} (${kt.visited}/${kt.total})</div>`;
-  } else if (settings.branchWarn && kt.doomed) {
-    msg = `<div class="status-msg fail">😢 ${t('knightTourDoomed')}</div>`;
-  } else if (branch) {
-    msg = `<div class="status-msg warn">⚠️ ${t('knightTourBranch')}</div>`;
-  } else {
-    msg = `<div class="status-msg">${t('knightTourDesc')}</div>`;
-  }
-
-  const comboText = kt.combo >= 2 ? ` 🔥x${kt.combo}` : '';
-  const info = `<div class="mission-info">
-    <div class="mission-speech">⭐ ${kt.score}${comboText}</div>
-    <div class="move-counter">${t('knightTourVisited')}: ${kt.visited}/${kt.total}</div>
-  </div>`;
-
-  const sizeChips = KNIGHT_TOUR_LEVELS.map((lv, i) =>
-    `<button class="kt-chip${i === kt.levelIdx ? ' active' : ''}" onclick="ktSelectSize(${i})">${lv.label}</button>`
-  ).join('');
-  const toggle = (key, label) =>
-    `<button class="kt-toggle${settings[key] ? ' on' : ''}" onclick="ktToggleOption('${key}')">
-      <span class="kt-switch"></span>${label}
-    </button>`;
-  const options = `<div class="kt-options">
-    <div class="kt-sizes">${sizeChips}</div>
-    <div class="kt-toggles">
-      ${toggle('randomStart', '🎲 ' + t('knightTourRandomStart'))}
-      ${toggle('branchWarn', '⚠️ ' + t('knightTourBranchWarn'))}
-    </div>
-  </div>`;
-
-  const actions = (!kt.clear && !kt.stuck) ? `
-    <div class="mission-actions">
-      <button class="icon-btn hint-btn" onclick="knightTourHint()">💡 ${t('hintBtn')}</button>
-      <button class="icon-btn reset-btn" onclick="goKnightTour(${kt.levelIdx})">🔄 ${t('resetBtn')}</button>
-    </div>` : '';
-
-  const nextBtn = kt.clear && kt.levelIdx < KNIGHT_TOUR_LEVELS.length - 1
-    ? `<button class="action-btn green" onclick="ktSelectSize(${kt.levelIdx + 1})">${t('btnNext')}</button>` : '';
-  const retryBtn = (kt.stuck || kt.clear)
-    ? `<button class="action-btn" onclick="goKnightTour(${kt.levelIdx})">${t('missionRetryBtn')}</button>` : '';
-
-  document.getElementById('screen-mini').innerHTML = `
-    <div class="screen-wrap">
-      <div class="screen-header">
-        <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
-        <h2>${t('knightTourTitle')} ${KNIGHT_TOUR_LEVELS[kt.levelIdx].label}</h2>
-      </div>
-      ${options}
-      ${msg} ${info}
-      <div class="chess-board${branch ? ' kt-branch' : ''}" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${actions} ${nextBtn} ${retryBtn}
-    </div>`;
+  const title=({walk:'산책',explore:'탐험',tour:'완주 도전'})[kt.mode];
+  let msg=kt.clear?'해냈어요! '+(kt.mode==='walk'?'깃발을 찾았어요.':`${kt.visited}칸을 탐험했어요.`):kt.stuck?'길이 막혔어요. ↶ 되돌려 다른 갈림길을 찾아봐요.':analysis?.fatal.length?'길이 나뉘어요. 막히면 돌아와도 괜찮아요.':kt.mode==='walk'?'나이트로 뛰어서 깃발을 찾아요.':'한 번 간 칸을 피해서 새 칸으로 뛰어요.';
+  const progress=kt.mode==='walk'?`🚩 깃발 찾기 · ${kt.moveCount}번 점프`:`👣 ${kt.visited}/${kt.visitGoal}칸`;
+  document.getElementById('screen-mini').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="goKnightSetup()">← 목표 고르기</button><h2>나이트 ${title}</h2></div>
+    ${kt.mode==='tour'?`<div class="kt-sizes">${KNIGHT_TOUR_LEVELS.map((lv,i)=>`<button class="kt-chip ${i===kt.levelIdx?'active':''}" onclick="goKnightTour(${i},'tour')">${lv.label}</button>`).join('')}</div>`:''}
+    <div class="status-msg ${kt.clear?'success':''}" role="status">${msg}</div><div class="mission-info"><div class="mission-speech">${kt.family?(kt.player===0?'🧒 내 차례':'🧑 함께하는 사람 차례'):progress}</div><div class="move-counter">${kt.family?progress:''}</div></div>
+    <div class="chess-board" style="grid-template-columns:repeat(${kt.size},1fr)">${cells}</div>
+    <div class="mission-actions">${undoButton()}${!kt.clear&&!kt.stuck?'<button class="icon-btn hint-btn" onclick="knightTourHint()">💡 한 점프 보기</button><button class="icon-btn" onclick="knightTourDemo()">▶ 시범</button>':''}<button class="icon-btn" onclick="goKnightTour(${kt.levelIdx},'${kt.mode}')">🔄 다시</button></div>
+    <div class="kt-options"><button class="kt-toggle ${kt.family?'on':''}" onclick="state.kt.family=!state.kt.family;renderKnightTour()">👪 ${kt.family?'번갈아 탐험 중':'함께 번갈아 하기'}</button><button class="kt-toggle ${settings.randomStart?'on':''}" onclick="ktToggleOption('randomStart')">🎲 다른 시작점 ${settings.randomStart?'켜짐':'꺼짐'}</button>${kt.mode==='tour'?`<button class="kt-toggle ${settings.branchWarn?'on':''}" onclick="ktToggleOption('branchWarn')">갈림길 알려주기 ${settings.branchWarn?'켜짐':'꺼짐'}</button>`:''}</div>
+    ${kt.clear?`<button class="action-btn green" onclick="goKnightTour(${kt.levelIdx},'${kt.mode==='walk'?'explore':kt.mode==='explore'?'tour':'tour'}')">${kt.mode==='walk'?'10칸 탐험하기':kt.mode==='explore'?'모든 칸 도전하기':'한 번 더 도전'}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button>`:''}</div>`;
 }
-
-function knightTourClick(r, c) {
-  if (state.animating) return;
-  const kt = state.kt;
-  if (kt.clear || kt.stuck) return;
-  const moves = getKnightMoves(kt.pos[0], kt.pos[1], kt.size, kt.board);
-  if (!moves.some(([mr, mc]) => mr === r && mc === c)) return;
-
-  // 경고했던 막힌 수를 골랐다면 이후로는 완주 불가
-  const a = kt.analysis && kt.analysis.at === kt.moveCount ? kt.analysis : null;
-  if (a && a.fatal.some(([fr, fc]) => fr === r && fc === c)) kt.doomed = true;
-
-  const [pr, pc] = kt.pos;
-  const boardEl = document.querySelector('#screen-mini .chess-board');
-  kt.board[r][c] = true;
-  kt.pos = [r, c];
-  kt.visited++;
-  kt.moveCount++;
-
-  // 별 수집 체크
-  const si = kt.stars.findIndex(([sr, sc]) => sr === r && sc === c);
-  const gotStar = si >= 0;
-  if (gotStar) {
-    kt.stars.splice(si, 1);
-    kt.combo = kt.lastWasStar ? kt.combo + 1 : 1;
-    kt.score += kt.combo; // 콤보 보너스
-    kt.lastWasStar = true;
-  } else {
-    kt.combo = 0;
-    kt.lastWasStar = false;
-  }
-
-  animateMove(boardEl, pr, pc, r, c, 'wN', () => {
-    // 별을 다 모으면 남은 칸에 새 별 추가
-    if (kt.stars.length === 0 && kt.visited < kt.total) {
-      const lv = KNIGHT_TOUR_LEVELS[kt.levelIdx];
-      const empties = [];
-      for (let rr = 0; rr < kt.size; rr++)
-        for (let cc = 0; cc < kt.size; cc++)
-          if (!kt.board[rr][cc]) empties.push([rr, cc]);
-      for (let i = empties.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [empties[i], empties[j]] = [empties[j], empties[i]];
-      }
-      kt.stars = empties.slice(0, Math.min(lv.bonusTurns, empties.length));
-    }
-
-    if (kt.visited === kt.total) {
-      kt.clear = true;
-      const pct = kt.visited / kt.total;
-      const stars = pct >= 1 ? 3 : pct >= 0.8 ? 2 : 1;
-      saveMiniGameStars('knighttour', kt.levelIdx || 0, stars);
-      spawnParticles();
-    } else {
-      const next = getKnightMoves(r, c, kt.size, kt.board);
-      if (next.length === 0) { kt.stuck = true; const pct=kt.visited/kt.total; if(pct>=0.4)saveMiniGameStars('knighttour',kt.levelIdx,pct>=0.8?2:1); }
-    }
+function knightTourClick(r,c) {
+  const kt=state.kt;if(state.animating||kt.clear||kt.stuck)return;
+  if(!getKnightMoves(...kt.pos,kt.size,kt.board).some(([mr,mc])=>mr===r&&mc===c))return;
+  rememberAction();const [pr,pc]=kt.pos;kt.pos=[r,c];kt.board[r][c]=true;kt.footprints[r+','+c]=kt.player;kt.visited++;kt.moveCount++;kt.analysis=null;
+  if(kt.family)kt.player=1-kt.player;
+  animateMove(document.querySelector('#screen-mini .chess-board'),pr,pc,r,c,'wN',()=>{
+    kt.clear=kt.mode==='walk'?r===kt.goal[0]&&c===kt.goal[1]:kt.visited>=kt.visitGoal;
+    if(kt.clear){saveMiniGameStars(kt.mode==='tour'?'knighttour':'knight-'+kt.mode,kt.levelIdx,3);spawnParticles();}
+    else if(!getKnightMoves(r,c,kt.size,kt.board).length){kt.stuck=true;const pct=kt.visited/kt.visitGoal;if(pct>=.4)saveMiniGameStars(kt.mode==='tour'?'knighttour':'knight-'+kt.mode,kt.levelIdx,pct>=.8?2:1);}
     renderKnightTour();
-  }, kt.size);
+  },kt.size);
 }
-
-function knightTourHint() {
-  const kt = state.kt;
-  if (kt.clear || kt.stuck) return;
-  const boardEl = document.querySelector('#screen-mini .chess-board');
-  if (!boardEl) return;
-
-  const result = ktFindPath(kt.board, kt.size, kt.pos, KT_NODE_LIMIT);
-
-  if (result.path === null) {
-    // 완주 불가능
-    const speech = document.querySelector('.mission-speech');
-    if (speech) {
-      speech.innerHTML = '⚠️ ' + t('knightTourUnsolvable');
-      speech.classList.add('hint-active', 'hint-unsolvable');
-    }
-    return;
-  }
-  if (result.timeout) {
-    // 한도 초과: 갈 곳이 가장 적은 칸(Warnsdorff)으로 한 수만 안내
-    const best = getKnightMoves(kt.pos[0], kt.pos[1], kt.size, kt.board).map(([r, c]) => {
-      kt.board[r][c] = true;
-      const next = getKnightMoves(r, c, kt.size, kt.board).length;
-      kt.board[r][c] = false;
-      return [r, c, next];
-    }).sort((a, b) => a[2] - b[2])[0];
-    if (best) showHintArrow(boardEl, kt.pos[0], kt.pos[1], best[0], best[1], kt.size, t('knightTourHint'));
-    return;
-  }
-
-  showHintPath(boardEl, result.path, kt.size, t('knightTourHintPath'));
+function knightTourHint(){
+  const kt=state.kt;if(kt.clear||kt.stuck)return;
+  const result=knightGoalPath();
+  if(result.path?.length>1)showHintArrow(document.querySelector('#screen-mini .chess-board'),...result.path[0],...result.path[1],kt.size,'두 칸, 옆으로 한 칸! 직접 뛰어봐요.');
+  else {const speech=document.querySelector('#screen-mini .mission-speech');if(speech)speech.textContent=result.timeout?'아직 길을 찾고 있어요. 한 걸음 되돌려 볼까요?':'여기서는 목표로 갈 수 없어요. ↶ 되돌려서 다시 찾아봐요.';}
+}
+function knightTourDemo(){
+  const kt=state.kt;if(state.animating||kt.clear||kt.stuck)return;const path=knightGoalPath().path;if(!path?.[1])return;
+  kt.demoUsed=true;animateMove(document.querySelector('#screen-mini .chess-board'),...path[0],...path[1],'wN',()=>renderKnightTour(),kt.size);
 }

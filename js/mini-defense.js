@@ -9,6 +9,7 @@ const DEFENSE_LEVELS = [
 ];
 
 function goDefense(levelIdx) {
+  beginActivity('defense',{levelIdx});
   const lv = DEFENSE_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.df = {
@@ -63,6 +64,7 @@ function getDefenseMoves(df) {
 }
 
 function renderDefense() {
+  saveActiveSession();
   const df = state.df;
   const size = df.size;
   const [pr,pc] = df.pos;
@@ -113,7 +115,7 @@ function renderDefense() {
       </div>
       ${msg} ${info}
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${actions} ${retryBtn} ${nextBtn}
+      ${undoButton()} ${actions} ${retryBtn} ${nextBtn}
     </div>`;
 }
 
@@ -124,6 +126,7 @@ function defenseClick(r,c) {
   const moves = getDefenseMoves(df);
   if (!moves.some(([mr,mc])=>mr===r&&mc===c)) return;
 
+  rememberAction();
   const [pr,pc] = df.pos;
   const boardEl = document.querySelector('#screen-mini .chess-board');
   df.pos = [r,c];
@@ -147,7 +150,7 @@ function defenseClick(r,c) {
           return nr>=0 && nr<df.size && nc>=0 && nc<df.size;
         });
         if (valid.length > 0) {
-          const [dr,dc] = valid[Math.floor(Math.random()*valid.length)];
+          const [dr,dc] = valid[Math.floor(activityRandom()*valid.length)];
           e.pos[0]+=dr; e.pos[1]+=dc;
         }
       } else if (e.p[1] === 'R') {

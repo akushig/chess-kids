@@ -223,88 +223,41 @@ const MISSIONS = {
   ]
 };
 
-// ===== 미션 진행도 관리 =====
-function getMissionProgress() {
-  try {
-    return JSON.parse(localStorage.getItem('mission_progress_v2')) || {};
-  } catch { return {}; }
-}
-
-function saveMissionProgress(pieceKey, missionIdx, stars) {
-  const progress = getMissionProgress();
-  if (!progress[pieceKey]) progress[pieceKey] = {};
-  const prev = progress[pieceKey][missionIdx] || 0;
-  progress[pieceKey][missionIdx] = Math.max(prev, stars);
-  localStorage.setItem('mission_progress_v2', JSON.stringify(progress));
-}
-
-function getMissionStars(pieceKey, missionIdx) {
-  const progress = getMissionProgress();
-  return (progress[pieceKey] && progress[pieceKey][missionIdx]) || 0;
-}
-
-function isMissionCleared(pieceKey, missionIdx) {
-  return getMissionStars(pieceKey, missionIdx) > 0;
-}
-
-function getPieceClearCount(pieceKey) {
-  const progress = getMissionProgress();
-  if (!progress[pieceKey]) return 0;
-  return Object.values(progress[pieceKey]).filter(v => v > 0).length;
-}
-
-function getPieceTotalStars(pieceKey) {
-  const progress = getMissionProgress();
-  if (!progress[pieceKey]) return 0;
-  return Object.values(progress[pieceKey]).reduce((a, b) => a + b, 0);
-}
-
-function getTotalStars() {
-  const progress = getMissionProgress();
-  let total = 0;
-  for (const key of Object.keys(progress)) {
-    total += Object.values(progress[key]).reduce((a, b) => a + b, 0);
-  }
-  return total;
-}
-
-function calculateStars(moveCount, minMoves) {
-  if (moveCount <= minMoves) return 3;
-  if (moveCount <= minMoves + 1) return 2;
-  return 1;
-}
-
-// ===== 퍼즐 별 관리 =====
-function getPuzzleProgress() {
-  try { return JSON.parse(localStorage.getItem('puzzle_stars')) || {}; } catch { return {}; }
-}
-function savePuzzleStars(level, puzzleIdx, stars) {
-  const p = getPuzzleProgress();
-  const key = level + '_' + puzzleIdx;
-  p[key] = Math.max(p[key] || 0, stars);
-  localStorage.setItem('puzzle_stars', JSON.stringify(p));
-}
-function getTotalPuzzleStars() {
-  return Object.values(getPuzzleProgress()).reduce((a, b) => a + b, 0);
-}
-
-// ===== 미니게임 별 관리 =====
-function getMiniGameProgress() {
-  try { return JSON.parse(localStorage.getItem('minigame_stars')) || {}; } catch { return {}; }
-}
-function saveMiniGameStars(gameType, levelOrId, stars) {
-  const p = getMiniGameProgress();
-  const key = gameType + '_' + levelOrId;
-  p[key] = Math.max(p[key] || 0, stars);
-  localStorage.setItem('minigame_stars', JSON.stringify(p));
-}
-function getTotalMiniGameStars() {
-  return Object.values(getMiniGameProgress()).reduce((a, b) => a + b, 0);
-}
-
-// ===== 전체 별 합산 =====
-function getAllStars() {
-  return getTotalStars() + getTotalPuzzleStars() + getTotalMiniGameStars();
-}
-
+// Original IDs remain archived in the ledger when a lesson is redesigned.
 for(const [piece,missions] of Object.entries(MISSIONS)) missions.forEach((m,i)=>{m.id=`adventure-${piece.toLowerCase()}-${i+1}-v1`;m.version=1;});
+const ROOK_LESSONS = [{"id": "rook.horizontal.v1", "size": 4, "start": [3, 0], "goals": [[3, 3]], "targets": [], "blocks": [], "objective": "reach", "par": 1, "prompt": "룩을 반짝이는 깃발로 보내요."}, {"id": "rook.vertical.v1", "size": 4, "start": [3, 3], "goals": [[0, 3]], "targets": [], "blocks": [], "objective": "reach", "par": 1, "prompt": "이번에는 위로 쭉 가요."}, {"id": "rook.capture.v1", "size": 4, "start": [3, 0], "goals": [], "targets": [[3, 3]], "blocks": [], "objective": "captureAll", "par": 1, "prompt": "같은 줄의 연습 말을 잡아요."}, {"id": "rook.capture-chain.v1", "size": 4, "start": [3, 0], "goals": [], "targets": [[3, 3], [0, 3]], "blocks": [], "objective": "captureAll", "par": 2, "prompt": "연습 말 두 개를 잡아요."}, {"id": "rook.turn.v1", "size": 4, "start": [3, 0], "goals": [[0, 3]], "targets": [], "blocks": [], "objective": "reach", "par": 2, "prompt": "한 번 꺾어서 깃발로 가요."}, {"id": "rook.obstacle.v1", "size": 4, "start": [3, 0], "goals": [[3, 3]], "targets": [], "blocks": [[3, 1]], "objective": "reach", "par": 3, "prompt": "상자가 없는 길로 돌아가요."}, {"id": "rook.transfer.v1", "size": 5, "start": [4, 0], "goals": [[0, 4]], "targets": [], "blocks": [[2, 0], [4, 2]], "objective": "reach", "par": 3, "prompt": "새로운 길에서도 깃발을 찾아요."}, {"id": "rook.challenge.v1", "size": 5, "start": [4, 0], "goals": [], "targets": [[4, 4], [0, 4], [0, 0]], "blocks": [], "objective": "captureAll", "par": 3, "optional": true, "prompt": "연습 말 세 개를 어떤 순서로 잡을까요?"}];
+MISSIONS.R = ROOK_LESSONS.map(m=>({...m,piece:'wR',type:m.objective==='reach'?'reach':'capture',targets:m.targets.map(([r,c])=>[r,c,'bP']),enemies:[],minMoves:m.par,desc:{ko:m.prompt,en:m.prompt},version:1}));
+
+function progressLedger() {
+  let saved=readData('progress_v3',null);
+  if(saved?.version===3 && saved.missions && saved.puzzles && saved.mini){saved.achievements ||= {};return saved;}
+  saved={version:3,missions:{},puzzles:{},mini:{},achievements:{}};
+  const legacy=readData('mission_progress_v2',{});
+  for(const [piece,stages]of Object.entries(legacy||{})) for(const [index,stars]of Object.entries(stages||{}))
+    saved.missions[`adventure-${piece.toLowerCase()}-${Number(index)+1}-v1`]=Math.min(3,Math.max(0,Number(stars)||0));
+  for(const [id,stars]of Object.entries(readData('puzzle_stars',{})))saved.puzzles['legacy-'+id]=Math.min(3,Math.max(0,Number(stars)||0));
+  for(const [id,stars]of Object.entries(readData('minigame_stars',{})))saved.mini[id]=Math.min(3,Math.max(0,Number(stars)||0));
+  writeData('progress_v3',saved);return saved;
+}
+function awardStars(section,id,stars) {
+  const p=progressLedger(),before=getAllStars();p[section][id]=Math.max(p[section][id]||0,stars);writeData('progress_v3',p);
+  const after=getAllStars();
+  if(typeof SKIN_UNLOCK!=='undefined')for(const [name,required]of Object.entries(SKIN_UNLOCK))if(before<required&&after>=required)writeData('pending_skin',name);
+}
+function getMissionProgress() {
+  const ledger=progressLedger();return Object.fromEntries(Object.entries(MISSIONS).map(([piece,ms])=>[piece,Object.fromEntries(ms.map((m,i)=>[i,ledger.missions[m.id]||0]))]));
+}
+function saveMissionProgress(piece,index,stars){awardStars('missions',MISSIONS[piece][index].id,stars);}
+function getMissionStars(piece,index){return progressLedger().missions[MISSIONS[piece][index].id]||0;}
+function isMissionCleared(piece,index){return getMissionStars(piece,index)>0;}
+function getPieceClearCount(piece){return MISSIONS[piece].filter((m,i)=>isMissionCleared(piece,i)).length;}
+function getPieceTotalStars(piece){return MISSIONS[piece].reduce((sum,m,i)=>sum+getMissionStars(piece,i),0);}
+function getTotalStars(){return Object.values(progressLedger().missions).reduce((a,b)=>a+b,0);}
+function calculateStars(count,par){return count<=par?3:count<=par+1?2:1;}
+function getPuzzleProgress(){return progressLedger().puzzles;}
+function savePuzzleStars(level,index,stars){awardStars('puzzles',PUZZLES[index].id,stars);}
+function getTotalPuzzleStars(){return Object.values(getPuzzleProgress()).reduce((a,b)=>a+b,0);}
+function getMiniGameProgress(){return progressLedger().mini;}
+function saveMiniGameStars(type,id,stars){awardStars('mini',type+'_'+id,stars);}
+function getTotalMiniGameStars(){return Object.values(getMiniGameProgress()).reduce((a,b)=>a+b,0);}
+function getAllStars(){const p=progressLedger();return [...Object.values(p.missions),...Object.values(p.puzzles),...Object.values(p.mini),...Object.values(p.achievements||{})].reduce((a,b)=>a+b,0);}

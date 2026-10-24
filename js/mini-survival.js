@@ -9,6 +9,7 @@ const SURVIVAL_LEVELS = [
 ];
 
 function goSurvival(levelIdx) {
+  beginActivity('survival',{levelIdx});
   const lv = SURVIVAL_LEVELS[levelIdx || 0];
   const size = 6;
   state.sv = {
@@ -18,7 +19,7 @@ function goSurvival(levelIdx) {
     kingPos: [size - 1, Math.floor(size / 2)],
     turn: 0,
     gameOver: false,
-    record: parseInt(localStorage.getItem('survival_record_' + (levelIdx || 0)) || '0'),
+    record: parseInt(safeStore.getItem('survival_record_' + (levelIdx || 0)) || '0'),
   };
   state.sv.board[state.sv.kingPos[0]][state.sv.kingPos[1]] = 'wK';
   // 첫 턴부터 적 배치
@@ -84,13 +85,13 @@ function survivalSpawnEnemy(sv) {
   for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (sv.board[r][c] && sv.board[r][c][0] === 'b') enemyCount++;
   if (enemyCount >= lv.maxEnemies) return;
 
-  const piece = lv.pieces[Math.floor(Math.random() * lv.pieces.length)];
+  const piece = lv.pieces[Math.floor(activityRandom() * lv.pieces.length)];
   const empties = [];
   for (let r = 0; r < 3; r++) for (let c = 0; c < size; c++) {
     if (!sv.board[r][c]) empties.push([r, c]);
   }
   if (empties.length === 0) return;
-  const [sr, sc] = empties[Math.floor(Math.random() * empties.length)];
+  const [sr, sc] = empties[Math.floor(activityRandom() * empties.length)];
   sv.board[sr][sc] = piece;
 }
 
@@ -116,7 +117,7 @@ function survivalMoveEnemies(sv) {
         sv.board[e.r][e.c] = null;
         const empties = [];
         for (let c = 0; c < size; c++) if (!sv.board[0][c]) empties.push(c);
-        if (empties.length > 0) sv.board[0][empties[Math.floor(Math.random() * empties.length)]] = e.p;
+        if (empties.length > 0) sv.board[0][empties[Math.floor(activityRandom() * empties.length)]] = e.p;
         continue;
       }
     } else if (type === 'R') {
@@ -152,6 +153,7 @@ function survivalMoveEnemies(sv) {
 }
 
 function renderSurvival() {
+  saveActiveSession();
   const sv = state.sv;
   const size = sv.size;
   const [kr, kc] = sv.kingPos;
@@ -202,7 +204,7 @@ function renderSurvival() {
       </div>
       ${msg} ${info}
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${actions} ${retryBtn} ${nextBtn}
+      ${undoButton()} ${actions} ${retryBtn} ${nextBtn}
     </div>`;
 }
 
@@ -213,6 +215,7 @@ function survivalClick(r, c) {
   const safeMoves = getSurvivalSafeMoves(sv);
   if (!safeMoves.some(([mr, mc]) => mr === r && mc === c)) return;
 
+  rememberAction();
   const [kr, kc] = sv.kingPos;
   const boardEl = document.querySelector('#screen-mini .chess-board');
   sv.board[kr][kc] = null;
@@ -241,7 +244,7 @@ function survivalClick(r, c) {
 
     if (sv.gameOver && sv.turn > sv.record) {
       sv.record = sv.turn;
-      localStorage.setItem('survival_record_' + sv.levelIdx, sv.turn);
+      safeStore.setItem('survival_record_' + sv.levelIdx, sv.turn);
     }
     if (sv.gameOver) {
       const stars = sv.turn >= 15 ? 3 : sv.turn >= 10 ? 2 : sv.turn >= 5 ? 1 : 0;

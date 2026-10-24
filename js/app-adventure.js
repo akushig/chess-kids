@@ -1,3 +1,4 @@
+function missionSize(mission=MISSIONS[state.missionPiece]?.[state.missionIdx]) { return mission?.size || 6; }
 // ===== 모험 화면: 월드 선택 → 스테이지 맵 → 미션 플레이 =====
 
 // --- 월드 선택 ---
@@ -40,6 +41,7 @@ function renderWorldSelect() {
 function goStageMap(pieceKey) {
   state.missionPiece = pieceKey;
   renderStageMap();
+  document.querySelector('.stage-node.current')?.scrollIntoView?.({block:'center'});
 }
 
 function renderStageMap() {
@@ -48,11 +50,11 @@ function renderStageMap() {
   const missions = MISSIONS[key];
   let nodes = '';
 
-  for (let i = missions.length - 1; i >= 0; i--) {
+  for (let i = 0; i < missions.length; i++) {
     const stars = getMissionStars(key, i);
     const cleared = stars > 0;
-    const locked = i > 0 && getMissionStars(key, i - 1) === 0;
-    const isCurrent = !cleared && !locked;
+    const locked = false;
+    const isCurrent = !cleared && (i===0 || getMissionStars(key,i-1)>0);
 
     let cls = 'stage-node';
     if (cleared) cls += ' cleared';
@@ -91,6 +93,7 @@ function renderStageMap() {
 
 // --- 미션 플레이 ---
 function goMissionPlay(pieceKey, missionIdx) {
+  beginActivity('mission',{pieceKey,missionIdx});
   cancelActivityCallbacks();
   const mission = MISSIONS[pieceKey][missionIdx];
   state.missionPiece = pieceKey;
@@ -100,14 +103,14 @@ function goMissionPlay(pieceKey, missionIdx) {
   state.missionSolved = false;
   state.missionFailed = false;
   state.missionMoveCount = 0;
-  state.missionHistory = [];
+
   state.missionNotice = '';
   showScreen('learn');
   renderMissionBoard();
 }
 
 function buildMissionBoard(mission) {
-  const size = MISSION_BOARD_SIZE;
+  const size = missionSize(mission);
   const board = Array.from({ length: size }, () => Array(size).fill(null));
   board[mission.start[0]][mission.start[1]] = mission.piece;
   if (mission.targets) {
@@ -125,7 +128,7 @@ function getMissionValidMoves(board, row, col, mission) {
   const type = piece[1];
   const color = piece[0];
   const opp = color === 'w' ? 'b' : 'w';
-  const size = MISSION_BOARD_SIZE;
+  const size = missionSize(mission);
   const moves = [];
 
   const inB = (r, c) => r >= 0 && r < size && c >= 0 && c < size;
@@ -181,18 +184,13 @@ function isSquareAttacked(board, row, col, byColor, mission) {
 }
 
 function missionNeedsSafety(mission) { return mission.type === 'escape' || mission.piece === 'wK'; }
-function missionUndo() {
-  const previous = state.missionHistory?.pop();
-  if(!previous || state.animating) return;
-  closeClearPopup(); Object.assign(state,previous);
-  state.missionSolved=false; state.missionFailed=false; state.missionNotice='다시 해볼 수 있어요.';
-  renderMissionBoard();
-}
+function missionUndo() { undoActivity(); }
 
 function renderMissionBoard() {
+  saveActiveSession();
   const mission = MISSIONS[state.missionPiece][state.missionIdx];
   const board = state.missionBoard;
-  const size = MISSION_BOARD_SIZE;
+  const size = missionSize(mission);
   const [pr, pc] = state.missionPlayerPos;
 
   const validMoves = state.missionSolved || state.missionFailed
@@ -236,7 +234,7 @@ function renderMissionBoard() {
   // 하단 버튼: 힌트 + 리셋
   const actionBtns = (!state.missionSolved) ? `
     <div class="mission-actions">
-      <button class="icon-btn" onclick="missionUndo()" ${state.missionHistory?.length ? '' : 'disabled'}>↶ 되돌리기</button>
+      <button class="icon-btn" onclick="missionUndo()" ${state.actionHistory?.length ? '' : 'disabled'}>↶ 되돌리기</button>
       <button class="icon-btn hint-btn" onclick="showMissionHint()">💡 ${t('hintBtn')}</button>
       <button class="icon-btn reset-btn" onclick="goMissionPlay('${state.missionPiece}', ${state.missionIdx})">🔄 ${t('resetBtn')}</button>
     </div>
@@ -249,7 +247,7 @@ function renderMissionBoard() {
         <h2>${t('missionTitle')} ${state.missionIdx + 1}</h2>
       </div>
       ${infoBar}
-      <div class="chess-board mission-board">${cells}</div>
+      <div class="chess-board mission-board" style="grid-template-columns:repeat(${size},1fr) !important">${cells}</div>
       ${actionBtns}
     </div>
   `;
@@ -265,7 +263,8 @@ function missionClick(r, c) {
   if (!validMoves.some(([mr, mc]) => mr === r && mc === c)) {
     state.missionNotice='점이 있는 칸으로 움직여요. 막힌 길은 돌아가요.'; renderMissionBoard(); return;
   }
-  state.missionHistory.push({missionBoard:board.map(row=>[...row]),missionPlayerPos:[pr,pc],missionMoveCount:state.missionMoveCount});
+  rememberAction();
+
   state.missionNotice='';
 
   const piece = board[pr][pc];
@@ -285,8 +284,8 @@ function missionClick(r, c) {
       }
     } else if (mission.type === 'capture') {
       let remaining = 0;
-      for (let rr = 0; rr < MISSION_BOARD_SIZE; rr++)
-        for (let cc = 0; cc < MISSION_BOARD_SIZE; cc++)
+      for (let rr = 0; rr < missionSize(mission); rr++)
+        for (let cc = 0; cc < missionSize(mission); cc++)
           if (board[rr][cc] && board[rr][cc][0] === 'b') remaining++;
       if (mission.enemies) {
         remaining -= mission.enemies.filter(([er, ec, ep]) => board[er][ec] === ep).length;
@@ -300,8 +299,10 @@ function missionClick(r, c) {
         state.missionFailed = true;
       }
     }
+    if(piece==='wP' && r===0 && state.missionSolved)state.missionBoard[r][c]='wQ';
+    if(!state.missionSolved&&!state.missionFailed&&!findMissionSolvePath())state.missionNotice='여기서는 목표로 갈 수 없어요. ↶ 되돌려 다른 길로 가요.';
     renderMissionBoard();
-  }, MISSION_BOARD_SIZE);
+  }, missionSize(mission));
 }
 
 function missionClear() {
@@ -359,7 +360,7 @@ function findMissionSolvePath() {
   const mission = MISSIONS[state.missionPiece][state.missionIdx];
   const origBoard = state.missionBoard;
   const [pr, pc] = state.missionPlayerPos;
-  const size = MISSION_BOARD_SIZE;
+  const size = missionSize(mission);
 
   function cloneBoard(b) { return b.map(row => [...row]); }
   function boardKey(b, r, c) {
@@ -420,6 +421,7 @@ function findMissionSolvePath() {
 }
 
 function showMissionHint() {
+  const mission=MISSIONS[state.missionPiece][state.missionIdx];
   const boardEl = document.querySelector('#screen-learn .mission-board');
   if (!boardEl) return;
 
@@ -428,5 +430,5 @@ function showMissionHint() {
     showHintUnsolvable();
     return;
   }
-  showHintArrow(boardEl,...path[0],...path[1],MISSION_BOARD_SIZE,'이 한 걸음부터 해볼까요?');
+  showHintArrow(boardEl,...path[0],...path[1],missionSize(mission),'이 한 걸음부터 해볼까요?');
 }
