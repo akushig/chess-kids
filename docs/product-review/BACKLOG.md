@@ -1,6 +1,8 @@
 # 실행 계획과 완료 기준
 
-분석·설계 산출물이며 앱 기능은 아직 수정하지 않았다. 기능 추가 전에 오류와 복구 문제를 해결한다. 작업 크기는 상대 크기(S/M/L)이며 일정 약속이 아니다. 실제 개발 일정은 아래 1차 묶음의 구현 속도를 본 뒤 추정한다.
+> 구현 전 진단·설계 기록입니다. 현재 반영 내역은 [개발 기록](../IMPLEMENTATION.md), 최종 검증은 [QA 기록](../qa/README.md)을 참고하세요.
+
+이 문서는 개발 착수 전 작성한 분석·설계 산출물이다. 실제 반영 상태는 위 개발 기록에 별도로 관리한다. 기능 추가 전에 오류와 복구 문제를 해결한다. 작업 크기는 상대 크기(S/M/L)이며 일정 약속이 아니다. 실제 개발 일정은 아래 1차 묶음의 구현 속도를 본 뒤 추정한다.
 
 ## 1. 권장 착수 순서
 
@@ -137,17 +139,16 @@ PLAY-01은 중요한 P0 사용자 문제를 해결하지만 구현 크기가 커
 
 무작위 게임은 ‘몇 번 해 봤다’를 검증의 전부로 삼지 않는다. 시드 기반 재현, 알려진 경계 사례, 상태 불변식(중복 점유 없음 등)을 자동 검사한다. 끝없는 게임의 모든 판을 해결 가능하다고 주장하지 않으며, 입문 추천에는 검증된 배치를 사용한다.
 
-현재 재현 방법:
+현재 구현 검증 방법:
 
 ```sh
-node docs/product-review/evidence/audit.cjs > /tmp/chess-audit-results.json
+npm test
 python3 -m venv /tmp/chess-review-verify
 /tmp/chess-review-verify/bin/python -m pip install chess==1.11.2
-/tmp/chess-review-verify/bin/python docs/product-review/evidence/verify-puzzles.py
-/tmp/chess-review-verify/bin/python docs/product-review/evidence/verify-examples.py
+node scripts/export-content.cjs | /tmp/chess-review-verify/bin/python scripts/verify-puzzles.py
 ```
 
-주의: 두 Python 스크립트 중 퍼즐 검증기는 동봉된 `evidence/audit-results.json`을 읽는다. 앱을 수정한 뒤 최신 데이터로 다시 검사하려면 Node 결과를 그 파일로 갱신하거나 읽는 경로를 변경한다. 현재 Node 검증은 DOM·시간을 대체하므로 브라우저 E2E 테스트를 대체하지 않는다. 소스 해시가 결과에 들어 있어 어떤 버전을 검사했는지 확인할 수 있다.
+`evidence/`의 결과와 `audit.cjs`는 최초 진단 커밋의 스냅샷이다. 변경된 앱의 회귀 검증에는 현재 `tests/`와 `scripts/`를 사용한다. 실제 브라우저 검수 방법은 프로젝트 [README](../../README.md)에 있다.
 
 ## 6. 어린이·성인 플레이테스트
 

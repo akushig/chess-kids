@@ -2,14 +2,14 @@
 // 적 폰이 전진, 끝줄 도달 전에 내 기물로 잡기
 
 const DEFENSE_LEVELS = [
-  { piece:'wR', size:6, waves:[[{pos:[0,1],p:'bP'},{pos:[0,3],p:'bP'},{pos:[0,5],p:'bP'}]], name:'룩' },
-  { piece:'wR', size:6, waves:[[{pos:[0,0],p:'bP'},{pos:[0,2],p:'bP'},{pos:[0,4],p:'bP'}],[{pos:[0,1],p:'bP'},{pos:[0,3],p:'bP'},{pos:[0,5],p:'bP'}]], name:'룩' },
-  { piece:'wQ', size:6, waves:[[{pos:[0,0],p:'bP'},{pos:[0,2],p:'bP'},{pos:[0,4],p:'bP'}],[{pos:[0,1],p:'bP'},{pos:[0,3],p:'bP'},{pos:[0,5],p:'bP'}],[{pos:[0,0],p:'bP'},{pos:[0,2],p:'bN'},{pos:[0,5],p:'bP'}]], name:'퀸' },
-  { piece:'wQ', size:6, waves:[[{pos:[0,0],p:'bP'},{pos:[0,1],p:'bP'},{pos:[0,3],p:'bP'},{pos:[0,5],p:'bP'}],[{pos:[0,0],p:'bP'},{pos:[0,2],p:'bN'},{pos:[0,4],p:'bP'}],[{pos:[0,1],p:'bP'},{pos:[0,3],p:'bR'},{pos:[0,5],p:'bP'}]], name:'퀸' },
+  {id:'defense-rook-one-v2',piece:'wR',size:6,waves:[[{pos:[0,3],p:'bP'}]],name:'룩'},
+  {id:'defense-rook-pair-v2',piece:'wR',size:6,waves:[[{pos:[0,1],p:'bP'},{pos:[0,4],p:'bP'}]],name:'룩'},
+  {id:'defense-queen-v2',piece:'wQ',size:6,waves:[[{pos:[0,0],p:'bP'},{pos:[0,2],p:'bP'},{pos:[0,5],p:'bP'}]],name:'퀸'},
+  {id:'defense-queen-waves-v2',piece:'wQ',size:6,waves:[[{pos:[0,0],p:'bP'},{pos:[0,1],p:'bP'},{pos:[0,3],p:'bP'},{pos:[0,5],p:'bP'}],[{pos:[0,0],p:'bP'},{pos:[0,2],p:'bN'},{pos:[0,4],p:'bP'}],[{pos:[0,1],p:'bP'},{pos:[0,3],p:'bR'},{pos:[0,5],p:'bP'}]],name:'퀸',optional:true},
 ];
 
 function goDefense(levelIdx=0){
-  beginActivity('defense',{levelIdx});const lv=DEFENSE_LEVELS[levelIdx];
+  beginActivity('defense',{levelIdx,id:DEFENSE_LEVELS[levelIdx||0].id});const lv=DEFENSE_LEVELS[levelIdx];
   state.df={levelIdx,size:lv.size,piece:lv.piece,pos:[lv.size-1,Math.floor(lv.size/2)],enemies:[],waves:copyData(lv.waves),waveIdx:0,turn:0,breached:0,maxBreach:2,clear:false,failed:false,notice:''};
   defenseSpawnWave(state.df);showScreen('mini');renderDefense();
 }
@@ -54,13 +54,14 @@ function renderDefense(){
     cells+=`<div class="${cls}" onclick="defenseClick(${r},${c})">${content}</div>`;
   }
   const msg=df.clear?(df.breached?'성을 지켰어요! 한 번 지나갔지만 끝까지 해냈어요.':'완벽하게 성을 지켰어요!'):df.failed?'상대가 성에 들어왔어요. ↶ 되돌려 다른 순서로 잡아봐요.':df.notice||'상대를 잡아서 성을 지켜요. 화살표는 다음 발자국이에요.';
-  document.getElementById('screen-mini').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="goMiniMenu()">← 놀이터</button><h2>성 지키기 ${df.levelIdx+1}</h2></div><div class="status-msg ${df.clear?'success':''}" role="status">${msg}</div><div class="mission-info"><div class="mission-speech">${'❤️'.repeat(Math.max(0,df.maxBreach-df.breached))}${'🤍'.repeat(Math.min(df.maxBreach,df.breached))}</div><div class="move-counter">물결 ${df.waveIdx}/${df.waves.length}</div></div><div class="chess-board" style="grid-template-columns:repeat(${df.size},1fr)">${cells}</div><p class="section-note">연습 침입자는 화살표대로 전진해요. 빨간 끝줄이나 내 말에 닿으면 하트가 줄어요.</p><div class="mission-actions">${undoButton()}${!over?'<button class="icon-btn hint-btn" onclick="defenseHint()">💡 한 수 보기</button>':''}<button class="icon-btn" onclick="goDefense(${df.levelIdx})">🔄 다시</button></div>${df.clear?finishLinks(df.levelIdx<DEFENSE_LEVELS.length-1?`goDefense(${df.levelIdx+1})`:'goPlay()',df.levelIdx<DEFENSE_LEVELS.length-1?'다음 성 지키기':'배운 말로 대전하기'):''}</div>`;
+  document.getElementById('screen-mini').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="goMiniMenu()">← 놀이터</button><h2>성 지키기 ${df.levelIdx+1}${DEFENSE_LEVELS[df.levelIdx].optional?' · 도전':''}</h2></div><div class="status-msg ${df.clear?'success':''}" role="status">${msg}</div><div class="mission-info"><div class="mission-speech">${'❤️'.repeat(Math.max(0,df.maxBreach-df.breached))}${'🤍'.repeat(Math.min(df.maxBreach,df.breached))}</div><div class="move-counter">물결 ${df.waveIdx}/${df.waves.length}</div></div><div class="chess-board" style="grid-template-columns:repeat(${df.size},1fr)">${cells}</div><p class="section-note">연습 침입자는 화살표대로 전진해요. 빨간 끝줄이나 내 말에 닿으면 하트가 줄어요.</p><div class="mission-actions">${undoButton()}${!over?'<button class="icon-btn hint-btn" onclick="defenseHint()">💡 한 수 보기</button>':''}<button class="icon-btn" onclick="goDefense(${df.levelIdx})">🔄 다시</button></div>${df.clear?finishLinks(df.levelIdx<DEFENSE_LEVELS.length-1?`goDefense(${df.levelIdx+1})`:'goPlay()',df.levelIdx<DEFENSE_LEVELS.length-1?'다음 성 지키기':'배운 말로 대전하기'):''}</div>`;
 }
 function defenseClick(r,c){
   const df=state.df;if(state.animating||df.clear||df.failed)return;
-  if(!getDefenseMoves(df).some(([mr,mc])=>r===mr&&c===mc))return;
-  rememberAction();const [pr,pc]=df.pos,piece=df.piece;state.df=defenseTransition(df,[r,c]);
-  animateMove(document.querySelector('#screen-mini .chess-board'),pr,pc,r,c,piece,()=>{if(state.df.clear){saveMiniGameStars('defense',df.levelIdx,state.df.breached?2:3);spawnParticles();}renderDefense();},df.size);
+  if(!getDefenseMoves(df).some(([mr,mc])=>r===mr&&c===mc)){df.notice=movementNotice(df.piece);renderDefense();return;}
+  rememberAction();df.notice='';const [pr,pc]=df.pos,piece=df.piece;state.df=defenseTransition(df,[r,c]);
+  if(state.df.clear)saveMiniGameStars('defense',df.levelIdx,state.df.breached?2:3);saveActiveSession();
+  animateMove(document.querySelector('#screen-mini .chess-board'),pr,pc,r,c,piece,()=>{if(state.df.clear)spawnParticles();renderDefense();},df.size);
 }
 function defenseHint(){
   const df=state.df;if(df.clear||df.failed)return;

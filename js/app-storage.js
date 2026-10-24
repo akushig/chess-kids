@@ -1,10 +1,12 @@
 // Storage failure must never interrupt a move or a celebration.
+let storageUnavailable=false;
 let activeProfile = 'child';
 try { activeProfile = localStorage.getItem('chess_active_profile') || 'child'; } catch {}
+const volatileStore=new Map();
 const safeStore = {
-  getItem(key) { try { return localStorage.getItem('chess.'+activeProfile+'.'+key); } catch { return null; } },
-  setItem(key,value) { try { localStorage.setItem('chess.'+activeProfile+'.'+key,String(value)); return true; } catch { return false; } },
-  removeItem(key) { try { localStorage.removeItem('chess.'+activeProfile+'.'+key); } catch {} },
+  getItem(key) { const full='chess.'+activeProfile+'.'+key;if(volatileStore.has(full))return volatileStore.get(full);try { return localStorage.getItem(full); } catch { return null; } },
+  setItem(key,value) {const full='chess.'+activeProfile+'.'+key;volatileStore.set(full,String(value));try { localStorage.setItem(full,String(value)); return true; } catch { storageUnavailable=true;return false; } },
+  removeItem(key) {const full='chess.'+activeProfile+'.'+key;volatileStore.set(full,null);try { localStorage.removeItem(full); } catch {} },
 };
 // Copy, never remove, the original family's progress. Other profiles start separately.
 try {

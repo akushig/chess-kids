@@ -1582,3 +1582,12 @@ button:disabled { opacity:.45; cursor:default; }
 .family-popup p{line-height:1.65;}.family-popup{max-height:90vh;overflow:auto;}.new-skin-card{padding:16px;background:#fff3b0;border:2px solid #ffd93d;border-radius:15px;font:inherit;cursor:pointer;}
 .next-enemy{outline:3px dashed #6772aa;outline-offset:-5px;}.next-mark{position:absolute;right:4px;top:1px;color:#354b90;font-size:18px;pointer-events:none;}.parent-step{color:#9664b0!important;}.patrol-marker{font-size:1.6rem;}
 .stage-row{width:100%;gap:16px;justify-content:flex-start;}.stage-node{flex-shrink:0;}.stage-label{font-size:.95rem;line-height:1.6;background:#ffffffdd;padding:10px 14px;border-radius:14px;}.stage-label small{display:block;color:#826227;font-size:.75rem;}.stage-connector{margin-left:30px;}
+/* Shared keyboard, reduced-motion and responsive layouts. */
+button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;outline-offset:3px;z-index:4;}
+.board-cell[data-piece-type]::before{content:attr(data-piece-type);position:absolute;bottom:1px;right:1px;font-size:8px;line-height:12px;padding:0 3px;border-radius:4px;background:#fffef3;color:#413529;z-index:2;pointer-events:none;}
+.board-cell[data-side="b"]::before{background:#33424c;color:white;}.read-guide{margin-left:8px;border:0;border-radius:8px;padding:5px 8px;background:#e8f0f5;cursor:pointer;}
+.mission-actions{flex-wrap:wrap;}.mission-actions>.icon-btn{flex:1 1 120px;min-height:46px;white-space:nowrap;}.section-note{font-size:.85rem;max-width:520px;}.screen-header{flex-wrap:wrap;}button{touch-action:manipulation;}button:disabled{pointer-events:none;}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
+.reduced-motion *, .reduced-motion *::before,.reduced-motion *::after{animation:none!important;transition:none!important;}
+@media(min-width:700px){#app{max-width:900px;}.home-wrap{max-width:650px;margin:auto;}.screen-wrap{max-width:850px;margin:auto;padding:24px;}.chess-board,.learn-board{max-width:560px;}.mission-info,.mission-actions,.guide-card,.play-setup{max-width:560px;}.world-grid{max-width:650px;}.board-cell[data-piece-type]::before{font-size:10px;line-height:16px;}.screen-header{max-width:650px;}.status-msg{max-width:650px;}}
+.captured-pieces:empty{display:none;}

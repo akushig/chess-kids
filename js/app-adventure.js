@@ -94,7 +94,7 @@ function renderStageMap() {
 
 // --- 미션 플레이 ---
 function goMissionPlay(pieceKey, missionIdx) {
-  beginActivity('mission',{pieceKey,missionIdx});
+  beginActivity('mission',{pieceKey,missionIdx,id:MISSIONS[pieceKey][missionIdx].id});
   cancelActivityCallbacks();
   const mission = MISSIONS[pieceKey][missionIdx];
   state.missionPiece = pieceKey;
@@ -276,7 +276,7 @@ function missionClick(r, c) {
   state.missionPlayerPos = [r, c];
   state.missionMoveCount++;
 
-  animateMove(boardEl, pr, pc, r, c, piece, () => {
+
     if (missionNeedsSafety(mission) && isSquareAttacked(board,r,c,'b',mission)) {
       state.missionFailed=true; state.missionNotice='이 칸은 상대 말이 공격하고 있어요. ↶ 되돌려서 다른 길로 가요.';
     } else if (mission.type === 'reach') {
@@ -302,8 +302,9 @@ function missionClick(r, c) {
     }
     if(piece==='wP' && r===0 && state.missionSolved)state.missionBoard[r][c]='wQ';
     if(!state.missionSolved&&!state.missionFailed&&!findMissionSolvePath())state.missionNotice='여기서는 목표로 갈 수 없어요. ↶ 되돌려 다른 길로 가요.';
-    renderMissionBoard();
-  }, missionSize(mission));
+
+  saveActiveSession();
+  animateMove(boardEl, pr, pc, r, c, piece, () => renderMissionBoard(), missionSize(mission));
 }
 
 function missionClear() {

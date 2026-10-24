@@ -39,9 +39,9 @@ function goPuzzleLevelSelect(){showScreen('puzzle');renderPuzzleLevelSelect();}
 function renderPuzzleLevelSelect(){
   document.getElementById('screen-puzzle').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="goMiniMenu()">← 놀이터</button><h2>한 수 발견</h2></div><p class="section-note">잡기부터 왕 구하기까지, 한 장면씩 해봐요.</p><div class="puzzle-level-grid">${PUZZLE_LEVELS.map(l=>`<button class="puzzle-level-card" onclick="goPuzzleLevel(${l.level})"><span class="level-name">${l.name[currentLang]||l.name.ko}</span><span class="level-progress">${PUZZLES.filter(p=>p.level===l.level).length}개 장면</span></button>`).join('')}</div></div>`;
 }
-function goPuzzleLevel(level){state.puzzleLevel=level;state.puzzleIndex=PUZZLES.findIndex(p=>p.level===level);renderPuzzle();}
+function goPuzzleLevel(level){showScreen('puzzle');state.puzzleLevel=level;state.puzzleIndex=PUZZLES.findIndex(p=>p.level===level);renderPuzzle();}
 function renderPuzzle(){
-  beginActivity('puzzle',{index:state.puzzleIndex});
+  beginActivity('puzzle',{index:state.puzzleIndex,id:PUZZLES[state.puzzleIndex].id});
   cancelActivityCallbacks();
   const p=PUZZLES[state.puzzleIndex];
   state.puzzleGame=ChessGame.fromFEN(p.fen);state.puzzleSelected=null;state.puzzleValidMoves=[];
@@ -58,12 +58,13 @@ function renderPuzzleBoard(){
     const pc=g.board[r][c];let cls='board-cell '+((r+c)%2?'dark':'light');
     if(state.puzzleSelected?.[0]===r&&state.puzzleSelected?.[1]===c)cls+=' selected';
     if(state.puzzleValidMoves.some(([mr,mc])=>mr===r&&mc===c))cls+=' move-hint';
+    if(state.puzzleSolved&&p.type==='fork'&&g.lastMove&&pc?.[0]==='b'&&pieceAttacks(g.board,g.lastMove[2],g.lastMove[3],r,c))cls+=' goal-cell';
     if(p.target?.[0]===r&&p.target?.[1]===c&&!state.puzzleSolved)cls+=' goal-cell';
-    if(pc?.[1]==='K'&&g.status==='check'&&pc[0]===g.turn)cls+=' danger-cell';
+    if(pc?.[1]==='K'&&(g.status==='check'||g.status==='checkmate')&&pc[0]===g.turn)cls+=' danger-cell';
     cells+=`<div class="${cls}" onclick="puzzleClick(${r},${c})">${pc?getPieceSVG(pc):''}</div>`;
   }
   document.getElementById('screen-puzzle').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="state.puzzleRun++;renderPuzzleLevelSelect()">← 장면 고르기</button><h2>한 수 발견 ${pos+1}/${group.length}</h2></div>
-    <div class="status-msg ${state.puzzleSolved?'success':''}" role="status">${state.puzzleSolved?'해냈어요! '+p.desc.ko:state.puzzleNotice||p.desc[currentLang]||p.desc.ko}</div>
+    <div class="status-msg ${state.puzzleSolved?'success':''}" role="status">${state.puzzleSolved?({capture:'목표 말을 잡았어요! ✓ 완료 도장',escape:'왕을 안전하게 했어요! ✓ 완료 도장',fork:'왕과 다른 말을 동시에 노리고 있어요! ✓ 완료 도장',checkmate:'왕이 공격받고 피할 수도 없어요. 체크메이트! ✓',checkmate2:'어떤 응수에도 메이트를 만들었어요! ✓'})[p.type]:state.puzzleNotice||p.desc[currentLang]||p.desc.ko}</div>
     <div class="chess-board">${cells}</div><div class="mission-speech" aria-live="polite">${state.puzzleWaiting?'상대가 움직여요. 잠깐 살펴봐요.':''}</div>
     <div class="mission-actions">${!state.puzzleSolved?`<button class="icon-btn" onclick="puzzleHint()" ${state.puzzleWaiting?'disabled':''}>💡 한 수 보기</button><button class="icon-btn" onclick="puzzleUndo()" ${!state.actionHistory?.length||state.puzzleWaiting?'disabled':''}>↶ 되돌리기</button>`:''}<button class="icon-btn" onclick="renderPuzzle()">🔄 다시</button></div>
     ${state.puzzleSolved?`<button class="action-btn green" onclick="${next?`state.puzzleIndex=${PUZZLES.indexOf(next)};renderPuzzle()`:'renderPuzzleLevelSelect()'}">${next?'다음 장면':'다른 장면 발견하기'}</button><button class="action-btn secondary" onclick="showScreen('home');renderHome()">여기까지</button>`:''}</div>`;
@@ -84,16 +85,17 @@ function puzzleClick(r,c){
     const before=g.clone();
     const pc=g.board[fr][fc],el=document.querySelector('#screen-puzzle .chess-board');
     g.move(...move);state.puzzleMoveCount++;state.puzzleSelected=null;state.puzzleValidMoves=[];state.puzzleNotice='';
+    const solved=puzzleMoveAchieves(before,g,move,p);
+    state.puzzleSolved=solved;state.puzzleWaiting=!solved;
+    if(solved)savePuzzleStars(p.level,state.puzzleIndex,1);
+    saveActiveSession();
     animateMove(el,fr,fc,r,c,pc,()=>{
-
-      if(puzzleMoveAchieves(before,g,move,p)){
-        state.puzzleSolved=true;savePuzzleStars(p.level,state.puzzleIndex,1);spawnParticles();renderPuzzleBoard();
-      }else{
-        state.puzzleWaiting=true;renderPuzzleBoard();const run=state.puzzleRun;
-        laterInScreen(()=>{if(run!==state.puzzleRun)return;doPuzzleAiMove();state.puzzleWaiting=false;renderPuzzleBoard();},650);
-      }
+      renderPuzzleBoard();
+      if(solved)spawnParticles();
+      else {const run=state.puzzleRun;laterInScreen(()=>{if(run!==state.puzzleRun)return;doPuzzleAiMove();state.puzzleWaiting=false;renderPuzzleBoard();},650);}
     });return;
   }
+  if(state.puzzleSelected&&g.board[r][c]?.[0]!=='w'){state.puzzleNotice=explainPlayMove(g,...state.puzzleSelected,r,c);renderPuzzleBoard();return;}
   const pc=g.board[r][c];state.puzzleSelected=pc?.[0]==='w'?[r,c]:null;
   state.puzzleValidMoves=state.puzzleSelected?g.legalMoves(r,c):[];renderPuzzleBoard();
 }

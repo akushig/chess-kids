@@ -58,9 +58,20 @@ class ChessGame {
     this.recordPosition();
   }
 
+  castlingKey() {
+    let rights='';for(const [color,k,q]of [['w','K','Q'],['b','k','q']]){
+      if(this.castling[color+'K']&&this.castling[color+'R_h'])rights+=k;
+      if(this.castling[color+'K']&&this.castling[color+'R_a'])rights+=q;
+    }return rights||'-';
+  }
+  effectiveEnPassant() {
+    if(!this.enPassant)return '-';
+    const [r,c]=this.enPassant,from=r+(this.turn==='w'?1:-1);
+    for(const fc of [c-1,c+1])if(this.board[from]?.[fc]===this.turn+'P'&&!this.moveLeavesCheck(from,fc,r,c))return ''+r+c;
+    return '-';
+  }
   positionKey() {
-    return this.board.map(r => r.map(p => p || '--').join('')).join('/')
-      + this.turn + (this.enPassant ? this.enPassant.join('') : '-');
+    return this.board.map(r=>r.map(p=>p||'--').join('')).join('/')+'/'+this.turn+this.castlingKey()+'/'+this.effectiveEnPassant();
   }
 
   recordPosition() {
@@ -96,16 +107,19 @@ class ChessGame {
   clone() { return Object.assign(new ChessGame(), JSON.parse(JSON.stringify(this))); }
 
   static fromFEN(fen) {
-    const g = new ChessGame();
-    g.board = boardFromFEN(fen); g.turn = fen.split(' ')[1] || 'w';
-    g.castling = {wK:false,wR_a:false,wR_h:false,bK:false,bR_a:false,bR_h:false};
-    g.positionCounts = {}; g.recordPosition(); g.updateStatus(); return g;
+    const [placement,turn,rights='-',ep='-',half='0']=fen.split(' '),g=new ChessGame();
+    g.board=boardFromFEN(placement);g.turn=turn||'w';
+    g.castling={wK:/[KQ]/.test(rights),wR_a:rights.includes('Q'),wR_h:rights.includes('K'),bK:/[kq]/.test(rights),bR_a:rights.includes('q'),bR_h:rights.includes('k')};
+    g.enPassant=ep==='-'?null:[8-Number(ep[1]),'abcdefgh'.indexOf(ep[0])];g.halfmoveClock=Number(half);g.positionCounts={};g.recordPosition();g.updateStatus();return g;
   }
 
   allMoves() {
     const moves=[];
-    for(let r=0;r<8;r++) for(let c=0;c<8;c++) if(this.color(this.board[r][c])===this.turn)
-      for(const [tr,tc] of this.legalMoves(r,c)) moves.push([r,c,tr,tc]);
+    for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(this.color(this.board[r][c])===this.turn)
+      for(const [tr,tc]of this.legalMoves(r,c)){
+        if(this.board[r][c][1]==='P'&&(tr===0||tr===7))for(const promote of ['Q','R','B','N'])moves.push([r,c,tr,tc,promote]);
+        else moves.push([r,c,tr,tc]);
+      }
     return moves;
   }
 
@@ -114,6 +128,7 @@ class ChessGame {
     const b = this.board.map(r => [...r]);
     // 앙파상은 옆 칸의 폰이 사라지므로 그 폰이 주던 체크도 함께 풀림
     if (this.type(b[fromR][fromC]) === 'P' && fromC !== toC && !b[toR][toC]) b[fromR][toC] = null;
+    if(this.type(b[fromR][fromC])==='K'&&Math.abs(toC-fromC)===2){const rookFrom=toC===6?7:0,rookTo=toC===6?5:3;b[fromR][rookTo]=b[fromR][rookFrom];b[fromR][rookFrom]=null;}
     b[toR][toC] = b[fromR][fromC];
     b[fromR][fromC] = null;
     const color = this.color(b[toR][toC]);
@@ -180,8 +195,15 @@ class ChessGame {
 
   // 합법 이동
   legalMoves(row, col) {
-    const raw = this.rawMoves(this.board, row, col, this.enPassant);
-    return raw.filter(([r, c]) => this.board[r][c]?.[1] !== 'K' && !this.moveLeavesCheck(row, col, r, c));
+    const piece=this.board[row]?.[col];if(!piece)return [];
+    const raw=this.rawMoves(this.board,row,col,this.enPassant);
+    if(piece[1]==='K'&&row===(piece[0]==='w'?7:0)&&col===4&&this.castling[piece[0]+'K']){
+      const opp=piece[0]==='w'?'b':'w';
+      if(!this.isAttacked(this.board,row,col,opp))for(const [rook,target,through,spaces,key]of [[7,6,5,[5,6],'R_h'],[0,2,3,[1,2,3],'R_a']]){
+        if(this.castling[piece[0]+key]&&this.board[row][rook]===piece[0]+'R'&&spaces.every(c=>!this.board[row][c])&&!this.moveLeavesCheck(row,col,row,through)&&!this.moveLeavesCheck(row,col,row,target))raw.push([row,target]);
+      }
+    }
+    return raw.filter(([r,c])=>this.board[r][c]?.[1]!=='K'&&!this.moveLeavesCheck(row,col,r,c));
   }
 
   select(row, col) {
@@ -202,8 +224,9 @@ class ChessGame {
     return 'none';
   }
 
-  move(fromR, fromC, toR, toC) {
+  move(fromR, fromC, toR, toC, promotion='Q') {
     const piece = this.board[fromR][fromC];
+    if (!['Q','R','B','N'].includes(promotion))return 'illegal';
     if (!piece || this.color(piece) !== this.turn || !this.legalMoves(fromR,fromC).some(([r,c])=>r===toR&&c===toC)) return 'illegal';
     const color = this.color(piece);
     const type = this.type(piece);
@@ -227,6 +250,11 @@ class ChessGame {
       this.captured[color].push(target);
     }
 
+    if(type==='K'){this.castling[color+'K']=false;if(Math.abs(toC-fromC)===2){const rookFrom=toC===6?7:0,rookTo=toC===6?5:3;this.board[fromR][rookTo]=this.board[fromR][rookFrom];this.board[fromR][rookFrom]=null;}}
+    for(const [side,row]of [['w',7],['b',0]])for(const [col,key]of [[0,'R_a'],[7,'R_h']]){
+      if((piece===side+'R'&&fromR===row&&fromC===col)||(target===side+'R'&&toR===row&&toC===col))this.castling[side+key]=false;
+    }
+
     // 앙파상 설정
     this.enPassant = null;
     if (type === 'P' && Math.abs(toR - fromR) === 2) {
@@ -236,11 +264,12 @@ class ChessGame {
     this.board[toR][toC] = piece;
     this.board[fromR][fromC] = null;
 
-    // 폰 프로모션 (자동으로 퀸)
+    // Promotion defaults to a queen; callers can choose rook, bishop or knight.
     if (type === 'P' && (toR === 0 || toR === 7)) {
-      this.board[toR][toC] = color + 'Q';
+      this.board[toR][toC] = color + promotion;
     }
 
+    this.lastMove=[fromR,fromC,toR,toC];
     this.selected = null;
     this.validMoves = [];
     this.turn = this.turn === 'w' ? 'b' : 'w';

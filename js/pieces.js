@@ -12,7 +12,7 @@ function getPieceSVG(piece, size) {
   size = size || 40;
   const skin = SKINS[currentSkin] || SKINS['cute'];
   const fn = skin[piece];
-  return fn ? fn(size) : '';
+  return fn ? fn(size).replace('<svg ', '<svg data-piece="'+piece+'" aria-hidden="true" focusable="false" ') : '';
 }
 
 function getPieceSVGForSkin(skinName, piece, size) {

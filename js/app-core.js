@@ -1,5 +1,5 @@
 // ===== 앱 코어: 상태, 화면전환, 애니메이션, 파티클, 초기화 =====
-const APP_VERSION = '261025.3';
+const APP_VERSION = CHESS_BUILD;
 
 const state = {
   screen: 'home',
@@ -48,6 +48,7 @@ function showScreen(name) {
 // ===== 이동 애니메이션 =====
 function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSize) {
   const epoch = screenEpoch;
+  if(!boardEl||readData('preferences',{}).motion===false||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){state.animating=false;callback();return;}
   state.animating = true;
   const cols = gridSize || 8;
   const cellSize = boardEl.offsetWidth / cols;
@@ -68,7 +69,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
   boardEl.appendChild(ghost);
 
   const fromIdx = fromR * cols + fromC;
-  const fromCell = boardEl.children[fromIdx];
+  const fromCell = boardEl.querySelectorAll('.board-cell')[fromIdx];
   if (fromCell) {
     const inner = fromCell.querySelector('svg') || fromCell.querySelector('span');
     if (inner) inner.style.visibility = 'hidden';
@@ -152,14 +153,15 @@ function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
   const cols = gridSize || 8;
   const cellSize = boardEl.offsetWidth / cols;
 
+  boardEl.querySelectorAll('.hint-arrow,.hint-path-overlay').forEach(el=>el.remove());
   // 출발칸 하이라이트
   const fromIdx = fromR * cols + fromC;
-  const fromCell = boardEl.children[fromIdx];
+  const fromCell = boardEl.querySelectorAll('.board-cell')[fromIdx];
   if (fromCell) fromCell.classList.add('hint-highlight');
 
   // 도착칸 하이라이트
   const toIdx = toR * cols + toC;
-  const toCell = boardEl.children[toIdx];
+  const toCell = boardEl.querySelectorAll('.board-cell')[toIdx];
   if (toCell) toCell.classList.add('hint-highlight');
 
   // 화살표 SVG
@@ -169,12 +171,14 @@ function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
   const fy = (fromR + 0.5) * cellSize;
   const tx = (toC + 0.5) * cellSize;
   const ty = (toR + 0.5) * cellSize;
+  const knight=fromCell?.querySelector('[data-piece]')?.getAttribute('data-piece')?.[1]==='N';
+  const guide=knight?`<path d="M ${fx} ${fy} ${Math.abs(toR-fromR)===2?`V ${ty} H ${tx}`:`H ${tx} V ${ty}`}" fill="none"`:`<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}"`;
   arrow.innerHTML = `
     <svg width="${boardEl.offsetWidth}" height="${boardEl.offsetHeight}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;">
       <defs><marker id="hintHead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
         <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B"/>
       </marker></defs>
-      <line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" marker-end="url(#hintHead)" opacity="0.85" class="hint-arrow-line"/>
+      ${guide} stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" marker-end="url(#hintHead)" opacity="0.85" class="hint-arrow-line"/>
     </svg>`;
   boardEl.appendChild(arrow);
 
@@ -199,7 +203,7 @@ function showHintTarget(boardEl, targetR, targetC, gridSize, text) {
   noteHelp(2);
   const cols = gridSize || 8;
   const idx = targetR * cols + targetC;
-  const cell = boardEl.children[idx];
+  const cell = boardEl.querySelectorAll('.board-cell')[idx];
   if (cell) cell.classList.add('hint-highlight');
 
   const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
@@ -225,7 +229,7 @@ function showHintPath(boardEl, path, gridSize, text) {
   for (let i = 0; i < path.length; i++) {
     const [r, c] = path[i];
     const idx = r * cols + c;
-    const cell = boardEl.children[idx];
+    const cell = boardEl.querySelectorAll('.board-cell')[idx];
     if (cell) cell.classList.add(i === 0 ? 'hint-path-start' : 'hint-path-cell');
   }
 
@@ -287,7 +291,7 @@ function showHintMoves(boardEl, moves, gridSize, text) {
     const tx = (tc + 0.5) * cellSize, ty = (tr + 0.5) * cellSize;
     // 출발/도착 하이라이트
     const fromIdx = fr * cols + fc, toIdx = tr * cols + tc;
-    const fromCell = boardEl.children[fromIdx], toCell = boardEl.children[toIdx];
+    const fromCell = boardEl.querySelectorAll('.board-cell')[fromIdx], toCell = boardEl.querySelectorAll('.board-cell')[toIdx];
     if (fromCell) fromCell.classList.add('hint-path-start');
     if (toCell) toCell.classList.add('hint-path-cell');
     lines += `<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}"
@@ -339,18 +343,13 @@ function showHintUnsolvable() {
 // ===== 초기화 =====
 document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const newSW = reg.installing;
-        if (newSW) {
-          newSW.addEventListener('statechange', () => {
-            if (newSW.state === 'activated' && navigator.serviceWorker.controller) {
-              window.location.reload();
-            }
-          });
-        }
-      });
-    }).catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      window.chessWorkerRegistration=reg;
+      const ready=()=>{if(navigator.serviceWorker.controller){window.chessUpdateReady=true;if(state.screen==='home')renderHome();}};
+      if(reg.waiting)ready();
+      reg.addEventListener('updatefound',()=>{reg.installing?.addEventListener('statechange',()=>{if(reg.waiting)ready();});});
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.chessApplyingUpdate)window.location.reload();});
+    }).catch(()=>{});
   }
   applyPreferences();
   renderHome();
@@ -363,4 +362,9 @@ function showChoice(message,choices) {
   overlay.innerHTML=`<div class="clear-popup" role="dialog" aria-modal="true" aria-label="선택"><p>${message}</p><div class="clear-btns"></div></div>`;
   for(const choice of choices){const b=document.createElement('button');b.className='action-btn';b.textContent=choice.label;b.onclick=()=>{overlay.remove();choice.action();};overlay.querySelector('.clear-btns').appendChild(b);}
   document.body.appendChild(overlay);overlay.querySelector('button')?.focus();
+}
+
+function applyAppUpdate(){
+  saveActiveSession();const waiting=window.chessWorkerRegistration?.waiting;
+  if(waiting){window.chessApplyingUpdate=true;waiting.postMessage({type:'ACTIVATE_UPDATE'});}
 }

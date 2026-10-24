@@ -1,0 +1,16 @@
+capture-rook-v1 : h1a8
+capture-knight-v1 : d1d5
+capture-bishop-v1 : h1e4
+check-escape-v1 : e1d1,e1d2,e1f1,e1f2
+check-capture-v1 : e1d1,e1e2,e1f1
+check-block-v1 : a2e2,e1d1,e1d2,e1f1,e1f2
+mate-queen-v1 : h6g7
+mate-rook-v1 : h1h8
+mate-edge-v1 : g6g7
+fork-knight-v1 : g1f3
+fork-queen-v1 : h1c6,h1e4
+fork-jump-v1 : c3d5
+mate-two-a-v1 : g3b8,g3g7
+mate-two-b-v1 : c5b6,c5c6
+mate-two-c-v1 : e1f2
+Independent validation passed: 15 puzzles

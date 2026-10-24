@@ -24,7 +24,7 @@ function getPlaySettings() {
   try { s = JSON.parse(safeStore.getItem('play_settings')) || {}; } catch { s = {}; }
   return {
     mode: s.mode === 'friend' ? 'friend' : 'ai',
-    level: Number.isInteger(s.level) && AI_LEVELS[s.level] ? s.level : 1,
+    level: Number.isInteger(s.level) && AI_LEVELS[s.level] ? s.level : (activeProfile==='adult'?2:0),
     timer: PLAY_TIMER_OPTIONS.includes(s.timer) ? s.timer : 0,
     help:s.help !== false, autoMove:!!s.autoMove, small:!!s.small, face:s.face !== false,
   };
@@ -124,6 +124,8 @@ function playStart() {
 
 function playStop() {
   playToken++;
+  if(playAiWorker){playAiWorker.terminate();playAiWorker=null;}
+  for(const id of Object.keys(playAiPending))delete playAiPending[id];
   playTimerStop();
   if (state.play) state.play.pausedLeft = null;
 }
@@ -134,6 +136,7 @@ function playIsOver() {
 
 // --- 화면 ---
 function renderPlay() {
+  if(state.play.help&&state.game.status==='check')noteHelp(1);
   saveActiveSession();
   if (state.play.mode === 'friend') renderPlayFriend();
   else renderPlayAi();
@@ -270,7 +273,8 @@ function playClick(r, c) {
     const [fr, fc] = game.selected;
     if (game.validMoves.some(([mr, mc]) => mr === r && mc === c)) {
       p.timeoutSide = null;
-      playCommitMove([fr, fc, r, c]);
+      if(game.board[fr][fc][1]==='P'&&(r===0||r===7))playChoosePromotion([fr,fc,r,c]);
+      else playCommitMove([fr, fc, r, c]);
       return;
     }
   }
@@ -283,19 +287,25 @@ function playClick(r, c) {
   renderPlay();
 }
 
-function playCommitMove([fr, fc, tr, tc]) {
+function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
   const game = state.game;
   const piece = game.board[fr][fc];
   const captured = game.board[tr][tc];
-  const mover = game.turn;
+  const mover = game.turn,wasCheck=game.status==='check';
   const boardEl = document.querySelector('#screen-play .chess-board');
   const token = playToken;
 
   rememberAction();
   state.play.notice='';state.play.guideMethod=null;state.play.pausedLeft=null;
   playTimerStop();
-  game.move(fr, fc, tr, tc);
+  game.move(fr, fc, tr, tc,promotion);
+  if(piece[1]==='K'&&Math.abs(tc-fc)===2)state.play.notice='왕과 룩이 함께 움직였어요. 캐슬링이에요.';
+  if(piece[1]==='P'&&(tr===0||tr===7))state.play.notice='폰이 새로운 말로 변했어요!';
   game.lastMove=[fr,fc,tr,tc];
+  if(wasCheck&&(state.play.mode==='friend'||mover==='w'))awardStars('achievements','play-first-rescue',1);
+  if(captured&&(state.play.mode==='friend'||mover==='w'))awardStars('achievements','play-first-capture',1);
+  if(playIsOver())awardStars('achievements','play-first-finish-'+state.play.mode,1);
+  saveActiveSession();
   animateMove(boardEl, fr, fc, tr, tc, piece, () => {
     if (token !== playToken) return;
     if (captured) {
@@ -322,6 +332,7 @@ function playPosition(game) {
     board: game.board,
     turn: game.turn,
     enPassant: game.enPassant,
+    castling:game.castling,
     halfmove: game.halfmoveClock,
     repeated: Object.keys(game.positionCounts).filter(k => game.positionCounts[k] >= 2),
   };
@@ -363,13 +374,15 @@ function playRequestAi(position, level, done) {
   if (playAiWorker === null) {
     try {
       playAiWorker = new Worker('js/chess-ai.js');
+      const worker=playAiWorker;
       playAiWorker.onmessage = e => {
         const job = playAiPending[e.data.id];
         delete playAiPending[e.data.id];
         if (job) job.done(e.data.move);
       };
       playAiWorker.onerror = () => {
-        playAiWorker.terminate();
+        if(playAiWorker!==worker)return;
+        worker.terminate();
         playAiWorker = false;
         for (const id of Object.keys(playAiPending)) {
           const job = playAiPending[id];
@@ -474,9 +487,10 @@ function goReward() {
   const miniStars = getTotalMiniGameStars();
   const allStars = getAllStars();
 
+  const playStars=Object.values(progressLedger().achievements||{}).reduce((a,b)=>a+b,0);
   // 별 출처별 카드
   const sourceCards = `
-    <div class="reward-sources">
+    <div class="reward-sources"><div class="reward-source"><span class="reward-source-icon">♟</span><span>대전의 발견</span><span class="reward-source-val">⭐ ${playStars}</span></div>
       <div class="reward-source"><span class="reward-source-icon">🗺️</span><span>${t('rewardAdventure')}</span><span class="reward-source-val">⭐ ${adventureStars}</span></div>
       <div class="reward-source"><span class="reward-source-icon">🧩</span><span>${t('rewardPuzzle')}</span><span class="reward-source-val">⭐ ${puzzleStars}</span></div>
       <div class="reward-source"><span class="reward-source-icon">🎮</span><span>${t('rewardMiniGame')}</span><span class="reward-source-val">⭐ ${miniStars}</span></div>
@@ -531,7 +545,7 @@ function goReward() {
 function playRescues(game=state.game) {
   if(game.status!=='check')return [];
   const king=game.findKing(game.turn),attackers=game.attackers(game.board,...king,game.turn==='w'?'b':'w');
-  return game.allMoves().map(move=>({move,method:attackers.some(([r,c])=>r===move[2]&&c===move[3])?'capture':game.board[move[0]][move[1]][1]==='K'?'escape':'block'}));
+  return game.allMoves().map(move=>({move,method:(attackers.some(([r,c])=>r===move[2]&&c===move[3])||(game.board[move[0]][move[1]][1]==='P'&&move[1]!==move[3]&&!game.board[move[2]][move[3]]&&attackers.some(([r,c])=>r===move[0]&&c===move[3])))?'capture':game.board[move[0]][move[1]][1]==='K'?'escape':'block'}));
 }
 function playAttackOverlay() {
   const g=state.game;if(!state.play.help||g.status!=='check')return '';
@@ -551,7 +565,8 @@ function playActionsHTML() {
 }
 function playRestartRequest() {
   if(playIsOver()||!state.actionHistory?.length){playStart();return;}
-  showChoice('지금 판 대신 새 판을 시작할까요?',[{label:'새 판 시작',action:()=>playStart()},{label:'이어서 두기',action:()=>{}}]);
+  playTimerPauseForHelp();
+  showChoice('지금 판 대신 새 판을 시작할까요?',[{label:'새 판 시작',action:()=>playStart()},{label:'이어서 두기',action:()=>playTimerStart()}]);
 }
 function explainPlayMove(g,fr,fc,tr,tc) {
   const p=g.board[fr][fc];
@@ -578,9 +593,14 @@ function playHint() {
   if(move){state.play.hintMove=move;renderPlay();showHintArrow(document.querySelector('#screen-play .chess-board'),...move,8,'화살표의 한 수를 직접 움직여 봐요.');}
 }
 function playDemo() {
-  noteHelp(3);
   if(state.animating||playIsOver()||(state.play.mode==='ai'&&state.game.turn!=='w'))return;
   playTimerPauseForHelp();
   const m=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),1);if(!m)return;
+  noteHelp(3);
   animateMove(document.querySelector('#screen-play .chess-board'),...m,state.game.board[m[0]][m[1]],()=>{state.play.notice='이렇게 움직일 수 있어요. 이제 직접 해볼까요?';renderPlay();});
+}
+
+function playChoosePromotion(move){
+  playTimerPauseForHelp();state.animating=true;
+  showChoice('폰이 끝줄에 도착했어요! 어떤 말로 바꿀까요?',[...['Q','R','B','N'].map(type=>({label:t(PIECE_NAMES[type])+(type==='Q'?' · 추천':''),action:()=>{state.animating=false;playCommitMove([...move,type]);}})),{label:'선택 취소',action:()=>{state.animating=false;renderPlay();playTimerStart();}}]);
 }

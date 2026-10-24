@@ -10,12 +10,12 @@ const COLLECTOR_LEVELS = [
 ];
 
 function goCollector(levelIdx,challenge=false) {
-  beginActivity('collector',{levelIdx,challenge});
+  beginActivity('collector',{levelIdx,id:COLLECTOR_LEVELS[levelIdx||0].id,challenge});
   const lv = COLLECTOR_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.cl = {
     levelIdx: levelIdx || 0,
-    challenge,moves:0,
+    challenge,moves:0,notice:'',
     size: size,
     piece: lv.piece,
     pos: [size - 1, 0],
@@ -58,7 +58,7 @@ function renderCollector() {
   let msg;
   if (cl.clear) msg=`<div class="status-msg success">${t('collectorClear')}</div>`;
   else if (cl.failed) msg=`<div class="status-msg fail">${cl.failMsg}</div>`;
-  else msg=`<div class="status-msg">${COLLECTOR_LEVELS[cl.levelIdx].name}로 별을 모아요. ${cl.challenge?'남은 이동 수 안에 도전해요.':'느긋하게 움직여도 괜찮아요.'}</div>`;
+  else msg=`<div class="status-msg">${cl.notice||COLLECTOR_LEVELS[cl.levelIdx].name+'로 별을 모아요.'} ${cl.challenge?'남은 이동 수 안에 도전해요.':'느긋하게 움직여도 괜찮아요.'}</div>`;
 
   const info=`<div class="mission-info">
     <div class="mission-speech">${t('collectorStars')}: ${cl.starsLeft > 0 ? '⭐'.repeat(cl.starsLeft) : '✓'}</div>
@@ -90,15 +90,15 @@ function collectorClick(r,c) {
   const cl=state.cl;
   if (cl.clear||cl.failed) return;
   const moves=getCollectorMoves(cl);
-  if (!moves.some(([mr,mc])=>mr===r&&mc===c)) return;
+  if (!moves.some(([mr,mc])=>mr===r&&mc===c)){cl.notice=movementNotice(cl.piece);renderCollector();return;}
 
   rememberAction();
   const [pr,pc]=cl.pos;
   const boardEl=document.querySelector('#screen-mini .chess-board');
-  cl.pos=[r,c];
+  cl.notice='';cl.pos=[r,c];
   cl.turnsLeft--;cl.moves++;
 
-  animateMove(boardEl,pr,pc,r,c,cl.piece,()=>{
+
     // 별 수집
     const si=cl.stars.findIndex(s=>s[0]===r&&s[1]===c);
     if (si>=0) { cl.stars.splice(si,1); cl.starsLeft--; }
@@ -114,8 +114,9 @@ function collectorClick(r,c) {
     else if (cl.starsLeft===0) { cl.clear=true; saveMiniGameStars('collector', cl.levelIdx||0, calculateStars(cl.moves,cl.par)); spawnParticles(); }
     else if (cl.challenge&&cl.turnsLeft<=0) { cl.failed=true; cl.failMsg=t('collectorTimeout'); }
 
-    renderCollector();
-  },cl.size);
+
+  saveActiveSession();
+  animateMove(boardEl,pr,pc,r,c,cl.piece,()=>renderCollector(),cl.size);
 }
 
 // BFS로 모든 별을 수집하는 전체 경로 탐색

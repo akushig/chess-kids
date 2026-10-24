@@ -1,0 +1,22 @@
+{
+  "build": "2026.10.25.4",
+  "viewports": [
+    {
+      "width": 360,
+      "height": 780,
+      "passed": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "passed": true
+    }
+  ],
+  "offline": true,
+  "errors": []
+}

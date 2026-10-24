@@ -1,0 +1,14 @@
+{
+  "name": "chess-kids",
+  "version": "1.0.0",
+  "private": true,
+  "description": "어린이와 가족이 함께 배우고 즐기는 정적 체스 앱",
+  "scripts": {
+    "dev": "python3 -m http.server 8765 --bind 127.0.0.1",
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "node tests/browser-smoke.cjs && node tests/browser-final.cjs",
+    "export:content": "node scripts/export-content.cjs"
+  },
+  "engines": { "node": ">=20" },
+  "devDependencies": { "playwright": "1.64.1" }
+}

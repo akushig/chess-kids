@@ -1,12 +1,12 @@
 // ===== 컴퓨터 대전 AI: 난이도별 수 선택 (페이지 · Web Worker 겸용) =====
-// 규칙은 ChessGame과 똑같이 맞춘다: 캐슬링 없음, 앙파상 있음, 프로모션은 퀸 고정.
+// 규칙은 ChessGame과 같이 캐슬링·앙파상·네 가지 승격을 지원한다.
 // 보드는 0x88 배열(sq = 행*16 + 열, 0행이 흑 쪽), 기물 코드는 흰색 1~6 / 검은색 9~14.
 
 // depth: 탐색 깊이, quiesce: 잡기 연쇄 끝까지 보기, margin: 최선 수와 이 점수(센티폰) 차이 안의 수 중 무작위
 const AI_LEVELS = [
   { random: true },                                  // 매우 쉬움: 아무 수나
-  { depth: 1, quiesce: false, margin: 150 },         // 쉬움: 눈앞의 기물만 노림
-  { depth: 2, quiesce: true, margin: 60 },           // 보통: 공짜로 내주는 기물은 피함
+  { depth: 1, quiesce: false, margin: 150, timeMs:250 },         // 쉬움: 눈앞의 기물만 노림
+  { depth: 2, quiesce: true, margin: 60, timeMs:600 },           // 보통: 공짜로 내주는 기물은 피함
   { depth: 3, quiesce: true, margin: 20, timeMs: 1500 },  // 어려움
   { depth: 6, quiesce: true, margin: 5, timeMs: 1200 },   // 매우 어려움: 시간 안에서 최대한 깊게
 ];
@@ -67,7 +67,7 @@ const AI_PST = [
    -10,  5,  5,  5,  5,  5,  0,-10,
    -10,  0,  5,  0,  0,  0,  0,-10,
    -20,-10,-10, -5, -5,-10,-10,-20],
-  // 킹(중반): 캐슬링이 없으니 손으로 옮기며 수를 낭비하지 않게 첫 줄은 거의 평평하게
+  // 킹(중반): 초반에는 안전한 첫 줄을 선호하고 캐슬링으로 옮길 수 있게 한다
   [-30,-40,-40,-50,-50,-40,-40,-30,
    -30,-40,-40,-50,-50,-40,-40,-30,
    -30,-40,-40,-50,-50,-40,-40,-30,
@@ -101,10 +101,11 @@ function aiFromPosition(position) {
     }
   }
   const ep = position.enPassant ? position.enPassant[0] * 16 + position.enPassant[1] : -1;
-  return { board, side: position.turn === 'b' ? 1 : 0, ep, king, hist: [] };
+  const rights=position.castling||{};const castle=(rights.wK&&rights.wR_h?1:0)|(rights.wK&&rights.wR_a?2:0)|(rights.bK&&rights.bR_h?4:0)|(rights.bK&&rights.bR_a?8:0);
+  return { board, side: position.turn === 'b' ? 1 : 0, ep, king, castle,hist: [] };
 }
 
-// 수 = from | to<<7 | flags<<14 (1: 앙파상, 2: 폰 두 칸, 4: 프로모션)
+// 수 = from | to<<7 | flags<<14 (1: 앙파상, 2: 폰 두 칸, 4: 승격, 8: 캐슬링, 4~6비트: 승격 종류)
 function aiGenMoves(pos, capturesOnly, out) {
   const b = pos.board, side = pos.side, opp = side ^ 1;
   let n = 0;
@@ -118,12 +119,12 @@ function aiGenMoves(pos, capturesOnly, out) {
       const to = sq + dir;
       if (!(to & 0x88) && !b[to]) {
         const promo = (to >> 4) === promoRow;
-        if (!capturesOnly || promo) out[n++] = sq | (to << 7) | (promo ? 4 << 14 : 0);
+        if(promo){for(const promote of [5,4,3,2])out[n++]=sq|(to<<7)|((4|(promote<<4))<<14);}else if(!capturesOnly)out[n++]=sq|(to<<7);
         if (!capturesOnly && (sq >> 4) === (side ? 1 : 6) && !b[to + dir]) out[n++] = sq | ((to + dir) << 7) | (2 << 14);
       }
       for (const t of [to - 1, to + 1]) {
         if (t & 0x88) continue;
-        if (b[t] && (b[t] >> 3) === opp) out[n++] = sq | (t << 7) | ((t >> 4) === promoRow ? 4 << 14 : 0);
+        if(b[t]&&(b[t]>>3)===opp){if((t>>4)===promoRow){for(const promote of [5,4,3,2])out[n++]=sq|(t<<7)|((4|(promote<<4))<<14);}else out[n++]=sq|(t<<7);}
         else if (t === pos.ep) out[n++] = sq | (t << 7) | (1 << 14);
       }
     } else if (type === 2 || type === 6) {
@@ -133,6 +134,11 @@ function aiGenMoves(pos, capturesOnly, out) {
         if (t & 0x88) continue;
         const q = b[t];
         if (q ? (q >> 3) === opp : !capturesOnly) out[n++] = sq | (t << 7);
+      }
+      if(type===6&&!capturesOnly&&sq===(side?4:116)&&!aiAttacked(b,sq,opp)){
+        const row=side?0:112,rook=(side<<3)|4;
+        if((pos.castle&(side?4:1))&&b[row+7]===rook&&!b[row+5]&&!b[row+6]&&!aiAttacked(b,row+5,opp)&&!aiAttacked(b,row+6,opp))out[n++]=sq|((row+6)<<7)|(8<<14);
+        if((pos.castle&(side?8:2))&&b[row]===rook&&!b[row+1]&&!b[row+2]&&!b[row+3]&&!aiAttacked(b,row+3,opp)&&!aiAttacked(b,row+2,opp))out[n++]=sq|((row+2)<<7)|(8<<14);
       }
     } else {
       const dirs = type === 3 ? AI_B_DIRS : type === 4 ? AI_R_DIRS : AI_K_DIRS;
@@ -184,9 +190,12 @@ function aiMake(pos, m) {
   const p = b[from];
   let capSq = to;
   if (flags & 1) capSq = to + (pos.side ? -16 : 16);
-  pos.hist.push(b[capSq], capSq, pos.ep);
+  pos.hist.push(b[capSq], capSq, pos.ep,pos.castle);
   b[capSq] = 0;
-  b[to] = (flags & 4) ? ((p & 8) | 5) : p;
+  b[to] = (flags & 4) ? ((p & 8) | ((flags>>4)||5)) : p;
+  if(flags&8){const row=from&112,rf=(to&7)===6?row+7:row,rt=(to&7)===6?row+5:row+3;b[rt]=b[rf];b[rf]=0;}
+  if((p&7)===6)pos.castle&=pos.side?3:12;
+  for(const [sq,bit]of [[119,1],[112,2],[7,4],[0,8]])if(from===sq||to===sq)pos.castle&=~bit;
   b[from] = 0;
   if ((p & 7) === 6) pos.king[pos.side] = to;
   pos.ep = (flags & 2) ? (from + to) >> 1 : -1;
@@ -196,9 +205,11 @@ function aiMake(pos, m) {
 function aiUnmake(pos, m) {
   const b = pos.board, from = m & 127, to = (m >> 7) & 127, flags = m >> 14;
   pos.side ^= 1;
+  pos.castle=pos.hist.pop();
   pos.ep = pos.hist.pop();
   const capSq = pos.hist.pop(), cap = pos.hist.pop();
   const p = b[to];
+  if(flags&8){const row=from&112,rf=(to&7)===6?row+7:row,rt=(to&7)===6?row+5:row+3;b[rf]=b[rt];b[rt]=0;}
   b[from] = (flags & 4) ? ((p & 8) | 1) : p;
   b[to] = 0;
   b[capSq] = cap;
@@ -257,13 +268,12 @@ function aiEvaluate(pos) {
 
 // ChessGame.positionKey()와 같은 형식
 function aiPositionKey(pos) {
-  const rows = [];
-  for (let r = 0; r < 8; r++) {
-    let row = '';
-    for (let c = 0; c < 8; c++) row += AI_NAMES[pos.board[r * 16 + c]] || '--';
-    rows.push(row);
-  }
-  return rows.join('/') + (pos.side ? 'b' : 'w') + (pos.ep >= 0 ? '' + (pos.ep >> 4) + (pos.ep & 7) : '-');
+  const rows=[];for(let r=0;r<8;r++){let row='';for(let c=0;c<8;c++)row+=AI_NAMES[pos.board[r*16+c]]||'--';rows.push(row);}
+  let castle='';for(const [bit,char]of [[1,'K'],[2,'Q'],[4,'k'],[8,'q']])if(pos.castle&bit)castle+=char;
+  let ep='-';if(pos.ep>=0){const target=pos.ep;for(const from of [target+(pos.side?-16:16)-1,target+(pos.side?-16:16)+1])if(!(from&0x88)&&pos.board[from]===((pos.side<<3)|1)){
+    const m=from|(target<<7)|(1<<14);aiMake(pos,m);const legal=!aiLeftInCheck(pos);aiUnmake(pos,m);if(legal){ep=''+(target>>4)+(target&7);break;}
+  }}
+  return rows.join('/')+'/'+(pos.side?'b':'w')+(castle||'-')+'/'+ep;
 }
 
 // 두면 3번 반복이나 50수 규칙으로 바로 비기게 되는 수
@@ -433,7 +443,7 @@ function aiChooseMove(position, levelIdx) {
     }
   }
   const from = pick & 127, to = (pick >> 7) & 127;
-  return [from >> 4, from & 7, to >> 4, to & 7];
+  const move=[from>>4,from&7,to>>4,to&7],flags=pick>>14;if(flags&4)move.push(AI_NAMES[(flags>>4)||5][1]);return move;
 }
 
 // Web Worker로 실행될 때: 메시지로 받은 국면에 대한 수를 돌려줌

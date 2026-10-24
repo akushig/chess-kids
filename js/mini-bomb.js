@@ -2,20 +2,20 @@
 // 기물로 폭탄 칸에 도달해서 해제
 
 const BOMB_LEVELS = [
-  { piece:'wR', size:6, bombs:[{pos:[0,5],timer:5}], blocks:[], name:'룩' },
-  { piece:'wR', size:6, bombs:[{pos:[0,5],timer:4},{pos:[5,5],timer:6}], blocks:[[3,0]], name:'룩' },
-  { piece:'wN', size:6, bombs:[{pos:[1,2],timer:4},{pos:[3,4],timer:6}], blocks:[], name:'나이트' },
-  { piece:'wB', size:6, bombs:[{pos:[0,1],timer:4},{pos:[4,5],timer:5},{pos:[2,3],timer:7}], blocks:[], name:'비숍' },
-  { piece:'wQ', size:6, bombs:[{pos:[0,0],timer:3},{pos:[0,5],timer:4},{pos:[5,5],timer:5},{pos:[3,1],timer:6}], blocks:[[2,3],[3,3]], name:'퀸' },
+  { id:'bomb-rook-one-v1', piece:'wR', size:6, bombs:[{pos:[0,5],timer:5}], blocks:[], name:'룩' },
+  { id:'bomb-rook-two-v1', piece:'wR', size:6, bombs:[{pos:[0,5],timer:4},{pos:[5,5],timer:6}], blocks:[[3,0]], name:'룩' },
+  { id:'bomb-knight-v1', piece:'wN', size:6, bombs:[{pos:[1,2],timer:4},{pos:[3,4],timer:6}], blocks:[], name:'나이트' },
+  { id:'bomb-bishop-v1', piece:'wB', size:6, bombs:[{pos:[0,1],timer:4},{pos:[4,5],timer:5},{pos:[2,3],timer:7}], blocks:[], name:'비숍' },
+  { id:'bomb-queen-v1', piece:'wQ', size:6, bombs:[{pos:[0,0],timer:3},{pos:[0,5],timer:4},{pos:[5,5],timer:5},{pos:[3,1],timer:6}], blocks:[[2,3],[3,3]], name:'퀸' },
 ];
 
 function goBomb(levelIdx,challenge=true) {
-  beginActivity('bomb',{levelIdx,challenge});
+  beginActivity('bomb',{levelIdx,id:BOMB_LEVELS[levelIdx||0].id,challenge});
   const lv = BOMB_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.bm = {
     levelIdx: levelIdx || 0,
-    challenge,
+    challenge,notice:'',
     size: size,
     piece: lv.piece,
     pos: [size-1, 0],
@@ -67,7 +67,7 @@ function renderBomb() {
   let msg;
   if (bm.clear) msg=`<div class="status-msg success">${t('bombClear')}</div>`;
   else if (bm.failed) msg=`<div class="status-msg fail">${t('bombExploded')}</div>`;
-  else msg=`<div class="status-msg">${bm.challenge?'한 번 움직이면 남은 이동 수가 줄어요. 먼저 갈 곳을 골라요.':'이동 수 제한 없이 해제해봐요.'}</div>`;
+  else msg=`<div class="status-msg">${bm.notice || (bm.challenge?'한 번 움직이면 남은 이동 수가 줄어요. 먼저 갈 곳을 골라요.':'이동 수 제한 없이 해제해봐요.')}</div>`;
 
   const remaining = bm.bombs.filter(b=>!b.defused);
   const minTimer = remaining.length > 0 ? Math.min(...remaining.map(b=>b.timer)) : 0;
@@ -101,15 +101,15 @@ function bombClick(r,c) {
   const bm=state.bm;
   if (bm.clear||bm.failed) return;
   const moves=getBombMoves(bm);
-  if (!moves.some(([mr,mc])=>mr===r&&mc===c)) return;
+  if (!moves.some(([mr,mc])=>mr===r&&mc===c)){bm.notice=movementNotice(bm.piece);renderBomb();return;}
 
   rememberAction();
   const [pr,pc]=bm.pos;
   const boardEl=document.querySelector('#screen-mini .chess-board');
-  bm.pos=[r,c];
+  bm.notice='';bm.pos=[r,c];
   bm.moves++;
 
-  animateMove(boardEl,pr,pc,r,c,bm.piece,()=>{
+
     // 폭탄 해제
     const bomb=bm.bombs.find(b=>b.pos[0]===r&&b.pos[1]===c&&!b.defused);
     if (bomb) bomb.defused=true;
@@ -121,8 +121,9 @@ function bombClick(r,c) {
     if (bm.challenge&&bm.bombs.some(b=>!b.defused&&b.timer<=0)) { bm.failed=true; }
     else if (bm.bombs.every(b=>b.defused)) { bm.clear=true; saveMiniGameStars('bomb', bm.levelIdx||0, calculateStars(bm.moves,[2,2,6,3,5][bm.levelIdx])); spawnParticles(); }
 
-    renderBomb();
-  },bm.size);
+
+  saveActiveSession();
+  animateMove(boardEl,pr,pc,r,c,bm.piece,()=>renderBomb(),bm.size);
 }
 
 // BFS로 모든 폭탄 해제 경로 탐색

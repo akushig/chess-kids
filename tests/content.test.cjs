@@ -25,5 +25,5 @@ test('every puzzle has goal-valid moves; alternate fork answers accepted; mate i
 test('collector and bomb optimal paths earn three stars',()=>{
  const {run}=load();
  assert.equal(run(`COLLECTOR_LEVELS.every((lv,i)=>{goCollector(i);const p=findCollectorSolvePath();if(!p)return false;for(const [r,c]of p.slice(1))collectorClick(r,c);return state.cl.clear&&getMiniGameProgress()[lv.id]===3;})`),true);
- assert.equal(run(`BOMB_LEVELS.every((lv,i)=>{goBomb(i);const p=findBombSolvePath();if(!p)return false;for(const [r,c]of p.slice(1))bombClick(r,c);return state.bm.clear&&getMiniGameProgress()['bomb_'+i]===3;})`),true);
+ assert.equal(run(`BOMB_LEVELS.every((lv,i)=>{goBomb(i);const p=findBombSolvePath();if(!p)return false;for(const [r,c]of p.slice(1))bombClick(r,c);return state.bm.clear&&getMiniGameProgress()[lv.id]===3;})`),true);
 });
