@@ -27,9 +27,23 @@ class ChessGame {
     this.selected = null;
     this.validMoves = [];
     this.status = 'playing'; // playing | check | checkmate | draw
+    this.drawReason = null;  // 비긴 이유: stalemate | kings | material | repetition | fifty
     this.enPassant = null;
     this.castling = { wK: true, wR_a: true, wR_h: true, bK: true, bR_a: true, bR_h: true };
     this.captured = { w: [], b: [] }; // w: 백이 잡은 기물, b: 흑이 잡은 기물
+    this.halfmoveClock = 0;  // 마지막으로 기물을 잡거나 폰을 움직인 뒤 둔 수 (50수 규칙)
+    this.positionCounts = {}; // 같은 장면이 나온 횟수 (3번 반복 규칙)
+    this.recordPosition();
+  }
+
+  positionKey() {
+    return this.board.map(r => r.map(p => p || '--').join('')).join('/')
+      + this.turn + (this.enPassant ? this.enPassant.join('') : '-');
+  }
+
+  recordPosition() {
+    const key = this.positionKey();
+    this.positionCounts[key] = (this.positionCounts[key] || 0) + 1;
   }
 
   color(piece) { return piece ? piece[0] : null; }
@@ -154,6 +168,11 @@ class ChessGame {
     const color = this.color(piece);
     const type = this.type(piece);
 
+    // 잡거나 폰을 움직이면 이전 장면은 다시 나올 수 없으므로 반복 기록도 비움
+    const irreversible = type === 'P' || !!this.board[toR][toC];
+    this.halfmoveClock = irreversible ? 0 : this.halfmoveClock + 1;
+    if (irreversible) this.positionCounts = {};
+
     // 앙파상
     if (type === 'P' && this.enPassant && toR === this.enPassant[0] && toC === this.enPassant[1]) {
       const captureRow = color === 'w' ? toR + 1 : toR - 1;
@@ -185,6 +204,7 @@ class ChessGame {
     this.selected = null;
     this.validMoves = [];
     this.turn = this.turn === 'w' ? 'b' : 'w';
+    this.recordPosition();
     this.updateStatus();
     return 'moved';
   }
@@ -207,9 +227,30 @@ class ChessGame {
 
     if (!hasLegal) {
       this.status = inCheck ? 'checkmate' : 'draw';
-    } else {
-      this.status = inCheck ? 'check' : 'playing';
+      this.drawReason = inCheck ? null : 'stalemate';
+      return;
     }
+    this.status = inCheck ? 'check' : 'playing';
+    this.drawReason = this.findDrawReason();
+    if (this.drawReason) this.status = 'draw';
+  }
+
+  // 더 둬도 승부가 나지 않는 상황 (체크메이트가 우선이라 합법 수가 있을 때만 확인)
+  findDrawReason() {
+    const pieces = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = this.board[r][c];
+        if (p && this.type(p) !== 'K') pieces.push({ type: this.type(p), square: (r + c) % 2 });
+      }
+    }
+    if (pieces.length === 0) return 'kings';
+    // 폰·룩·퀸 없이 마이너 기물 1개뿐이거나, 비숍만 남았는데 모두 같은 색 칸이면 체크메이트 불가
+    if (!pieces.some(p => p.type === 'P' || p.type === 'R' || p.type === 'Q')
+      && (pieces.length === 1 || pieces.every(p => p.type === 'B' && p.square === pieces[0].square))) return 'material';
+    if (this.positionCounts[this.positionKey()] >= 3) return 'repetition';
+    if (this.halfmoveClock >= 100) return 'fifty';
+    return null;
   }
 
   // 간단한 AI: 랜덤 합법 이동

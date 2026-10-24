@@ -21,6 +21,8 @@ const AI_B_DIRS = [-17, -15, 15, 17];
 const AI_R_DIRS = [-16, -1, 1, 16];
 const AI_SQUARES = [];
 for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) AI_SQUARES.push(r * 16 + c);
+const AI_NAMES = [];
+for (const [k, v] of Object.entries(AI_CODE)) { AI_NAMES[v] = 'w' + k; AI_NAMES[v | 8] = 'b' + k; }
 
 // 위치 점수표 (흰색 기준, 0행 = 8랭크)
 const AI_PST = [
@@ -217,6 +219,8 @@ function aiCenterDist(sq) {
 function aiEvaluate(pos) {
   const b = pos.board;
   const score = [0, 0], minor = [0, 0];
+  const strong = [0, 0], minors = [0, 0];  // 폰·룩·퀸 수, 나이트·비숍 수
+  let knights = 0, bishopSquares = 0;       // bishopSquares: 비숍이 있는 칸 색 (비트 1 = 밝은 칸, 2 = 어두운 칸)
   for (let i = 0; i < 64; i++) {
     const sq = AI_SQUARES[i], p = b[sq];
     if (!p) continue;
@@ -224,8 +228,12 @@ function aiEvaluate(pos) {
     score[color] += AI_VAL[type];
     if (type === 6) continue;
     if (type !== 1) minor[color] += AI_VAL[type];
+    if (type === 1 || type >= 4) strong[color]++;
+    else { minors[color]++; if (type === 2) knights++; else bishopSquares |= 1 << (((sq >> 4) + (sq & 7)) & 1); }
     score[color] += AI_PST[type][color ? (7 - (sq >> 4)) * 8 + (sq & 7) : i];
   }
+  // ChessGame과 같은 기준: 체크메이트할 기물이 없으면 무승부
+  if (!strong[0] && !strong[1] && (minors[0] + minors[1] <= 1 || (!knights && bishopSquares !== 3))) return 0;
   const endgame = minor[0] + minor[1] <= 1600;
   for (let color = 0; color < 2; color++) {
     const sq = pos.king[color];
@@ -240,7 +248,40 @@ function aiEvaluate(pos) {
     const dist = Math.abs((wk >> 4) - (lk >> 4)) + Math.abs((wk & 7) - (lk & 7));
     score[win] += 10 * aiCenterDist(lk) + 4 * (14 - dist);
   }
-  return pos.side ? score[1] - score[0] : score[0] - score[1];
+  // 폰·룩·퀸 없이 마이너 기물 하나뿐인 쪽은 이길 수 없으니 그쪽 우세는 인정하지 않음
+  let result = score[0] - score[1];
+  if (result > 0 && !strong[0] && minors[0] <= 1) result = 0;
+  if (result < 0 && !strong[1] && minors[1] <= 1) result = 0;
+  return pos.side ? -result : result;
+}
+
+// ChessGame.positionKey()와 같은 형식
+function aiPositionKey(pos) {
+  const rows = [];
+  for (let r = 0; r < 8; r++) {
+    let row = '';
+    for (let c = 0; c < 8; c++) row += AI_NAMES[pos.board[r * 16 + c]] || '--';
+    rows.push(row);
+  }
+  return rows.join('/') + (pos.side ? 'b' : 'w') + (pos.ep >= 0 ? '' + (pos.ep >> 4) + (pos.ep & 7) : '-');
+}
+
+// 두면 3번 반복이나 50수 규칙으로 바로 비기게 되는 수
+// (잡기·폰 이동은 새 장면이라 해당 없고, 그 수로 체크메이트가 되면 체크메이트가 우선)
+function aiRuleDrawMoves(pos, moves, position) {
+  const repeated = new Set(position.repeated || []);
+  const fifty = (position.halfmove || 0) >= 99;
+  const draws = new Set();
+  if (!repeated.size && !fifty) return draws;
+  for (const m of moves) {
+    const from = m & 127, to = (m >> 7) & 127;
+    if ((pos.board[from] & 7) === 1 || pos.board[to]) continue;
+    aiMake(pos, m);
+    const mate = aiAttacked(pos.board, pos.king[pos.side], pos.side ^ 1) && !aiLegalRootMoves(pos).length;
+    if (!mate && (fifty || repeated.has(aiPositionKey(pos)))) draws.add(m);
+    aiUnmake(pos, m);
+  }
+  return draws;
 }
 
 // ---- 탐색 ----
@@ -343,7 +384,8 @@ function aiLegalRootMoves(pos) {
   return legal;
 }
 
-// position: { board: 8x8 ('wP' 등 또는 null), turn: 'w'|'b', enPassant: [r,c]|null }
+// position: { board: 8x8 ('wP' 등 또는 null), turn: 'w'|'b', enPassant: [r,c]|null,
+//             halfmove: 50수 규칙 카운트, repeated: 이미 두 번 나온 장면 키 목록 }
 // 반환: [fromR, fromC, toR, toC] 또는 null(둘 수 있는 수 없음)
 function aiChooseMove(position, levelIdx) {
   const level = AI_LEVELS[levelIdx] || AI_LEVELS[1];
@@ -358,6 +400,7 @@ function aiChooseMove(position, levelIdx) {
     aiQuiesce = level.quiesce;
     aiKillers = [];
     aiDeadline = level.timeMs ? Date.now() + level.timeMs : 0;
+    const ruleDraws = aiRuleDrawMoves(pos, moves, position);
     let scores = null;
     for (let depth = 1; depth <= level.depth; depth++) {
       aiExtendLimit = depth * 2;
@@ -367,9 +410,11 @@ function aiChooseMove(position, levelIdx) {
         aiMake(pos, m);
         // 최선 수와 margin 안에 드는 수만 정확한 점수가 필요하므로 그 아래는 잘라냄
         const floor = best === -AI_INF ? -AI_INF : best - level.margin - 1;
-        const score = -aiNegamax(pos, depth - 1, -AI_INF, -floor, 1);
+        let score = -aiNegamax(pos, depth - 1, -AI_INF, -floor, 1);
         aiUnmake(pos, m);
         if (aiAborted) break;
+        // 두는 순간 대국이 비기며 끝나므로 그 뒤 수읽기와 상관없이 0점
+        if (ruleDraws.has(m)) score = 0;
         cur.set(m, score);
         if (score > best) best = score;
       }

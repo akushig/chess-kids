@@ -560,6 +560,8 @@ body {
 .status-msg.fail    { background: linear-gradient(135deg, #FFCDD2, #FFEBEE); color: #C62828; }
 .status-msg.warn    { background: linear-gradient(135deg, #FFF9C4, #FFFDE7); color: #F57F17; }
 .status-msg.dim     { color: var(--text-light); }
+.status-msg.draw    { background: linear-gradient(135deg, #D6EAF8, #EBF5FB); color: #1F618D; text-align: center; }
+.status-sub { margin-top: 2px; font-size: 0.8rem; font-weight: 700; }
 
 /* ===== 클리어 오버레이 ===== */
 .clear-overlay {
@@ -828,6 +830,9 @@ body {
 .p2-panel.win { border-color: #00B894; background: linear-gradient(135deg, #A8E6CF, #DCEDC1); }
 .p2-panel.win .p2-msg { color: #2E7D32; }
 .p2-panel.lose .p2-msg { color: #C62828; }
+.p2-panel.draw { border-color: #5DADE2; background: #EBF5FB; }
+.p2-panel.draw .p2-msg { color: #1F618D; }
+.p2-reason { font-size: 0.78rem; font-weight: 700; line-height: 1.4; color: #1F618D; }
 @keyframes p2Pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.15); }

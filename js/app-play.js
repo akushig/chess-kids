@@ -5,6 +5,13 @@ const PLAY_TIMER_OPTIONS = [0, 15, 30, 60];
 const PLAY_LEVEL_ICONS = ['🐣', '🐥', '🐱', '🦁', '🐲'];
 const PLAY_AI_MIN_DELAY = 400;  // 컴퓨터가 너무 빨리 두면 아이가 수를 못 따라감
 const PLAY_TIMEOUT_LEVEL = 2;   // 시간 초과 때 대신 두는 수의 수준 (보통)
+const PLAY_DRAW_KEYS = {
+  stalemate: 'playDrawStalemate',
+  kings: 'playDrawKings',
+  material: 'playDrawMaterial',
+  repetition: 'playDrawRepetition',
+  fifty: 'playDrawFifty',
+};
 
 let playToken = 0;          // 새 대국·화면 이탈마다 증가해서 늦게 도착한 콜백을 버림
 let playTimerHandle = null;
@@ -150,7 +157,7 @@ function renderPlayAi() {
       ? `<div class="status-msg success">${t('playCheckmate')}</div>`
       : `<div class="status-msg fail">${t('playLose')}</div>`;
   } else if (game.status === 'draw') {
-    statusMsg = `<div class="status-msg">${t('playDraw')}</div>`;
+    statusMsg = `<div class="status-msg draw">${t('playDraw')}<div class="status-sub">${t(PLAY_DRAW_KEYS[game.drawReason])}</div></div>`;
   } else if (game.status === 'check') {
     statusMsg = `<div class="status-msg warn">${t('playCheck')}</div>`;
   } else {
@@ -182,13 +189,15 @@ function renderPlayFriend() {
 
   const panel = side => {
     const active = !over && game.turn === side;
-    let msg, cls = active ? 'active' : '';
+    let msg, reason = '', cls = active ? 'active' : '';
     if (game.status === 'checkmate') {
       const lost = game.turn === side;
       msg = lost ? t('playLoseShort') : t('playWin');
       cls = lost ? 'lose' : 'win';
     } else if (game.status === 'draw') {
       msg = t('playDraw');
+      reason = `<div class="p2-reason">${t(PLAY_DRAW_KEYS[game.drawReason])}</div>`;
+      cls = 'draw';
     } else if (p.timeoutSide === side) {
       msg = t('playTimeout');
     } else if (active) {
@@ -196,8 +205,8 @@ function renderPlayFriend() {
     } else {
       msg = t('playFriendTurn');
     }
-    const time = p.timer ? `<span class="p2-time">${p.timer}</span>` : '';
-    const bar = p.timer ? `<div class="p2-bar"><div class="p2-bar-fill"></div></div>` : '';
+    const time = p.timer && !over ? `<span class="p2-time">${p.timer}</span>` : '';
+    const bar = p.timer && !over ? `<div class="p2-bar"><div class="p2-bar-fill"></div></div>` : '';
     const capturedId = side === 'w' ? 'captured-bottom' : 'captured-top';
     return `
       <div class="p2-panel ${side === 'b' ? 'p2-top' : ''} ${cls}" id="p2-panel-${side}">
@@ -209,6 +218,7 @@ function renderPlayFriend() {
           </div>
           ${time}
         </div>
+        ${reason}
         ${bar}
         <div class="captured-pieces" id="${capturedId}">${game.captured[side].map(pc => getPieceSVG(pc, 24)).join('')}</div>
       </div>
@@ -282,7 +292,13 @@ function playNextTurn() {
 }
 
 function playPosition(game) {
-  return { board: game.board, turn: game.turn, enPassant: game.enPassant };
+  return {
+    board: game.board,
+    turn: game.turn,
+    enPassant: game.enPassant,
+    halfmove: game.halfmoveClock,
+    repeated: Object.keys(game.positionCounts).filter(k => game.positionCounts[k] >= 2),
+  };
 }
 
 // 엔진이 고른 수가 ChessGame 규칙에서도 합법인지 확인, 아니면 아무 합법 수
