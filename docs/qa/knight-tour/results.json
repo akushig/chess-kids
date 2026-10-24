@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "height": 780,
+      "fullPath": true,
+      "branchAlert": true,
+      "impossibleRoute": true,
+      "restore": true,
+      "startSettings": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "fullPath": true,
+      "branchAlert": true,
+      "impossibleRoute": true,
+      "restore": true,
+      "startSettings": true
+    }
+  ],
+  "errors": []
+}

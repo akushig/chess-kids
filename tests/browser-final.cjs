@@ -27,7 +27,7 @@ const output=process.env.CHESS_QA_OUTPUT||'/tmp/chess-kids-ui';
    for(const fn of ['goKnightTour(0,"walk")','goCollector(0)','goBomb(0)','goDefense(0)','goSurvival(0)','goPuzzleLevel(4)']){
     await page.evaluate(fn);await page.locator('.screen.active [role="gridcell"]').first().waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,fn+' overflow '+viewport.width);
    }
-   await page.evaluate(()=>goKnightTour(2,'tour'));await page.getByRole('button',{name:/같은 판을 가족에게/}).click();await page.getByRole('button',{name:'어른이 완주 도전',exact:true}).click();assert.equal(await page.evaluate(()=>activeProfile),'adult');assert.equal(await page.locator('.screen.active .board-cell').count(),49);
+   await page.evaluate(()=>goKnightTour(2,'tour'));await page.locator('.kt-settings > summary').click();await page.getByRole('button',{name:/같은 판을 가족에게/}).click();await page.getByRole('button',{name:'어른이 완주 도전',exact:true}).click();assert.equal(await page.evaluate(()=>activeProfile),'adult');assert.equal(await page.locator('.screen.active .board-cell').count(),49);
    summary.viewports.push({...viewport,passed:true});await context.close();
   }
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();page.on('pageerror',e=>summary.errors.push(e.message));await page.route('https://fonts.googleapis.com/**',r=>r.abort());

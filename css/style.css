@@ -1591,3 +1591,75 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .reduced-motion *, .reduced-motion *::before,.reduced-motion *::after{animation:none!important;transition:none!important;}
 @media(min-width:700px){#app{max-width:900px;}.home-wrap{max-width:650px;margin:auto;}.screen-wrap{max-width:850px;margin:auto;padding:24px;}.chess-board,.learn-board{max-width:560px;}.mission-info,.mission-actions,.guide-card,.play-setup{max-width:560px;}.world-grid{max-width:650px;}.board-cell[data-piece-type]::before{font-size:10px;line-height:16px;}.screen-header{max-width:650px;}.status-msg{max-width:650px;}}
 .captured-pieces:empty{display:none;}
+
+/* Knight tour: primary play controls above settings, with stable alert placement. */
+.kt-screen { width:100%;max-width:600px;gap:10px; }
+.kt-screen .kt-header { max-width:560px;gap:10px; }
+.kt-header h2 { font-size:1.1rem; }
+.kt-subtitle { margin-left:auto;font-size:.75rem;color:#315e66;font-weight:700; }
+.kt-mode-nav { display:flex;width:100%;max-width:560px;padding:4px;background:#ffffff65;border:1px solid #ffffff9c;border-radius:14px;gap:4px; }
+.kt-mode-nav button { flex:1;border:0;background:transparent;color:#406267;font:inherit;font-size:.85rem;padding:9px 6px;border-radius:10px;cursor:pointer; }
+.kt-mode-nav button[aria-pressed="true"] { background:#fff;color:#1e695e;box-shadow:0 2px 5px #284a4820;font-weight:900; }
+.kt-toolbar { display:flex;justify-content:space-between;align-items:center;width:100%;max-width:560px;gap:12px; }
+.kt-size-picker { display:flex;gap:4px; }
+.kt-size-picker button { border:1px solid #ffffff90;background:#ffffff65;border-radius:9px;padding:8px 10px;color:#385b5d;font:inherit;font-size:.8rem;cursor:pointer;min-height:36px; }
+.kt-size-picker button[aria-pressed="true"] { background:#fff;border-color:#59b9a7;color:#216d5c;font-weight:900; }
+.kt-board-size { font-size:.8rem;color:#385b5d; }
+.kt-alert-toggle { position:relative;display:flex;align-items:center;gap:9px;font-size:.8rem;font-weight:700;color:#345c60;min-height:40px;cursor:pointer;white-space:nowrap; }
+.kt-alert-toggle input { position:absolute;right:0;width:36px;height:24px;opacity:0;cursor:pointer;margin:0; }
+.kt-switch-track { width:34px;height:20px;background:#a4b7bc;border-radius:12px;position:relative;pointer-events:none;flex-shrink:0;transition:background .15s; }
+.kt-switch-track::after { content:'';width:14px;height:14px;background:#fff;position:absolute;left:3px;top:3px;border-radius:50%;box-shadow:0 1px 2px #0002;transition:transform .15s; }
+.kt-alert-toggle input:checked + .kt-switch-track { background:#248a73; }
+.kt-alert-toggle input:checked + .kt-switch-track::after { transform:translateX(14px); }
+.kt-alert-toggle input:focus-visible + .kt-switch-track { outline:3px solid #215cca;outline-offset:3px; }
+.kt-progress { display:flex;justify-content:space-between;align-items:baseline;width:100%;max-width:560px;font-size:.82rem;color:#345c60; }
+.kt-progress strong { font-size:1.25rem;color:#224f50; }
+.kt-turn { font-size:.78rem; }
+.kt-progress-bar { appearance:none;display:block;width:100%;max-width:560px;height:5px;border:0;border-radius:5px;overflow:hidden;background:#ffffff80;margin-top:-5px; }
+.kt-progress-bar::-webkit-progress-bar { background:#ffffff80; }
+.kt-progress-bar::-webkit-progress-value { background:#259b81;border-radius:5px; }
+.kt-progress-bar::-moz-progress-bar { background:#259b81;border-radius:5px; }
+.kt-status { display:flex;align-items:center;gap:10px;width:100%;max-width:560px;min-height:58px;padding:9px 12px;border:1px solid #ffffffa0;background:#ffffffa8;border-radius:13px;color:#345858; }
+.kt-status strong { display:block;font-size:.84rem;line-height:1.5; }
+.kt-status small { display:block;font-size:.72rem;line-height:1.5;margin-top:1px; }
+.kt-status-icon { font-size:1.3rem;min-width:22px;text-align:center; }
+.kt-status--branch { background:#fff4db;border-color:#efbc63;color:#805821; }
+.kt-status--blocked { background:#fff0e4;border-color:#e9aa80;color:#884826; }
+.kt-status--success { background:#e6f7ed;border-color:#78bda0;color:#276749; }
+.kt-screen .kt-board { max-width:560px;border-width:4px;border-radius:14px; }
+.kt-screen .kt-board--branch { box-shadow:0 0 0 3px #eeb86d80,0 8px 24px #0002; }
+.kt-actions { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:560px;margin-top:2px; }
+.kt-action { border:1px solid #ffffffc7;border-radius:13px;background:#ffffffd9;color:#3d5353;font:inherit;font-size:.8rem;font-weight:800;min-height:48px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 #5d6a6920;white-space:nowrap;padding:8px 4px; }
+.kt-action>span { font-size:1.2rem;line-height:1; }
+.kt-action--hint { background:#ffe6a1;border-color:#f1d17e;color:#72551a;box-shadow:0 3px 0 #d2ae5d; }
+.kt-action:active { transform:translateY(2px);box-shadow:none; }
+.kt-action:disabled { background:#ffffff75;box-shadow:none;opacity:.55; }
+.kt-hint-panel { width:100%;max-width:560px;padding:10px 12px;background:#fffdf4;border:1px solid #e5d79f;border-radius:13px; }
+.kt-hint-tabs { display:flex;gap:5px;background:#f0eddc;padding:3px;border-radius:10px; }
+.kt-hint-tabs button { flex:1;border:0;background:transparent;font:inherit;font-size:.8rem;color:#716b50;border-radius:8px;padding:9px 5px;cursor:pointer; }
+.kt-hint-tabs button[aria-pressed="true"] { background:#fff;color:#286b52;box-shadow:0 1px 4px #0001;font-weight:900; }
+.kt-hint-panel p { margin-top:8px;text-align:center;font-size:.75rem;line-height:1.5;color:#6d674e; }
+.kt-route { position:absolute;inset:0;width:100%;height:100%;color:#188963;pointer-events:none;z-index:5; }
+.kt-route--full { opacity:.43; }
+.kt-route-number { position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:24px;height:24px;padding:0 3px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fcfff5;color:#23704b;border:1.5px solid #37865f;box-shadow:0 1px 3px #263e2926;font-size:.76rem;font-weight:900;z-index:6;pointer-events:none; }
+.kt-route-cell.move-hint::after { display:none; }
+.kt-screen .kt-settings { width:100%;max-width:560px;border:1px solid #ffffff70;border-radius:13px;background:#ffffff6b;overflow:hidden; }
+.kt-settings summary { padding:12px 14px;font-size:.8rem;font-weight:800;color:#3c5b61;cursor:pointer; }
+.kt-settings summary span { font-weight:500;color:#60787c;font-size:.72rem;margin-left:8px; }
+.kt-settings-body { padding:2px 14px 14px; }
+.kt-start-field { border:0;padding:0;min-width:0; }
+.kt-start-field legend { font-size:.78rem;font-weight:800;margin-bottom:8px;color:#385b5c; }
+.kt-start-field>div { display:flex;gap:6px; }
+.kt-start-option { flex:1;position:relative;cursor:pointer; }
+.kt-start-option input { position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0; }
+.kt-start-option span { display:block;padding:10px;border-radius:10px;background:#ffffffa8;border:1px solid #c5d5cf;text-align:center;font-size:.8rem;color:#536b65;pointer-events:none; }
+.kt-start-option input:checked+span { border-color:#408f77;background:#f2fff7;color:#216d54;font-weight:800;box-shadow:inset 0 0 0 1px #408f77; }
+.kt-start-option input:focus-visible+span { outline:3px solid #215cca;outline-offset:2px; }
+.kt-start-field p { font-size:.72rem;line-height:1.65;color:#60787c;margin-top:8px; }
+.kt-new-game,.kt-share-game { width:100%;min-height:40px;border:1px solid #c1d2ca;background:#ffffffab;font:inherit;font-size:.8rem;color:#3b6759;border-radius:10px;padding:10px;cursor:pointer;margin-top:10px; }
+.kt-family-row { border-top:1px solid #becfca;margin-top:14px;padding-top:8px; }
+.kt-family-row .kt-alert-toggle { justify-content:space-between; }
+.kt-family-row .kt-alert-toggle input { right:0; }
+@media(max-width:370px) { .kt-subtitle{font-size:.68rem;}.kt-alert-toggle{font-size:.74rem;gap:6px;}.kt-size-picker button{padding:8px;}.kt-route-number{min-width:21px;height:21px;font-size:.7rem;} }
+.kt-screen .kt-status { box-shadow:none;backdrop-filter:none;font-weight:400; }
+.kt-hint-panel .kt-hint-message { background:transparent;border-radius:0;padding:0;font-weight:400;flex:none;box-shadow:none;color:#6d674e; }

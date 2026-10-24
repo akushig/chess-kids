@@ -1,7 +1,7 @@
 function goMiniMenu(){leaveActivity();showScreen('mini');renderMiniMenu();}
 function renderMiniMenu(){
   const games=[
-    ['goKnightSetup()','♞','나이트 탐험','짧은 산책부터 모든 칸 완주까지','mini-green'],
+    ['goKnightSetup()','♞','나이트 투어','갈림길을 살피고 모든 칸을 방문해요','mini-green'],
     ['goDefense(0)','🏰','성 지키기','다음 발자국을 보고 상대 말을 잡아요','mini-blue'],
     ['goPuzzleLevelSelect()','💡','한 수 발견','말 잡기 · 왕 구하기 · 메이트','mini-purple'],
     ['goCollector(0)','⭐','별 모으기','느긋하게 길을 찾고, 원하면 이동 수 도전','mini-orange'],

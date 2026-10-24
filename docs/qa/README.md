@@ -1,10 +1,10 @@
 # 2026-10-25 개발 검수
 
-검수 빌드: `2026.10.25.4` · Node 20 · Playwright 1.64.1 / Chromium headless
+검수 빌드: `2026.10.25.5` · Node 20 · Playwright 1.64.1 / Chromium headless
 
 | 검사 | 결과 |
 |---|---|
-| Node 회귀 검사 | 29개 통과 |
+| Node 회귀 검사 | 37개 통과 |
 | 모든 모험의 경로·최단 수·실제 입력 재생 | 48단계 통과 |
 | 수집·폭탄의 해결 경로와 최고 보상 | 각 5단계 통과 |
 | 성 지키기 승리 경로와 적 중복 점유 | 4단계 통과 |
@@ -17,7 +17,7 @@
 | 실제 브라우저 화면과 입력 | 360×780, 768×1024, 1280×900 통과 |
 | 오프라인 새로고침·전체 스킨·Worker 컴퓨터 응수 | 통과 |
 
-[브라우저 결과 JSON](browser-results.json) · [독립 퍼즐 대조 결과](puzzle-results.txt)
+[나이트 투어 UX 수정 검수](knight-tour/README.md) · [브라우저 결과 JSON](browser-results.json) · [독립 퍼즐 대조 결과](puzzle-results.txt)
 
 ## 검수 화면
 
