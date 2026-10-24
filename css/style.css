@@ -887,6 +887,76 @@ body {
   color: var(--secondary);
 }
 
+/* 나이트 투어 설정: 크기 선택 + 옵션 토글 */
+.kt-options {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kt-sizes, .kt-toggles {
+  display: flex;
+  gap: 8px;
+}
+.kt-chip, .kt-toggle {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 6px;
+  font-family: inherit;
+  font-weight: 800;
+  color: var(--text-light);
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.kt-chip:active, .kt-toggle:active { transform: translateY(2px); box-shadow: none; }
+.kt-chip { font-size: 0.95rem; }
+.kt-chip.active {
+  background: linear-gradient(135deg, #55EFC4, #00B894);
+  color: #fff;
+  box-shadow: 0 3px 0 #00896B;
+}
+.kt-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+.kt-toggle.on { color: var(--text); }
+.kt-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: #B2BEC3;
+  transition: background 0.2s;
+}
+.kt-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+.kt-toggle.on .kt-switch { background: var(--secondary); }
+.kt-toggle.on .kt-switch::after { transform: translateX(12px); }
+
+/* 갈림길 경고: 보드 테두리 깜빡임 */
+.chess-board.kt-branch { animation: ktBranchGlow 1.2s ease infinite; }
+@keyframes ktBranchGlow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 0 0 0 rgba(255,159,67,0); }
+  50% { box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 0 0 6px rgba(255,159,67,0.75); }
+}
+
 /* ===== 폭탄 ===== */
 .bomb-cell {
   background: #FFF3E0 !important;
