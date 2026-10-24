@@ -61,6 +61,8 @@ class ChessGame {
   // 이동 후 자기 킹이 체크인지
   moveLeavesCheck(fromR, fromC, toR, toC) {
     const b = this.board.map(r => [...r]);
+    // 앙파상은 옆 칸의 폰이 사라지므로 그 폰이 주던 체크도 함께 풀림
+    if (this.type(b[fromR][fromC]) === 'P' && fromC !== toC && !b[toR][toC]) b[fromR][toC] = null;
     b[toR][toC] = b[fromR][fromC];
     b[fromR][fromC] = null;
     const color = this.color(b[toR][toC]);

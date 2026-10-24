@@ -24,6 +24,7 @@ const state = {
   puzzleSolutionStep: 0,
   // 대전
   game: null,
+  play: null,
 };
 
 const PIECE_ORDER = ['P', 'R', 'N', 'B', 'Q', 'K'];
@@ -52,7 +53,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
   }
 
   const ghost = document.createElement('div');
-  ghost.className = 'move-anim';
+  ghost.className = 'move-anim pc-' + pieceKey[0];
   ghost.innerHTML = getPieceSVG(pieceKey, Math.round(cellSize * 0.8));
   ghost.style.width = cellSize + 'px';
   ghost.style.height = cellSize + 'px';

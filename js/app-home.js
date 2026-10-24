@@ -31,7 +31,7 @@ function renderHome() {
           <span class="menu-icon">${getPieceSVG('wR', 42)}</span>
           <div class="menu-label">
             <div>${t('menuPlay')}</div>
-            <div class="menu-sub">${t('playTitle')}</div>
+            <div class="menu-sub">${t('playMenuSub')}</div>
           </div>
           <span class="menu-arrow">›</span>
         </button>
