@@ -1,0 +1,24 @@
+{
+  "status": "design-only; not connected to the application",
+  "coordinates": "zero-based [row,column], top-left origin",
+  "rookLessons": [
+    {"id":"rook.horizontal.v1","size":4,"start":[3,0],"goals":[[3,3]],"targets":[],"blocks":[],"objective":"reach","par":1,"prompt":"룩을 반짝이는 깃발로 보내요."},
+    {"id":"rook.vertical.v1","size":4,"start":[3,3],"goals":[[0,3]],"targets":[],"blocks":[],"objective":"reach","par":1,"prompt":"이번에는 위로 쭉 가요."},
+    {"id":"rook.capture.v1","size":4,"start":[3,0],"goals":[],"targets":[[3,3]],"blocks":[],"objective":"captureAll","par":1,"prompt":"같은 줄의 연습 말을 잡아요."},
+    {"id":"rook.capture-chain.v1","size":4,"start":[3,0],"goals":[],"targets":[[3,3],[0,3]],"blocks":[],"objective":"captureAll","par":2,"prompt":"연습 말 두 개를 잡아요."},
+    {"id":"rook.turn.v1","size":4,"start":[3,0],"goals":[[0,3]],"targets":[],"blocks":[],"objective":"reach","par":2,"prompt":"한 번 꺾어서 깃발로 가요."},
+    {"id":"rook.obstacle.v1","size":4,"start":[3,0],"goals":[[3,3]],"targets":[],"blocks":[[3,1]],"objective":"reach","par":3,"prompt":"상자가 없는 길로 돌아가요."},
+    {"id":"rook.transfer.v1","size":5,"start":[4,0],"goals":[[0,4]],"targets":[],"blocks":[[2,0],[4,2]],"objective":"reach","par":3,"prompt":"새로운 길에서도 깃발을 찾아요."},
+    {"id":"rook.challenge.v1","size":5,"start":[4,0],"goals":[],"targets":[[4,4],[0,4],[0,0]],"blocks":[],"objective":"captureAll","par":3,"optional":true,"prompt":"연습 말 세 개를 어떤 순서로 잡을까요?"}
+  ],
+  "chessFixtures": [
+    {"id":"check.escape","fen":"k3r3/8/8/8/8/8/8/4K3 w - - 0 1","expected":"check","demo":"e1d1","objective":"resolveCheck"},
+    {"id":"check.capture","fen":"k7/8/8/8/8/8/4r3/4K3 w - - 0 1","expected":"check","demo":"e1e2","objective":"resolveCheck"},
+    {"id":"check.block","fen":"4r2k/8/8/8/8/8/R7/4K3 w - - 0 1","expected":"check","demo":"a2e2","objective":"resolveCheck"},
+    {"id":"check.knight","fen":"7k/8/8/8/8/5n2/R7/4K3 w - - 0 1","expected":"check","demo":"e1d1","objective":"resolveCheck"},
+    {"id":"check.double","fen":"4r2k/8/8/8/1b6/8/R7/4K3 w - - 0 1","expected":"check","demo":"e1f1","objective":"resolveCheck"},
+    {"id":"pin.exposure","fen":"k3r3/8/8/8/8/8/4R3/4K3 w - - 0 1","expected":"playing","illegalAttempt":"e2f2","demo":"e2e8","objective":"keepKingSafe"},
+    {"id":"ending.mate","fen":"6k1/6Q1/5K2/8/8/8/8/8 b - - 0 1","expected":"checkmate"},
+    {"id":"ending.stalemate","fen":"7k/5Q2/5K2/8/8/8/8/8 b - - 0 1","expected":"stalemate"}
+  ]
+}

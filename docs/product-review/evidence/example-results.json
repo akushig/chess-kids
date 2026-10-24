@@ -1,0 +1,82 @@
+[
+  {
+    "id": "rook.horizontal.v1",
+    "shortest": 1,
+    "valid": true
+  },
+  {
+    "id": "rook.vertical.v1",
+    "shortest": 1,
+    "valid": true
+  },
+  {
+    "id": "rook.capture.v1",
+    "shortest": 1,
+    "valid": true
+  },
+  {
+    "id": "rook.capture-chain.v1",
+    "shortest": 2,
+    "valid": true
+  },
+  {
+    "id": "rook.turn.v1",
+    "shortest": 2,
+    "valid": true
+  },
+  {
+    "id": "rook.obstacle.v1",
+    "shortest": 3,
+    "valid": true
+  },
+  {
+    "id": "rook.transfer.v1",
+    "shortest": 3,
+    "valid": true
+  },
+  {
+    "id": "rook.challenge.v1",
+    "shortest": 3,
+    "valid": true
+  },
+  {
+    "id": "check.escape",
+    "initialStatus": "check",
+    "valid": true
+  },
+  {
+    "id": "check.capture",
+    "initialStatus": "check",
+    "valid": true
+  },
+  {
+    "id": "check.block",
+    "initialStatus": "check",
+    "valid": true
+  },
+  {
+    "id": "check.knight",
+    "initialStatus": "check",
+    "valid": true
+  },
+  {
+    "id": "check.double",
+    "initialStatus": "check",
+    "valid": true
+  },
+  {
+    "id": "pin.exposure",
+    "initialStatus": "playing",
+    "valid": true
+  },
+  {
+    "id": "ending.mate",
+    "initialStatus": "checkmate",
+    "valid": true
+  },
+  {
+    "id": "ending.stalemate",
+    "initialStatus": "stalemate",
+    "valid": true
+  }
+]

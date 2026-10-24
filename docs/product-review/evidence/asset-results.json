@@ -1,0 +1,134 @@
+{
+  "scriptsLoaded": 23,
+  "allScriptsLoaded": true,
+  "skinCount": 7,
+  "skinPieceCount": 84,
+  "uncachedScripts": [
+    "js/skin-dino.js",
+    "js/skin-tiniping.js",
+    "js/skin-robot.js",
+    "js/skin-baemin.js"
+  ],
+  "skins": [
+    {
+      "name": "cute",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    },
+    {
+      "name": "classic",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    },
+    {
+      "name": "hellocarbot",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    },
+    {
+      "name": "dino",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    },
+    {
+      "name": "tiniping",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    },
+    {
+      "name": "robot",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    },
+    {
+      "name": "baemin",
+      "pieces": [
+        "wK",
+        "wQ",
+        "wR",
+        "wB",
+        "wN",
+        "wP",
+        "bK",
+        "bQ",
+        "bR",
+        "bB",
+        "bN",
+        "bP"
+      ]
+    }
+  ],
+  "svgXmlValid": true
+}

@@ -1,0 +1,3146 @@
+{
+  "note": "Current shipped rules; not independent certification of standard chess. Coordinates are zero-based row/column.",
+  "hashes": {
+    "i18n": "abe593166ab553721174ae39fe141e60ffca109fee38cf78f352ccb25ec0b3ca",
+    "chess": "de1ad2b0ed093b2c7815f7af89ce1c45c0cda629ec3acf5cd5f2c6bba60da45f",
+    "chess-ai": "0937d82660daef3d3b3d883580256372109e914c827840c4e803c99cf7cb9f0e",
+    "missions": "35a6b6a3596eb0f6bf7aafadaad287e2e3f516c0889e36862f04bb74febf77e8",
+    "app-core": "2c1964bfb4313114904170d548d1f3ead5bc9e181abecaafe7407c80cf5d3d23",
+    "app-adventure": "80304db217f371815956e24fc2902d5e03c6dc62400e6af3920faa6006113cd8",
+    "app-puzzle": "f781ad2f34a811c1ddd7ff7ee3ef8cd4bbb85578c3b7bd74a9b100224acdcc7e",
+    "mini-knight-solver": "e966e4e166c51594339a6c126e559daf59c29e0fb8bf17f12802a23adb0cdb78",
+    "mini-knight-tour": "af83e17676d395c2ebb2b904cdd76ec1531e4fd18185591e462874ee2e8fd1ec",
+    "mini-collector": "098573ca1debb3962d7f8a43948819ec4f93a6b1d98d6e59f18028084d6f391a",
+    "mini-bomb": "b91a99c45be83323d46ca3f917dfc14ed7843b0d810bae3d6d6b116305a488ed",
+    "mini-defense": "b186e9062bcfe16cea1555cd6f4d4e223a40598546a552a8266a203d37b503f8",
+    "mini-survival": "cc9f0c99147fad3cb08be0b01f1f15c5bc796a61c83c9b184fcfb61a99ef4dbd"
+  },
+  "missions": [
+    {
+      "id": "P-1",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "P-2",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          4,
+          3
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "P-3",
+      "type": "capture",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "initialMoves": 3,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "P-4",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "initialMoves": 1,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "P-5",
+      "type": "capture",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "P-6",
+      "type": "reach",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          4,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          1,
+          4
+        ]
+      ],
+      "initialMoves": 1,
+      "staticHintLegal": true,
+      "overlaps": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "P-7",
+      "type": "reach",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "P-8",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          4,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "initialMoves": 1,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-1",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          5
+        ]
+      ],
+      "initialMoves": 10,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-2",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "initialMoves": 10,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-3",
+      "type": "capture",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          4
+        ]
+      ],
+      "initialMoves": 9,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-4",
+      "type": "reach",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "initialMoves": 4,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-5",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          5,
+          4
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-6",
+      "type": "escape",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          3,
+          3
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          5,
+          5
+        ]
+      ],
+      "initialMoves": 10,
+      "safeFirstMoves": [
+        [
+          0,
+          3
+        ],
+        [
+          3,
+          0
+        ]
+      ],
+      "staticHintLegal": false,
+      "overlaps": []
+    },
+    {
+      "id": "R-7",
+      "type": "reach",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "R-8",
+      "type": "capture",
+      "statedMin": 4,
+      "actualMin": 4,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          5
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-1",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          4,
+          1
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 4,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-2",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          1
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-3",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-4",
+      "type": "capture",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          4,
+          1
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 4,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-5",
+      "type": "capture",
+      "statedMin": 5,
+      "actualMin": 5,
+      "path": [
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          4
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-6",
+      "type": "reach",
+      "statedMin": 4,
+      "actualMin": 4,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-7",
+      "type": "capture",
+      "statedMin": 5,
+      "actualMin": 5,
+      "path": [
+        [
+          5,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "initialMoves": 4,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "N-8",
+      "type": "capture",
+      "statedMin": 4,
+      "actualMin": 4,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          2,
+          5
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-1",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "initialMoves": 5,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-2",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          5
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 5,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-3",
+      "type": "capture",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          2
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-4",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          5,
+          1
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          0,
+          4
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-5",
+      "type": "capture",
+      "statedMin": 5,
+      "actualMin": 5,
+      "path": [
+        [
+          5,
+          2
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "initialMoves": 4,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-6",
+      "type": "reach",
+      "statedMin": 5,
+      "actualMin": 5,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-7",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          1
+        ]
+      ],
+      "initialMoves": 5,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "B-8",
+      "type": "capture",
+      "statedMin": 4,
+      "actualMin": 4,
+      "path": [
+        [
+          5,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "initialMoves": 2,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-1",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "initialMoves": 15,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-2",
+      "type": "reach",
+      "statedMin": 1,
+      "actualMin": 1,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "initialMoves": 15,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-3",
+      "type": "capture",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          3,
+          3
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          3,
+          0
+        ]
+      ],
+      "initialMoves": 19,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-4",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-5",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "initialMoves": 15,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-6",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          5,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "initialMoves": 15,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-7",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          0,
+          4
+        ]
+      ],
+      "initialMoves": 11,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "Q-8",
+      "type": "capture",
+      "statedMin": 4,
+      "actualMin": 4,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          5
+        ]
+      ],
+      "initialMoves": 13,
+      "staticHintLegal": false,
+      "overlaps": []
+    },
+    {
+      "id": "K-1",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-2",
+      "type": "reach",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          4,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "initialMoves": 5,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-3",
+      "type": "capture",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          3,
+          3
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-4",
+      "type": "escape",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          5
+        ]
+      ],
+      "initialMoves": 8,
+      "safeFirstMoves": [
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          4
+        ]
+      ],
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-5",
+      "type": "escape",
+      "statedMin": 2,
+      "actualMin": 2,
+      "path": [
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          0
+        ]
+      ],
+      "initialMoves": 8,
+      "safeFirstMoves": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-6",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          4,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-7",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          3,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      "initialMoves": 8,
+      "staticHintLegal": true,
+      "overlaps": []
+    },
+    {
+      "id": "K-8",
+      "type": "capture",
+      "statedMin": 3,
+      "actualMin": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ]
+      ],
+      "initialMoves": 3,
+      "staticHintLegal": true,
+      "overlaps": []
+    }
+  ],
+  "rookFailure": {
+    "failed": true,
+    "solved": false,
+    "controls": [
+      "onclick=\"renderStageMap()\"",
+      "onclick=\"missionClick(0,0)\"",
+      "onclick=\"missionClick(0,1)\"",
+      "onclick=\"missionClick(0,2)\"",
+      "onclick=\"missionClick(0,3)\"",
+      "onclick=\"missionClick(0,4)\"",
+      "onclick=\"missionClick(0,5)\"",
+      "onclick=\"missionClick(1,0)\"",
+      "onclick=\"missionClick(1,1)\"",
+      "onclick=\"missionClick(1,2)\"",
+      "onclick=\"missionClick(1,3)\"",
+      "onclick=\"missionClick(1,4)\"",
+      "onclick=\"missionClick(1,5)\"",
+      "onclick=\"missionClick(2,0)\"",
+      "onclick=\"missionClick(2,1)\"",
+      "onclick=\"missionClick(2,2)\"",
+      "onclick=\"missionClick(2,3)\"",
+      "onclick=\"missionClick(2,4)\"",
+      "onclick=\"missionClick(2,5)\"",
+      "onclick=\"missionClick(3,0)\"",
+      "onclick=\"missionClick(3,1)\"",
+      "onclick=\"missionClick(3,2)\"",
+      "onclick=\"missionClick(3,3)\"",
+      "onclick=\"missionClick(3,4)\"",
+      "onclick=\"missionClick(3,5)\"",
+      "onclick=\"missionClick(4,0)\"",
+      "onclick=\"missionClick(4,1)\"",
+      "onclick=\"missionClick(4,2)\"",
+      "onclick=\"missionClick(4,3)\"",
+      "onclick=\"missionClick(4,4)\"",
+      "onclick=\"missionClick(4,5)\"",
+      "onclick=\"missionClick(5,0)\"",
+      "onclick=\"missionClick(5,1)\"",
+      "onclick=\"missionClick(5,2)\"",
+      "onclick=\"missionClick(5,3)\"",
+      "onclick=\"missionClick(5,4)\"",
+      "onclick=\"missionClick(5,5)\""
+    ],
+    "html": "\n    <div class=\"screen-wrap\">\n      <div class=\"screen-header\">\n        <button class=\"back-btn\" onclick=\"renderStageMap()\">← 뒤로</button>\n        <h2>미션 6</h2>\n      </div>\n      \n    <div class=\"mission-info\">\n      <div class=\"mission-speech\">적의 공격을 피해 안전한 곳으로!</div>\n      <div class=\"move-counter\">이동: 1</div>\n    </div>\n  \n      <div class=\"chess-board mission-board\"><div class=\"board-cell light goal-cell\" onclick=\"missionClick(0,0)\"><span class=\"goal-mark\">●</span></div><div class=\"board-cell dark\" onclick=\"missionClick(0,1)\"></div><div class=\"board-cell light\" onclick=\"missionClick(0,2)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(0,3)\">bR</div><div class=\"board-cell light\" onclick=\"missionClick(0,4)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(0,5)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(1,0)\"></div><div class=\"board-cell light\" onclick=\"missionClick(1,1)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(1,2)\"></div><div class=\"board-cell light\" onclick=\"missionClick(1,3)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(1,4)\"></div><div class=\"board-cell light\" onclick=\"missionClick(1,5)\"></div><div class=\"board-cell light\" onclick=\"missionClick(2,0)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(2,1)\"></div><div class=\"board-cell light\" onclick=\"missionClick(2,2)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(2,3)\"></div><div class=\"board-cell light\" onclick=\"missionClick(2,4)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(2,5)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(3,0)\">bR</div><div class=\"board-cell light\" onclick=\"missionClick(3,1)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(3,2)\"></div><div class=\"board-cell light\" onclick=\"missionClick(3,3)\"></div><div class=\"board-cell dark selected\" onclick=\"missionClick(3,4)\">wR</div><div class=\"board-cell light\" onclick=\"missionClick(3,5)\"></div><div class=\"board-cell light\" onclick=\"missionClick(4,0)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(4,1)\"></div><div class=\"board-cell light\" onclick=\"missionClick(4,2)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(4,3)\"></div><div class=\"board-cell light\" onclick=\"missionClick(4,4)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(4,5)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(5,0)\"></div><div class=\"board-cell light\" onclick=\"missionClick(5,1)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(5,2)\"></div><div class=\"board-cell light\" onclick=\"missionClick(5,3)\"></div><div class=\"board-cell dark\" onclick=\"missionClick(5,4)\"></div><div class=\"board-cell light goal-cell\" onclick=\"missionClick(5,5)\"><span class=\"goal-mark\">●</span></div></div>\n      \n    </div>\n  "
+  },
+  "puzzles": [
+    {
+      "id": "L1-1",
+      "index": 0,
+      "type": "checkmate",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "wR",
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          null,
+          "wQ"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          7,
+          0,
+          7
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check"
+    },
+    {
+      "id": "L1-2",
+      "index": 1,
+      "type": "checkmate",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "bP",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          "wQ",
+          null,
+          null,
+          null,
+          "wK"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          3,
+          0,
+          3
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check"
+    },
+    {
+      "id": "L1-3",
+      "index": 2,
+      "type": "checkmate",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bP",
+          "bP"
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          null,
+          "wR"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          7,
+          0,
+          7
+        ]
+      ],
+      "firstLegal": false
+    },
+    {
+      "id": "L2-1",
+      "index": 3,
+      "type": "capture",
+      "board": [
+        [
+          "bR",
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          null,
+          "wQ"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          7,
+          0,
+          0
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check"
+    },
+    {
+      "id": "L2-2",
+      "index": 4,
+      "type": "capture",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          "bN",
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          "wR",
+          null,
+          "wK",
+          null,
+          null
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          3,
+          3,
+          3
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "playing"
+    },
+    {
+      "id": "L2-3",
+      "index": 5,
+      "type": "capture",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          "bB",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          "wK",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "wB"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          7,
+          4,
+          2
+        ]
+      ],
+      "firstLegal": false
+    },
+    {
+      "id": "L3-1",
+      "index": 6,
+      "type": "fork",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bR"
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          "wN",
+          null
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          6,
+          5,
+          5
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "playing",
+      "attackedTargets": []
+    },
+    {
+      "id": "L3-2",
+      "index": 7,
+      "type": "fork",
+      "board": [
+        [
+          "bR",
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          null,
+          "wQ"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          7,
+          0,
+          7
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check",
+      "attackedTargets": [
+        {
+          "square": [
+            0,
+            4
+          ],
+          "piece": "bK"
+        }
+      ]
+    },
+    {
+      "id": "L3-3",
+      "index": 8,
+      "type": "fork",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          "bR",
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          "wN",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          null,
+          null
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          5,
+          2,
+          3,
+          3
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "playing",
+      "attackedTargets": []
+    },
+    {
+      "id": "L4-1",
+      "index": 9,
+      "type": "checkmate2",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bP",
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          "wQ",
+          "wR"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          6,
+          1,
+          6
+        ],
+        [
+          7,
+          7,
+          0,
+          7
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check",
+      "replies": [
+        {
+          "reply": [
+            0,
+            6,
+            1,
+            6
+          ],
+          "secondLegal": true,
+          "afterSecond": "playing"
+        }
+      ]
+    },
+    {
+      "id": "L4-2",
+      "index": 10,
+      "type": "checkmate2",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "wR",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          null,
+          "wR"
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          6,
+          0,
+          0,
+          0
+        ],
+        [
+          7,
+          7,
+          0,
+          7
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check",
+      "replies": [
+        {
+          "reply": [
+            0,
+            4,
+            1,
+            3
+          ],
+          "secondLegal": true,
+          "afterSecond": "playing"
+        },
+        {
+          "reply": [
+            0,
+            4,
+            1,
+            4
+          ],
+          "secondLegal": true,
+          "afterSecond": "playing"
+        },
+        {
+          "reply": [
+            0,
+            4,
+            1,
+            5
+          ],
+          "secondLegal": true,
+          "afterSecond": "playing"
+        }
+      ]
+    },
+    {
+      "id": "L4-3",
+      "index": 11,
+      "type": "checkmate2",
+      "board": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bK",
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          "bP",
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "wR",
+          null,
+          null,
+          null,
+          "wK",
+          null,
+          "wQ",
+          null
+        ]
+      ],
+      "turn": "w",
+      "solution": [
+        [
+          7,
+          6,
+          1,
+          6
+        ],
+        [
+          7,
+          0,
+          0,
+          0
+        ]
+      ],
+      "firstLegal": true,
+      "afterFirst": "check",
+      "replies": [
+        {
+          "reply": [
+            0,
+            5,
+            0,
+            4
+          ],
+          "secondLegal": true,
+          "afterSecond": "check"
+        },
+        {
+          "reply": [
+            0,
+            5,
+            1,
+            4
+          ],
+          "secondLegal": true,
+          "afterSecond": "playing"
+        },
+        {
+          "reply": [
+            0,
+            5,
+            1,
+            6
+          ],
+          "secondLegal": true,
+          "afterSecond": "playing"
+        }
+      ]
+    }
+  ],
+  "collector": [
+    {
+      "level": 1,
+      "turns": 8,
+      "shortest": 8,
+      "path": [
+        [
+          4,
+          0
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "level": 2,
+      "turns": 10,
+      "shortest": 6,
+      "path": [
+        [
+          4,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "level": 3,
+      "turns": 8,
+      "shortest": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "level": 4,
+      "turns": 12,
+      "shortest": 7,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          3
+        ]
+      ]
+    },
+    {
+      "level": 5,
+      "turns": 10,
+      "shortest": 5,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          5,
+          5
+        ]
+      ]
+    }
+  ],
+  "bomb": [
+    {
+      "level": 1,
+      "shortest": 2,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "threeStarMaxMoves": 1
+    },
+    {
+      "level": 2,
+      "shortest": 2,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "threeStarMaxMoves": 2
+    },
+    {
+      "level": 3,
+      "shortest": 6,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "threeStarMaxMoves": 2
+    },
+    {
+      "level": 4,
+      "shortest": 3,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          4,
+          5
+        ]
+      ],
+      "threeStarMaxMoves": 3
+    },
+    {
+      "level": 5,
+      "shortest": 5,
+      "path": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          3,
+          1
+        ]
+      ],
+      "threeStarMaxMoves": 4
+    }
+  ],
+  "pawnAttack": {
+    "emptyDiagonal": false,
+    "emptyForward": true
+  },
+  "knightTours": [
+    {
+      "size": 5,
+      "validCompletion": true,
+      "inputUnchanged": true,
+      "timeout": false
+    },
+    {
+      "size": 6,
+      "validCompletion": true,
+      "inputUnchanged": true,
+      "timeout": false
+    },
+    {
+      "size": 7,
+      "validCompletion": true,
+      "inputUnchanged": true,
+      "timeout": false
+    }
+  ],
+  "replays": [
+    {
+      "id": "P-1",
+      "solved": true
+    },
+    {
+      "id": "P-2",
+      "solved": true
+    },
+    {
+      "id": "P-3",
+      "solved": true
+    },
+    {
+      "id": "P-4",
+      "solved": true
+    },
+    {
+      "id": "P-5",
+      "solved": true
+    },
+    {
+      "id": "P-6",
+      "solved": true
+    },
+    {
+      "id": "P-7",
+      "solved": true
+    },
+    {
+      "id": "P-8",
+      "solved": true
+    },
+    {
+      "id": "R-1",
+      "solved": true
+    },
+    {
+      "id": "R-2",
+      "solved": true
+    },
+    {
+      "id": "R-3",
+      "solved": true
+    },
+    {
+      "id": "R-4",
+      "solved": true
+    },
+    {
+      "id": "R-5",
+      "solved": true
+    },
+    {
+      "id": "R-6",
+      "solved": true
+    },
+    {
+      "id": "R-7",
+      "solved": true
+    },
+    {
+      "id": "R-8",
+      "solved": true
+    },
+    {
+      "id": "N-1",
+      "solved": true
+    },
+    {
+      "id": "N-2",
+      "solved": true
+    },
+    {
+      "id": "N-3",
+      "solved": true
+    },
+    {
+      "id": "N-4",
+      "solved": true
+    },
+    {
+      "id": "N-5",
+      "solved": true
+    },
+    {
+      "id": "N-6",
+      "solved": true
+    },
+    {
+      "id": "N-7",
+      "solved": true
+    },
+    {
+      "id": "N-8",
+      "solved": true
+    },
+    {
+      "id": "B-1",
+      "solved": true
+    },
+    {
+      "id": "B-2",
+      "solved": true
+    },
+    {
+      "id": "B-3",
+      "solved": true
+    },
+    {
+      "id": "B-4",
+      "solved": true
+    },
+    {
+      "id": "B-5",
+      "solved": true
+    },
+    {
+      "id": "B-6",
+      "solved": true
+    },
+    {
+      "id": "B-7",
+      "solved": true
+    },
+    {
+      "id": "B-8",
+      "solved": true
+    },
+    {
+      "id": "Q-1",
+      "solved": true
+    },
+    {
+      "id": "Q-2",
+      "solved": true
+    },
+    {
+      "id": "Q-3",
+      "solved": true
+    },
+    {
+      "id": "Q-4",
+      "solved": true
+    },
+    {
+      "id": "Q-5",
+      "solved": true
+    },
+    {
+      "id": "Q-6",
+      "solved": true
+    },
+    {
+      "id": "Q-7",
+      "solved": true
+    },
+    {
+      "id": "Q-8",
+      "solved": true
+    },
+    {
+      "id": "K-1",
+      "solved": true
+    },
+    {
+      "id": "K-2",
+      "solved": true
+    },
+    {
+      "id": "K-3",
+      "solved": true
+    },
+    {
+      "id": "K-4",
+      "solved": true
+    },
+    {
+      "id": "K-5",
+      "solved": true
+    },
+    {
+      "id": "K-6",
+      "solved": true
+    },
+    {
+      "id": "K-7",
+      "solved": true
+    },
+    {
+      "id": "K-8",
+      "solved": true
+    },
+    {
+      "id": "collector-1",
+      "solved": true,
+      "stars": 1
+    },
+    {
+      "id": "collector-2",
+      "solved": true,
+      "stars": 3
+    },
+    {
+      "id": "collector-3",
+      "solved": true,
+      "stars": 3
+    },
+    {
+      "id": "collector-4",
+      "solved": true,
+      "stars": 3
+    },
+    {
+      "id": "collector-5",
+      "solved": true,
+      "stars": 3
+    },
+    {
+      "id": "bomb-1",
+      "solved": true,
+      "stars": 2
+    },
+    {
+      "id": "bomb-2",
+      "solved": true,
+      "stars": 3
+    },
+    {
+      "id": "bomb-3",
+      "solved": true,
+      "stars": 1
+    },
+    {
+      "id": "bomb-4",
+      "solved": true,
+      "stars": 3
+    },
+    {
+      "id": "bomb-5",
+      "solved": true,
+      "stars": 2
+    }
+  ]
+}
