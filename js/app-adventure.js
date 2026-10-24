@@ -7,6 +7,7 @@ function goAdventure() {
 }
 
 function renderWorldSelect() {
+  cancelActivityCallbacks();
   let cards = PIECE_ORDER.map(key => {
     const missions = MISSIONS[key];
     const cleared = getPieceClearCount(key);
@@ -42,6 +43,7 @@ function goStageMap(pieceKey) {
 }
 
 function renderStageMap() {
+  cancelActivityCallbacks();
   const key = state.missionPiece;
   const missions = MISSIONS[key];
   let nodes = '';
@@ -89,6 +91,7 @@ function renderStageMap() {
 
 // --- 미션 플레이 ---
 function goMissionPlay(pieceKey, missionIdx) {
+  cancelActivityCallbacks();
   const mission = MISSIONS[pieceKey][missionIdx];
   state.missionPiece = pieceKey;
   state.missionIdx = missionIdx;
@@ -97,6 +100,8 @@ function goMissionPlay(pieceKey, missionIdx) {
   state.missionSolved = false;
   state.missionFailed = false;
   state.missionMoveCount = 0;
+  state.missionHistory = [];
+  state.missionNotice = '';
   showScreen('learn');
   renderMissionBoard();
 }
@@ -151,7 +156,7 @@ function getMissionValidMoves(board, row, col, mission) {
       }
     }
     for (const dc of [-1, 1]) {
-      if (inB(row + dir, col + dc) && isEnemy(row + dir, col + dc)) {
+      if (inB(row + dir, col + dc) && !isBlock(row + dir,col + dc) && isEnemy(row + dir, col + dc)) {
         moves.push([row + dir, col + dc]);
       }
     }
@@ -170,17 +175,18 @@ function getMissionValidMoves(board, row, col, mission) {
 }
 
 function isSquareAttacked(board, row, col, byColor, mission) {
-  const size = MISSION_BOARD_SIZE;
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const p = board[r][c];
-      if (p && p[0] === byColor) {
-        const moves = getMissionValidMoves(board, r, c, mission);
-        if (moves.some(([mr, mc]) => mr === row && mc === col)) return true;
-      }
-    }
-  }
+  for(let r=0;r<board.length;r++) for(let c=0;c<board.length;c++)
+    if(board[r][c]?.[0]===byColor && pieceAttacks(board,r,c,row,col,mission.blocks)) return true;
   return false;
+}
+
+function missionNeedsSafety(mission) { return mission.type === 'escape' || mission.piece === 'wK'; }
+function missionUndo() {
+  const previous = state.missionHistory?.pop();
+  if(!previous || state.animating) return;
+  closeClearPopup(); Object.assign(state,previous);
+  state.missionSolved=false; state.missionFailed=false; state.missionNotice='다시 해볼 수 있어요.';
+  renderMissionBoard();
 }
 
 function renderMissionBoard() {
@@ -211,12 +217,13 @@ function renderMissionBoard() {
       if (piece) content = getPieceSVG(piece, 36);
       if (r === pr && c === pc) cls += ' selected';
       if (validMoves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
+      if (missionNeedsSafety(mission) && isSquareAttacked(board,r,c,'b',mission)) cls += ' danger-cell';
 
       cells += `<div class="${cls}" onclick="missionClick(${r},${c})">${content}</div>`;
     }
   }
 
-  const desc = mission.desc[currentLang] || mission.desc['ko'];
+  const desc = state.missionNotice || mission.desc[currentLang] || mission.desc['ko'];
 
   // 상단 정보: 말풍선 + 이동 카운터
   const infoBar = `
@@ -227,8 +234,9 @@ function renderMissionBoard() {
   `;
 
   // 하단 버튼: 힌트 + 리셋
-  const actionBtns = (!state.missionSolved && !state.missionFailed) ? `
+  const actionBtns = (!state.missionSolved) ? `
     <div class="mission-actions">
+      <button class="icon-btn" onclick="missionUndo()" ${state.missionHistory?.length ? '' : 'disabled'}>↶ 되돌리기</button>
       <button class="icon-btn hint-btn" onclick="showMissionHint()">💡 ${t('hintBtn')}</button>
       <button class="icon-btn reset-btn" onclick="goMissionPlay('${state.missionPiece}', ${state.missionIdx})">🔄 ${t('resetBtn')}</button>
     </div>
@@ -254,7 +262,11 @@ function missionClick(r, c) {
   const [pr, pc] = state.missionPlayerPos;
   const validMoves = getMissionValidMoves(board, pr, pc, mission);
 
-  if (!validMoves.some(([mr, mc]) => mr === r && mc === c)) return;
+  if (!validMoves.some(([mr, mc]) => mr === r && mc === c)) {
+    state.missionNotice='점이 있는 칸으로 움직여요. 막힌 길은 돌아가요.'; renderMissionBoard(); return;
+  }
+  state.missionHistory.push({missionBoard:board.map(row=>[...row]),missionPlayerPos:[pr,pc],missionMoveCount:state.missionMoveCount});
+  state.missionNotice='';
 
   const piece = board[pr][pc];
   const boardEl = document.querySelector('#screen-learn .mission-board');
@@ -265,7 +277,9 @@ function missionClick(r, c) {
   state.missionMoveCount++;
 
   animateMove(boardEl, pr, pc, r, c, piece, () => {
-    if (mission.type === 'reach') {
+    if (missionNeedsSafety(mission) && isSquareAttacked(board,r,c,'b',mission)) {
+      state.missionFailed=true; state.missionNotice='이 칸은 상대 말이 공격하고 있어요. ↶ 되돌려서 다른 길로 가요.';
+    } else if (mission.type === 'reach') {
       if (mission.goals.some(([gr, gc]) => gr === r && gc === c)) {
         missionClear();
       }
@@ -297,7 +311,7 @@ function missionClear() {
   saveMissionProgress(state.missionPiece, state.missionIdx, stars);
 
   // 클리어 팝업을 약간 딜레이 후 표시
-  setTimeout(() => showClearPopup(stars), 300);
+  laterInScreen(() => showClearPopup(stars), 300);
 }
 
 function showClearPopup(stars) {
@@ -391,7 +405,7 @@ function findMissionSolvePath() {
       const nb = cloneBoard(b);
       nb[r][c] = nb[row][col];
       nb[row][col] = null;
-      if (mission.type === 'escape' && isSquareAttacked(nb, r, c, 'b', mission)) continue;
+      if (missionNeedsSafety(mission) && isSquareAttacked(nb, r, c, 'b', mission)) continue;
 
       const key = boardKey(nb, r, c);
       if (visited.has(key)) continue;
@@ -414,5 +428,5 @@ function showMissionHint() {
     showHintUnsolvable();
     return;
   }
-  showHintPath(boardEl, path, MISSION_BOARD_SIZE, t('hintFullPath'));
+  showHintArrow(boardEl,...path[0],...path[1],MISSION_BOARD_SIZE,'이 한 걸음부터 해볼까요?');
 }

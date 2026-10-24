@@ -33,7 +33,11 @@ const PIECE_NAMES = { P:'piecePawn', N:'pieceKnight', B:'pieceBishop', R:'pieceR
 const MISSION_BOARD_SIZE = 6;
 
 // ===== 화면 전환 =====
+let screenEpoch = 0;
+function laterInScreen(callback,delay) { const epoch=screenEpoch; return setTimeout(()=>{if(epoch===screenEpoch)callback();},delay); }
+function cancelActivityCallbacks() { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
 function showScreen(name) {
+  if (state.screen !== name) { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
   state.screen = name;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('screen-' + name);
@@ -42,6 +46,7 @@ function showScreen(name) {
 
 // ===== 이동 애니메이션 =====
 function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSize) {
+  const epoch = screenEpoch;
   state.animating = true;
   const cols = gridSize || 8;
   const cellSize = boardEl.offsetWidth / cols;
@@ -74,7 +79,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
     done = true;
     if (ghost.parentNode) ghost.remove();
     state.animating = false;
-    callback();
+    if(epoch === screenEpoch) callback();
   }
 
   ghost.addEventListener('transitionend', finish, { once: true });
@@ -173,7 +178,7 @@ function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
   boardEl.appendChild(arrow);
 
   // 텍스트 표시
-  const speech = document.querySelector('.mission-speech');
+  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
   if (speech && text) {
     speech.innerHTML = '💡 ' + text;
     speech.classList.add('hint-active');
@@ -195,7 +200,7 @@ function showHintTarget(boardEl, targetR, targetC, gridSize, text) {
   const cell = boardEl.children[idx];
   if (cell) cell.classList.add('hint-highlight');
 
-  const speech = document.querySelector('.mission-speech');
+  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
   if (speech && text) {
     speech.innerHTML = '💡 ' + text;
     speech.classList.add('hint-active');
@@ -260,7 +265,7 @@ function showHintPath(boardEl, path, gridSize, text) {
   boardEl.appendChild(markerEl);
 
   // 텍스트
-  const speech = document.querySelector('.mission-speech');
+  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
   if (speech && text) {
     speech.innerHTML = '💡 ' + text;
     speech.classList.add('hint-active');
@@ -314,7 +319,7 @@ function showHintMoves(boardEl, moves, gridSize, text) {
   }
   boardEl.appendChild(markerEl);
 
-  const speech = document.querySelector('.mission-speech');
+  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
   if (speech && text) {
     speech.innerHTML = '💡 ' + text;
     speech.classList.add('hint-active');
@@ -322,7 +327,7 @@ function showHintMoves(boardEl, moves, gridSize, text) {
 }
 
 function showHintUnsolvable() {
-  const speech = document.querySelector('.mission-speech');
+  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
   if (speech) {
     speech.innerHTML = '⚠️ ' + t('hintUnsolvable');
     speech.classList.add('hint-active', 'hint-unsolvable');

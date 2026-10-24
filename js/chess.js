@@ -16,6 +16,28 @@ const INIT_BOARD = [
   ['wR','wN','wB','wQ','wK','wB','wN','wR']
 ];
 
+// Attack maps are independent of legal moves: pawns attack diagonally, even empty squares.
+function pieceAttacks(board, fr, fc, tr, tc, blocks = []) {
+  const p = board[fr]?.[fc];
+  if (!p || (fr === tr && fc === tc)) return false;
+  const dr = tr-fr, dc = tc-fc, ar = Math.abs(dr), ac = Math.abs(dc);
+  if (p[1] === 'P') return dr === (p[0] === 'w' ? -1 : 1) && ac === 1;
+  if (p[1] === 'N') return ar*ac === 2;
+  if (p[1] === 'K') return Math.max(ar,ac) === 1;
+  const straight = dr === 0 || dc === 0, diagonal = ar === ac;
+  if (!((p[1] === 'R' && straight) || (p[1] === 'B' && diagonal) || (p[1] === 'Q' && (straight || diagonal)))) return false;
+  const sr = Math.sign(dr), sc = Math.sign(dc);
+  for (let r=fr+sr,c=fc+sc; r!==tr || c!==tc; r+=sr,c+=sc) {
+    if (board[r]?.[c] || blocks.some(([br,bc])=>br===r&&bc===c)) return false;
+  }
+  return true;
+}
+
+function boardFromFEN(fen) {
+  return fen.split(' ')[0].split('/').map(row => [...row].flatMap(p =>
+    /[1-8]/.test(p) ? Array(Number(p)).fill(null) : [(p === p.toUpperCase() ? 'w' : 'b') + p.toUpperCase()]));
+}
+
 class ChessGame {
   constructor() {
     this.reset();
@@ -60,16 +82,31 @@ class ChessGame {
   }
 
   // 해당 칸이 color에게 공격받는지
+  attackers(board, row, col, byColor) {
+    const result = [];
+    for (let r=0;r<8;r++) for (let c=0;c<8;c++)
+      if (board[r][c]?.[0] === byColor && pieceAttacks(board,r,c,row,col)) result.push([r,c]);
+    return result;
+  }
+
   isAttacked(board, row, col, byColor) {
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const p = board[r][c];
-        if (!p || this.color(p) !== byColor) continue;
-        const moves = this.rawMoves(board, r, c, null);
-        if (moves.some(([mr, mc]) => mr === row && mc === col)) return true;
-      }
-    }
-    return false;
+    return this.attackers(board,row,col,byColor).length > 0;
+  }
+
+  clone() { return Object.assign(new ChessGame(), JSON.parse(JSON.stringify(this))); }
+
+  static fromFEN(fen) {
+    const g = new ChessGame();
+    g.board = boardFromFEN(fen); g.turn = fen.split(' ')[1] || 'w';
+    g.castling = {wK:false,wR_a:false,wR_h:false,bK:false,bR_a:false,bR_h:false};
+    g.positionCounts = {}; g.recordPosition(); g.updateStatus(); return g;
+  }
+
+  allMoves() {
+    const moves=[];
+    for(let r=0;r<8;r++) for(let c=0;c<8;c++) if(this.color(this.board[r][c])===this.turn)
+      for(const [tr,tc] of this.legalMoves(r,c)) moves.push([r,c,tr,tc]);
+    return moves;
   }
 
   // 이동 후 자기 킹이 체크인지
@@ -80,7 +117,9 @@ class ChessGame {
     b[toR][toC] = b[fromR][fromC];
     b[fromR][fromC] = null;
     const color = this.color(b[toR][toC]);
-    const [kr, kc] = this.findKingOnBoard(b, color);
+    const king = this.findKingOnBoard(b, color);
+    if (!king) return true;
+    const [kr, kc] = king;
     return this.isAttacked(b, kr, kc, color === 'w' ? 'b' : 'w');
   }
 
@@ -142,7 +181,7 @@ class ChessGame {
   // 합법 이동
   legalMoves(row, col) {
     const raw = this.rawMoves(this.board, row, col, this.enPassant);
-    return raw.filter(([r, c]) => !this.moveLeavesCheck(row, col, r, c));
+    return raw.filter(([r, c]) => this.board[r][c]?.[1] !== 'K' && !this.moveLeavesCheck(row, col, r, c));
   }
 
   select(row, col) {
@@ -165,6 +204,7 @@ class ChessGame {
 
   move(fromR, fromC, toR, toC) {
     const piece = this.board[fromR][fromC];
+    if (!piece || this.color(piece) !== this.turn || !this.legalMoves(fromR,fromC).some(([r,c])=>r===toR&&c===toC)) return 'illegal';
     const color = this.color(piece);
     const type = this.type(piece);
 
@@ -284,171 +324,24 @@ const PIECE_LEARN = [
   { symbol: '♙', nameKey: 'piecePawn', desc: { ko: '폰은 앞으로 한 칸, 처음에는 두 칸 갈 수 있어요. 대각선으로 상대를 잡아요!', en: 'The Pawn moves forward one square, or two on its first move. It captures diagonally!' }, moves: [[-1,0],[-2,0]] },
 ];
 
-// ===== 퍼즐 데이터 (4레벨 × 3개 = 12개) =====
-
-// 레벨 1: 1수 체크메이트
-// 레벨 2: 기물 잡기
-// 레벨 3: 포크/핀
-// 레벨 4: 2수 체크메이트
-
+// Stable puzzle IDs survive menu reordering. Historical stars stay in the legacy ledger.
 const PUZZLES = [
-  // === 레벨 1: 1수 체크메이트 ===
-  { level:1, type:'checkmate',
-    board: [
-      [null,null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ['wR',null,null,null,'wK',null,null,'wQ']
-    ], turn:'w', solution:[[7,7,0,7]],
-    desc:{ ko:'퀸으로 체크메이트!', en:'Checkmate with the Queen!' }},
-
-  { level:1, type:'checkmate',
-    board: [
-      [null,null,null,null,'bK',null,null,null],
-      [null,null,null,null,'bP',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,'wQ',null,null,null,'wK']
-    ], turn:'w', solution:[[7,3,0,3]],
-    desc:{ ko:'퀸으로 체크메이트!', en:'Checkmate with the Queen!' }},
-
-  { level:1, type:'checkmate',
-    board: [
-      [null,null,null,null,null,null,'bK',null],
-      [null,null,null,null,null,null,'bP','bP'],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,null,'wR']
-    ], turn:'w', solution:[[7,7,0,7]],
-    desc:{ ko:'룩으로 체크메이트!', en:'Checkmate with the Rook!' }},
-
-  // === 레벨 2: 기물 잡기 (보호 안 된 기물 캡처) ===
-  { level:2, type:'capture',
-    board: [
-      ['bR',null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,null,'wQ']
-    ], turn:'w', solution:[[7,7,0,0]],
-    desc:{ ko:'보호 안 된 룩을 잡으세요!', en:'Capture the undefended Rook!' }},
-
-  { level:2, type:'capture',
-    board: [
-      [null,null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,'bN',null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,'wR',null,'wK',null,null]
-    ], turn:'w', solution:[[7,3,3,3]],
-    desc:{ ko:'보호 안 된 나이트를 잡으세요!', en:'Capture the undefended Knight!' }},
-
-  { level:2, type:'capture',
-    board: [
-      [null,null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,'bB',null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,'wK',null,null,null,null,null,'wB']
-    ], turn:'w', solution:[[7,7,4,2]],
-    desc:{ ko:'보호 안 된 비숍을 잡으세요!', en:'Capture the undefended Bishop!' }},
-
-  // === 레벨 3: 포크 (두 기물 동시 위협) ===
-  { level:3, type:'fork',
-    board: [
-      [null,null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,'bR'],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,'wN',null]
-    ], turn:'w', solution:[[7,6,5,5]],
-    desc:{ ko:'나이트로 킹과 룩을 동시에 위협하세요!', en:'Fork the King and Rook with the Knight!' }},
-
-  { level:3, type:'fork',
-    board: [
-      ['bR',null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,null,'wQ']
-    ], turn:'w', solution:[[7,7,0,7]],
-    desc:{ ko:'퀸으로 킹과 룩을 동시에 위협하세요!', en:'Fork the King and Rook with the Queen!' }},
-
-  { level:3, type:'fork',
-    board: [
-      [null,null,null,'bR','bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,'wN',null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,null,null]
-    ], turn:'w', solution:[[5,2,3,3]],
-    desc:{ ko:'나이트 포크! 킹과 룩을 동시에!', en:'Knight fork! King and Rook at once!' }},
-
-  // === 레벨 4: 2수 체크메이트 ===
-  { level:4, type:'checkmate2',
-    board: [
-      [null,null,null,null,null,null,'bK',null],
-      [null,null,null,null,null,null,'bP',null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,'wQ','wR']
-    ], turn:'w', solution:[[7,6,1,6],[7,7,0,7]],
-    desc:{ ko:'2수 만에 체크메이트를 만드세요!', en:'Checkmate in 2 moves!' }},
-
-  { level:4, type:'checkmate2',
-    board: [
-      [null,null,null,null,'bK',null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ['wR',null,null,null,null,null,null,null],
-      [null,null,null,null,'wK',null,null,'wR']
-    ], turn:'w', solution:[[6,0,0,0],[7,7,0,7]],
-    desc:{ ko:'두 룩으로 2수 체크메이트!', en:'Checkmate in 2 with two Rooks!' }},
-
-  { level:4, type:'checkmate2',
-    board: [
-      [null,null,null,null,null,'bK',null,null],
-      [null,null,null,null,null,'bP',null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      [null,null,null,null,null,null,null,null],
-      ['wR',null,null,null,'wK',null,'wQ',null]
-    ], turn:'w', solution:[[7,6,1,6],[7,0,0,0]],
-    desc:{ ko:'퀸과 룩으로 2수 체크메이트!', en:'Checkmate in 2 with Queen and Rook!' }},
-];
+  {id:'capture-rook-v1',level:2,type:'capture',fen:'r3k3/8/8/8/8/8/8/4K2Q w - - 0 1',target:[0,0]},
+  {id:'capture-knight-v1',level:2,type:'capture',fen:'4k3/8/8/3n4/8/8/8/3R1K2 w - - 0 1',target:[3,3]},
+  {id:'capture-bishop-v1',level:2,type:'capture',fen:'4k3/8/8/8/4b3/8/8/1K5B w - - 0 1',target:[4,4]},
+  {id:'check-escape-v1',level:5,type:'escape',fen:'k3r3/8/8/8/8/8/8/4K3 w - - 0 1'},
+  {id:'check-capture-v1',level:5,type:'escape',fen:'k7/8/8/8/8/8/4r3/4K3 w - - 0 1'},
+  {id:'check-block-v1',level:5,type:'escape',fen:'4r2k/8/8/8/8/8/R7/4K3 w - - 0 1'},
+  {id:'mate-queen-v1',level:1,type:'checkmate',fen:'6k1/8/5K1Q/8/8/8/8/8 w - - 0 1'},
+  {id:'mate-rook-v1',level:1,type:'checkmate',fen:'k7/8/1K6/8/8/8/8/7R w - - 0 1'},
+  {id:'mate-edge-v1',level:1,type:'checkmate',fen:'7k/8/5KQ1/8/8/8/8/8 w - - 0 1'},
+  {id:'fork-knight-v1',level:3,type:'fork',fen:'8/8/8/4k3/7r/8/8/4K1N1 w - - 0 1'},
+  {id:'fork-queen-v1',level:3,type:'fork',fen:'r3k3/8/8/8/8/8/8/4K2Q w - - 0 1'},
+  {id:'fork-jump-v1',level:3,type:'fork',fen:'8/2r1k3/8/8/8/2N5/8/4K3 w - - 0 1'},
+  {id:'mate-two-a-v1',level:4,type:'checkmate2',fen:'8/8/k7/2K5/8/6Q1/8/8 w - - 0 1'},
+  {id:'mate-two-b-v1',level:4,type:'checkmate2',fen:'1k6/6Q1/8/2K5/8/8/8/8 w - - 0 1'},
+  {id:'mate-two-c-v1',level:4,type:'checkmate2',fen:'6Q1/8/8/8/8/8/7k/4K3 w - - 0 1'},
+].map(p => ({...p,board:boardFromFEN(p.fen),turn:'w',desc:{
+  ko:({capture:'표시된 상대 말을 잡아요.',escape:'왕을 안전하게 해요. 피하거나, 잡거나, 막아 보세요.',checkmate:'상대 왕이 피할 수 없게 해요.',fork:'한 말로 상대 왕과 다른 말을 동시에 노려요.',checkmate2:'내 말 두 번으로 체크메이트! 상대가 어떻게 움직여도 해낼 수 있어요.'})[p.type],
+  en:({capture:'Capture the marked piece.',escape:'Make your king safe: move, capture, or block.',checkmate:'Checkmate the king.',fork:'Attack the king and another piece at once.',checkmate2:'Force checkmate in two of your moves.'})[p.type]
+}}));

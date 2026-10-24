@@ -2,8 +2,8 @@
 // 특정 기물로 별을 수집, 적 순찰 회피
 
 const COLLECTOR_LEVELS = [
-  { piece:'wN', size:5, stars:[[0,4],[2,2],[4,4]], enemies:[], turns:8, name:'나이트' },
-  { piece:'wN', size:5, stars:[[0,0],[0,4],[4,4]], enemies:[{pos:[2,2],piece:'bR',path:[[2,2],[2,4],[2,0],[2,2]]}], turns:10, name:'나이트' },
+  { piece:'wN', size:5, stars:[[0,4],[2,2],[4,4]], enemies:[], turns:14, par:8, name:'나이트' },
+  { piece:'wN', size:5, stars:[[0,0],[0,4],[4,4]], enemies:[{pos:[2,2],piece:'bR',path:[[2,2],[2,4],[2,0],[2,2]]}], turns:12, par:6, name:'나이트' },
   { piece:'wB', size:6, stars:[[0,1],[2,3],[4,5]], enemies:[{pos:[1,1],piece:'bR',path:[[1,1],[1,5],[1,1]]}], turns:8, name:'비숍' },
   { piece:'wR', size:6, stars:[[0,5],[3,0],[5,3],[1,2]], enemies:[{pos:[2,2],piece:'bB',path:[[2,2],[4,4],[2,2]]},{pos:[3,3],piece:'bN',path:[[3,3],[1,4],[3,3]]}], turns:12, name:'룩' },
   { piece:'wQ', size:6, stars:[[0,0],[0,5],[5,0],[5,5],[2,3]], enemies:[{pos:[1,3],piece:'bR',path:[[1,3],[1,0],[1,5],[1,3]]},{pos:[4,2],piece:'bB',path:[[4,2],[2,0],[4,2]]}], turns:10, name:'퀸' },
@@ -121,7 +121,7 @@ function collectorClick(r,c) {
 
     // 적에게 잡혔는지
     if (cl.enemies.some(e=>e.pos[0]===r&&e.pos[1]===c)) { cl.failed=true; cl.failMsg=t('collectorCaught'); }
-    else if (cl.starsLeft===0) { cl.clear=true; saveMiniGameStars('collector', cl.levelIdx||0, cl.turnsLeft>3?3:cl.turnsLeft>0?2:1); spawnParticles(); }
+    else if (cl.starsLeft===0) { cl.clear=true; saveMiniGameStars('collector', cl.levelIdx||0, calculateStars(COLLECTOR_LEVELS[cl.levelIdx].turns-cl.turnsLeft, COLLECTOR_LEVELS[cl.levelIdx].par || [8,6,3,7,5][cl.levelIdx])); spawnParticles(); }
     else if (cl.turnsLeft<=0) { cl.failed=true; cl.failMsg=t('collectorTimeout'); }
 
     renderCollector();

@@ -284,7 +284,7 @@ function knightTourClick(r, c) {
       spawnParticles();
     } else {
       const next = getKnightMoves(r, c, kt.size, kt.board);
-      if (next.length === 0) kt.stuck = true;
+      if (next.length === 0) { kt.stuck = true; const pct=kt.visited/kt.total; if(pct>=0.4)saveMiniGameStars('knighttour',kt.levelIdx,pct>=0.8?2:1); }
     }
     renderKnightTour();
   }, kt.size);

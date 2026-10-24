@@ -29,7 +29,7 @@ const MISSIONS = {
       hint:[4,2,3,3],
       desc:{ ko:'대각선 공격으로 적을 모두 잡으세요!', en:'Capture all enemies with diagonal attacks!' }},
     // Stage 6: 미로 탈출
-    { type:'reach', piece:'wP', start:[4,1], goals:[[1,4]], blocks:[[3,1],[2,3]], enemies:[], targets:[[3,2,'bP'],[2,3,'bP'],[1,4,'bP']], minMoves:3,
+    { type:'reach', piece:'wP', start:[4,1], goals:[[1,4]], blocks:[[3,1]], enemies:[], targets:[[3,2,'bP'],[2,3,'bP'],[1,4,'bP']], minMoves:3,
       hint:[4,1,3,2],
       desc:{ ko:'적을 잡으며 미로를 통과하세요!', en:'Capture enemies to navigate through!' }},
     // Stage 7: 끝까지 전진 (프로모션 느낌)
@@ -213,7 +213,7 @@ const MISSIONS = {
       hint:[4,2,3,2],
       desc:{ ko:'킹으로 적 폰을 모두 잡으세요!', en:'Capture all enemy Pawns with the King!' }},
     // Stage 7: 위험 속 캡처
-    { type:'capture', piece:'wK', start:[3,3], goals:[], blocks:[], enemies:[[0,0,'bB']], targets:[[2,4,'bP'],[4,2,'bP']], minMoves:3,
+    { type:'capture', piece:'wK', start:[3,3], goals:[], blocks:[], enemies:[[0,0,'bB']], targets:[[2,4,'bP'],[4,2,'bP']], minMoves:4,
       hint:[3,3,2,4],
       desc:{ ko:'적의 위협을 피하면서 적을 잡으세요!', en:'Capture enemies while avoiding threats!' }},
     // Stage 8: 킹 마스터
@@ -306,3 +306,5 @@ function getTotalMiniGameStars() {
 function getAllStars() {
   return getTotalStars() + getTotalPuzzleStars() + getTotalMiniGameStars();
 }
+
+for(const [piece,missions] of Object.entries(MISSIONS)) missions.forEach((m,i)=>{m.id=`adventure-${piece.toLowerCase()}-${i+1}-v1`;m.version=1;});
