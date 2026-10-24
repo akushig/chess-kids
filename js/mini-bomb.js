@@ -9,12 +9,13 @@ const BOMB_LEVELS = [
   { piece:'wQ', size:6, bombs:[{pos:[0,0],timer:3},{pos:[0,5],timer:4},{pos:[5,5],timer:5},{pos:[3,1],timer:6}], blocks:[[2,3],[3,3]], name:'퀸' },
 ];
 
-function goBomb(levelIdx) {
-  beginActivity('bomb',{levelIdx});
+function goBomb(levelIdx,challenge=true) {
+  beginActivity('bomb',{levelIdx,challenge});
   const lv = BOMB_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.bm = {
     levelIdx: levelIdx || 0,
+    challenge,
     size: size,
     piece: lv.piece,
     pos: [size-1, 0],
@@ -28,22 +29,7 @@ function goBomb(levelIdx) {
   renderBomb();
 }
 
-function getBombMoves(bm) {
-  const {pos, size, piece, blocks} = bm;
-  const [row, col] = pos;
-  const type = piece[1];
-  const moves = [];
-  const inB = (r,c) => r>=0 && r<size && c>=0 && c<size;
-  const isBlock = (r,c) => blocks.some(([br,bc]) => br===r && bc===c);
-  const add = (r,c) => { if (inB(r,c) && !isBlock(r,c)) moves.push([r,c]); };
-  const slide = (dr,dc) => { let r=row+dr,c=col+dc; while(inB(r,c)&&!isBlock(r,c)) { moves.push([r,c]); r+=dr; c+=dc; } };
-
-  if (type==='N') { for (const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) add(row+dr,col+dc); }
-  else if (type==='B') { for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) slide(dr,dc); }
-  else if (type==='R') { for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) slide(dr,dc); }
-  else if (type==='Q') { for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]) slide(dr,dc); }
-  return moves;
-}
+function getBombMoves(bm) { return pathGameMoves(bm.piece,bm.pos,bm.size,bm.blocks); }
 
 function renderBomb() {
   saveActiveSession();
@@ -65,8 +51,8 @@ function renderBomb() {
 
       const bomb = bm.bombs.find(b=>b.pos[0]===r&&b.pos[1]===c&&!b.defused);
       if (bomb) {
-        cls += bomb.timer <= 2 ? ' bomb-urgent' : ' bomb-cell';
-        content = `<span class="bomb-icon">💣<span class="bomb-timer">${bomb.timer}</span></span>`;
+        cls += bm.challenge && bomb.timer <= 2 ? ' bomb-urgent' : ' bomb-cell';
+        content = `<span class="bomb-icon">💣<span class="bomb-timer">${bm.challenge?bomb.timer:'·'}</span></span>`;
       }
 
       const defused = bm.bombs.find(b=>b.pos[0]===r&&b.pos[1]===c&&b.defused);
@@ -81,22 +67,22 @@ function renderBomb() {
   let msg;
   if (bm.clear) msg=`<div class="status-msg success">${t('bombClear')}</div>`;
   else if (bm.failed) msg=`<div class="status-msg fail">${t('bombExploded')}</div>`;
-  else msg=`<div class="status-msg">${t('bombDesc')}</div>`;
+  else msg=`<div class="status-msg">${bm.challenge?'한 번 움직이면 남은 이동 수가 줄어요. 먼저 갈 곳을 골라요.':'이동 수 제한 없이 해제해봐요.'}</div>`;
 
   const remaining = bm.bombs.filter(b=>!b.defused);
   const minTimer = remaining.length > 0 ? Math.min(...remaining.map(b=>b.timer)) : 0;
   const info=`<div class="mission-info">
     <div class="mission-speech">💣 ×${remaining.length}</div>
-    <div class="move-counter">${remaining.length > 0 ? t('bombTimer')+': '+minTimer : '✓'}</div>
+    <div class="move-counter">${remaining.length > 0 ? bm.challenge?'남은 이동 '+minTimer+'번':'이동 수 제한 없음' : '✓'}</div>
   </div>`;
 
   const actions=(!bm.clear&&!bm.failed)?`<div class="mission-actions">
     <button class="icon-btn hint-btn" onclick="bombHint()">💡 ${t('hintBtn')}</button>
-    <button class="icon-btn reset-btn" onclick="goBomb(${bm.levelIdx})">🔄 ${t('resetBtn')}</button>
+    <button class="icon-btn reset-btn" onclick="goBomb(${bm.levelIdx},${bm.challenge})">🔄 ${t('resetBtn')}</button>
   </div>`:'';
 
-  const retryBtn=bm.failed?`<button class="action-btn" onclick="goBomb(${bm.levelIdx})">${t('missionRetryBtn')}</button>`:'';
-  const nextBtn=bm.clear&&bm.levelIdx<BOMB_LEVELS.length-1?`<button class="action-btn green" onclick="goBomb(${bm.levelIdx+1})">${t('btnNext')}</button>`:'';
+  const retryBtn=bm.failed?`<button class="action-btn" onclick="goBomb(${bm.levelIdx},${bm.challenge})">${t('missionRetryBtn')}</button>`:'';
+  const nextBtn=bm.clear&&bm.levelIdx<BOMB_LEVELS.length-1?`<button class="action-btn green" onclick="goBomb(${bm.levelIdx+1},${bm.challenge})">${t('btnNext')}</button>`:'';
 
   document.getElementById('screen-mini').innerHTML=`
     <div class="screen-wrap">
@@ -104,9 +90,9 @@ function renderBomb() {
         <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
         <h2>${t('bombTitle')} Lv.${bm.levelIdx+1}</h2>
       </div>
-      ${msg} ${info}
+      ${msg} ${info}<button class="play-chip" onclick="goBomb(${bm.levelIdx},${!bm.challenge})">${bm.challenge?'느긋하게 연습하기':'이동 수 도전하기'}</button>
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${undoButton()} ${actions} ${retryBtn} ${nextBtn}
+      ${undoButton()} ${actions} ${retryBtn} ${nextBtn} ${bm.clear?finishLinks('goCollector(0)','별 모으러 가기'):''}
     </div>`;
 }
 
@@ -132,7 +118,7 @@ function bombClick(r,c) {
     for (const b of bm.bombs) { if (!b.defused) b.timer--; }
 
     // 폭발 체크
-    if (bm.bombs.some(b=>!b.defused&&b.timer<=0)) { bm.failed=true; }
+    if (bm.challenge&&bm.bombs.some(b=>!b.defused&&b.timer<=0)) { bm.failed=true; }
     else if (bm.bombs.every(b=>b.defused)) { bm.clear=true; saveMiniGameStars('bomb', bm.levelIdx||0, calculateStars(bm.moves,[2,2,6,3,5][bm.levelIdx])); spawnParticles(); }
 
     renderBomb();
@@ -164,7 +150,7 @@ function findBombSolvePath() {
       // 폭발 체크
       let exploded = false;
       for (let i = 0; i < bombs.length; i++) {
-        if (!(newMask & (1 << i)) && bombs[i].timer - mc <= 0) { exploded = true; break; }
+        if (bm.challenge && !(newMask & (1 << i)) && bombs[i].timer - mc <= 0) { exploded = true; break; }
       }
       if (exploded) continue;
 
@@ -197,5 +183,5 @@ function bombHint() {
     }
     return;
   }
-  showHintPath(boardEl, path, bm.size, t('bombHintPath'));
+  showHintArrow(boardEl,...path[0],...path[1],bm.size,'이 한 걸음부터 계획해봐요.');
 }

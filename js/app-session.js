@@ -8,6 +8,7 @@ function copyData(value) { return JSON.parse(JSON.stringify(value)); }
 function beginActivity(kind,params={}) {
   saveActiveSession(); cancelActivityCallbacks();
   state.activeKind=kind;state.activityParams=params;state.actionHistory=[];
+  state.supportLevel=0;
   state.randomSeed=(Date.now() ^ Math.floor(Math.random()*0xffffffff))>>>0 || 1;
 }
 function activityRandom() {
@@ -15,11 +16,11 @@ function activityRandom() {
 }
 function activitySnapshot() {
   const values={};for(const key of SESSION_KEYS[state.activeKind]||[])values[key]=state[key];
-  return copyData({values,randomSeed:state.randomSeed});
+  return copyData({values,randomSeed:state.randomSeed,supportLevel:state.supportLevel||0});
 }
 function rememberAction() { state.actionHistory ||= [];state.actionHistory.push(activitySnapshot());if(state.actionHistory.length>120)state.actionHistory.shift(); }
 function restoreSnapshot(snap) {
-  Object.assign(state,copyData(snap.values));state.randomSeed=snap.randomSeed;
+  Object.assign(state,copyData(snap.values));state.randomSeed=snap.randomSeed;state.supportLevel=Math.max(state.supportLevel||0,snap.supportLevel||0);
   if(state.game)state.game=Object.assign(new ChessGame(),state.game);
   if(state.puzzleGame)state.puzzleGame=Object.assign(new ChessGame(),state.puzzleGame);
 }
@@ -54,7 +55,7 @@ function resumeActivity() {
   const saved=readData('last_session',null);
   if(!saved||saved.version!==1||!SESSION_KEYS[saved.kind])return;
   if(state.play)playStop();cancelActivityCallbacks();
-  state.activeKind=saved.kind;state.activityParams=saved.params;state.actionHistory=saved.history||[];restoreSnapshot(saved.snapshot);
+  state.supportLevel=saved.snapshot.supportLevel||0;state.activeKind=saved.kind;state.activityParams=saved.params;state.actionHistory=saved.history||[];restoreSnapshot(saved.snapshot);
   state.puzzleWaiting=false;state.puzzleRun=(state.puzzleRun||0)+1;
   const screen=({mission:'learn',puzzle:'puzzle',play:'play'})[saved.kind]||'mini';showScreen(screen);
   if(saved.kind==='puzzle'&&state.puzzleGame.turn==='b'&&!state.puzzleSolved)doPuzzleAiMove();
@@ -69,4 +70,9 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)saveActiveS
 function requestActivityUndo() {
   if(state.activeKind==='play'&&state.play.mode==='friend')showChoice('둘 다 한 수 되돌리기에 동의하나요?',[{label:'함께 되돌리기',action:undoActivity},{label:'그대로 두기',action:()=>{}}]);
   else undoActivity();
+}
+
+function noteHelp(level=1){state.supportLevel=Math.max(state.supportLevel||0,level);}
+function finishLinks(action='goMiniMenu()',label='다른 놀이 보기'){
+  return `<div class="finish-actions"><button class="action-btn green" onclick="${action}">${label}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div>`;
 }

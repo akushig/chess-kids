@@ -225,6 +225,13 @@ const MISSIONS = {
 
 // Original IDs remain archived in the ledger when a lesson is redesigned.
 for(const [piece,missions] of Object.entries(MISSIONS)) missions.forEach((m,i)=>{m.id=`adventure-${piece.toLowerCase()}-${i+1}-v1`;m.version=1;});
+// Keep each original ID when making the learning sequence gentler.
+MISSIONS.P[0].goals=[[3,2]];MISSIONS.P[0].hint=[4,2,3,2];MISSIONS.P[0].desc.ko='폰을 앞으로 한 칸 움직여요.';
+MISSIONS.N[4].targets=[[1,2,'bP'],[3,1,'bP']];MISSIONS.N[4].minMoves=2;
+MISSIONS.B[4].targets=[[3,0,'bP'],[1,2,'bP']];MISSIONS.B[4].minMoves=2;
+MISSIONS.B=[0,1,6,2,3,4,5,7].map(i=>MISSIONS.B[i]);
+MISSIONS.B[6].optional=true;MISSIONS.N[6].optional=true;MISSIONS.N[7].optional=true;MISSIONS.K[6].optional=true;
+MISSIONS.Q[0].desc.ko='퀸은 가로·세로·대각선으로 가요. 깃발을 찾아요.';
 const ROOK_LESSONS = [{"id": "rook.horizontal.v1", "size": 4, "start": [3, 0], "goals": [[3, 3]], "targets": [], "blocks": [], "objective": "reach", "par": 1, "prompt": "룩을 반짝이는 깃발로 보내요."}, {"id": "rook.vertical.v1", "size": 4, "start": [3, 3], "goals": [[0, 3]], "targets": [], "blocks": [], "objective": "reach", "par": 1, "prompt": "이번에는 위로 쭉 가요."}, {"id": "rook.capture.v1", "size": 4, "start": [3, 0], "goals": [], "targets": [[3, 3]], "blocks": [], "objective": "captureAll", "par": 1, "prompt": "같은 줄의 연습 말을 잡아요."}, {"id": "rook.capture-chain.v1", "size": 4, "start": [3, 0], "goals": [], "targets": [[3, 3], [0, 3]], "blocks": [], "objective": "captureAll", "par": 2, "prompt": "연습 말 두 개를 잡아요."}, {"id": "rook.turn.v1", "size": 4, "start": [3, 0], "goals": [[0, 3]], "targets": [], "blocks": [], "objective": "reach", "par": 2, "prompt": "한 번 꺾어서 깃발로 가요."}, {"id": "rook.obstacle.v1", "size": 4, "start": [3, 0], "goals": [[3, 3]], "targets": [], "blocks": [[3, 1]], "objective": "reach", "par": 3, "prompt": "상자가 없는 길로 돌아가요."}, {"id": "rook.transfer.v1", "size": 5, "start": [4, 0], "goals": [[0, 4]], "targets": [], "blocks": [[2, 0], [4, 2]], "objective": "reach", "par": 3, "prompt": "새로운 길에서도 깃발을 찾아요."}, {"id": "rook.challenge.v1", "size": 5, "start": [4, 0], "goals": [], "targets": [[4, 4], [0, 4], [0, 0]], "blocks": [], "objective": "captureAll", "par": 3, "optional": true, "prompt": "연습 말 세 개를 어떤 순서로 잡을까요?"}];
 MISSIONS.R = ROOK_LESSONS.map(m=>({...m,piece:'wR',type:m.objective==='reach'?'reach':'capture',targets:m.targets.map(([r,c])=>[r,c,'bP']),enemies:[],minMoves:m.par,desc:{ko:m.prompt,en:m.prompt},version:1}));
 
@@ -240,7 +247,12 @@ function progressLedger() {
   writeData('progress_v3',saved);return saved;
 }
 function awardStars(section,id,stars) {
-  const p=progressLedger(),before=getAllStars();p[section][id]=Math.max(p[section][id]||0,stars);writeData('progress_v3',p);
+  const p=progressLedger(),before=getAllStars();p[section][id]=Math.max(p[section][id]||0,stars);p.completions ||= {};
+  const assisted=(state.supportLevel||0)>0 || !!state.kt?.demoUsed && state.activeKind==='knight';
+  const joint=state.activeKind==='knight'&&state.kt?.family;
+  const previous=p.completions[id]||{};
+  p.completions[id]={completedAt:Date.now(),assisted,joint,independent:previous.independent||(!assisted&&!joint),count:(previous.count||0)+1};
+  writeData('progress_v3',p);
   const after=getAllStars();
   if(typeof SKIN_UNLOCK!=='undefined')for(const [name,required]of Object.entries(SKIN_UNLOCK))if(before<required&&after>=required)writeData('pending_skin',name);
 }
@@ -258,6 +270,6 @@ function getPuzzleProgress(){return progressLedger().puzzles;}
 function savePuzzleStars(level,index,stars){awardStars('puzzles',PUZZLES[index].id,stars);}
 function getTotalPuzzleStars(){return Object.values(getPuzzleProgress()).reduce((a,b)=>a+b,0);}
 function getMiniGameProgress(){return progressLedger().mini;}
-function saveMiniGameStars(type,id,stars){awardStars('mini',type+'_'+id,stars);}
+function saveMiniGameStars(type,id,stars){const key=type==='collector'?COLLECTOR_LEVELS[id].id:type+'_'+id;awardStars('mini',key,stars);}
 function getTotalMiniGameStars(){return Object.values(getMiniGameProgress()).reduce((a,b)=>a+b,0);}
 function getAllStars(){const p=progressLedger();return [...Object.values(p.missions),...Object.values(p.puzzles),...Object.values(p.mini),...Object.values(p.achievements||{})].reduce((a,b)=>a+b,0);}

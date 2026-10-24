@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chess-kids-v30';
+const CACHE_NAME = 'chess-kids-v31';
 const ASSETS = [
   './',
   './index.html',
@@ -21,6 +21,7 @@ const ASSETS = [
   './js/mini-knight-solver.js',
   './js/mini-knight-tour.js',
   './js/mini-survival.js',
+  './js/path-games.js',
   './js/mini-collector.js',
   './js/mini-bomb.js',
   './js/mini-defense.js'

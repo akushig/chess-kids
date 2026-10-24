@@ -1,53 +1,41 @@
-// ===== 홈 화면: 마스코트 + 말풍선 + 3D 메뉴 버튼 =====
+// Home emphasizes a real saved game and three purposes: learn, play, compete.
 function renderHome() {
-  const totalStars = getAllStars();
-  document.getElementById('screen-home').innerHTML = `
-    <div class="home-wrap">
-      <button class="skin-btn" onclick="openSkinSelector()" aria-label="${t('skinSelectTitle')}">🎨</button>
-      <div class="app-title">${t('appName')}</div>
-      <div class="mascot-area">
-        ${getPieceSVG('wK', 90)}
-        <div class="speech-bubble">${t('greeting')}</div>
-      </div>
-      <div class="star-bar" onclick="goReward()" style="cursor:pointer">⭐ ${totalStars}</div>
-      <div class="menu-grid">
-        <button class="menu-btn menu-adventure" onclick="goAdventure()">
-          <span class="menu-icon">${getPieceSVG('wN', 42)}</span>
-          <div class="menu-label">
-            <div>${t('menuAdventure')}</div>
-            <div class="menu-sub">${t('adventureTitle')}</div>
-          </div>
-          <span class="menu-arrow">›</span>
-        </button>
-        <button class="menu-btn menu-puzzle" onclick="goPuzzleLevelSelect()">
-          <span class="menu-icon">${getPieceSVG('wQ', 42)}</span>
-          <div class="menu-label">
-            <div>${t('menuPuzzle')}</div>
-            <div class="menu-sub">${t('puzzleTitle')}</div>
-          </div>
-          <span class="menu-arrow">›</span>
-        </button>
-        <button class="menu-btn menu-play" onclick="goPlay()">
-          <span class="menu-icon">${getPieceSVG('wR', 42)}</span>
-          <div class="menu-label">
-            <div>${t('menuPlay')}</div>
-            <div class="menu-sub">${t('playMenuSub')}</div>
-          </div>
-          <span class="menu-arrow">›</span>
-        </button>
-        <button class="menu-btn menu-mini" onclick="goMiniMenu()">
-          <span class="menu-icon">${getPieceSVG('wB', 42)}</span>
-          <div class="menu-label">
-            <div>${t('menuMini')}</div>
-            <div class="menu-sub">${t('miniSub')}</div>
-          </div>
-          <span class="menu-arrow">›</span>
-        </button>
-      </div>
-      <div class="app-version">v${APP_VERSION}</div>
-    </div>
-  `;
+  if(state.activeKind)leaveActivity();
+  const saved=readData('last_session',null),profile=profileInfo();
+  const titles={mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'나이트 탐험',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
+  const resume=saved&&!saved.complete&&SESSION_KEYS[saved.kind];
+  const nextR=MISSIONS.R.findIndex((m,i)=>!isMissionCleared('R',i));
+  const recommend=nextR>=0?`goMissionPlay('R',${nextR})`:'goKnightSetup()';
+  const nextSkin=readData('pending_skin',null);
+  document.getElementById('screen-home').innerHTML=`<div class="home-wrap">
+    <div class="home-topbar"><button class="profile-button" onclick="openFamilySettings()">${profile.icon} ${profile.name}</button><button class="profile-button" onclick="openSkinSelector()">🎨 내 꾸미기</button></div>
+    <div class="app-title">${t('appName')}</div><div class="home-greeting">움직이고, 발견하고, 함께 두어요.</div>
+    <button class="resume-card" onclick="${resume?'resumeActivity()':recommend}"><span class="resume-icon">${resume?'▶':'🚩'}</span><span><strong>${resume?'이어서 놀기':nextR>=0?'룩과 모험하기':'나이트와 놀기'}</strong><small>${resume?titles[saved.kind]+' · 하던 판이 기다리고 있어요.':'한 걸음씩 해봐요. 막히면 돌아와도 괜찮아요.'}</small></span><span>›</span></button>
+    <div class="menu-grid">${[
+      ['goAdventure()','🗺','모험','말의 움직임부터 왕 구하기까지','menu-adventure'],
+      ['goMiniMenu()','🎲','놀이터','나이트 탐험 · 성 지키기 · 한 수 발견','menu-mini'],
+      ['goPlay()','♟','대전','도움을 받으며, 컴퓨터와, 가족과','menu-play'],
+    ].map(([action,icon,title,desc,color])=>`<button class="menu-btn ${color}" onclick="${action}"><span class="menu-icon">${icon}</span><span class="menu-label">${title}<span class="menu-sub">${desc}</span></span><span class="menu-arrow">›</span></button>`).join('')}</div>
+    ${nextSkin?`<button class="new-skin-card" onclick="safeStore.removeItem('pending_skin');openSkinDetail('${nextSkin}')">🎁 새로운 꾸미기를 얻었어요! 지금 입혀보기</button>`:''}
+    <button class="star-bar" onclick="goReward()" aria-label="내 별과 완료 기록">⭐ ${getAllStars()} <small>내가 모은 별</small></button>
+    <button class="text-button" onclick="openFamilySettings()">👪 가족 · 소리 · 도움 설정</button><div class="app-version">v${APP_VERSION}</div></div>`;
 }
+function profileInfo(id=activeProfile){return ({child:{icon:'🧒',name:'내 모험'},sibling:{icon:'🐱',name:'다른 가족'},adult:{icon:'🧑',name:'어른의 도전'}})[id]||{icon:'🧒',name:'내 모험'};}
+function switchProfile(id){
+  if(!['child','sibling','adult'].includes(id))return;
+  leaveActivity();activeProfile=id;try{localStorage.setItem('chess_active_profile',id);}catch{}
+  currentSkin=safeStore.getItem('skin')||'cute';applyPreferences();state.game=null;state.play=null;
+  document.getElementById('family-overlay')?.remove();showScreen('home');renderHome();
+}
+function openFamilySettings(){
+  document.getElementById('family-overlay')?.remove();
+  const overlay=document.createElement('div');overlay.id='family-overlay';overlay.className='skin-overlay';
+  const prefs=readData('preferences',{}),p=progressLedger(),done=Object.keys(p.completions||{}).length;
+  overlay.innerHTML=`<div class="skin-popup family-popup" role="dialog" aria-modal="true" aria-label="가족 설정"><div class="skin-popup-header"><h2>함께 쓰는 체스</h2><button class="back-btn" onclick="document.getElementById('family-overlay').remove()">닫기</button></div><p>각자 하던 판과 별을 따로 간직해요.</p><div class="profile-list">${['child','sibling','adult'].map(id=>`<button class="profile-button ${id===activeProfile?'active':''}" onclick="switchProfile('${id}')">${profileInfo(id).icon} ${profileInfo(id).name} ${id===activeProfile?'✓':''}</button>`).join('')}</div><p class="section-note">${done}개 활동 완료 · 예전에 모은 별과 꾸미기도 보관해요.</p><div class="play-options"><button class="play-chip" onclick="setPreference('voice',${!prefs.voice})">🔊 안내 읽어주기 ${prefs.voice?'켜짐':'꺼짐'}</button><button class="play-chip" onclick="setPreference('motion',${prefs.motion===false})">움직임 ${prefs.motion===false?'적게':'보통'}</button></div><p class="section-note">도움은 대전 설정에서 조절할 수 있어요. 부모가 먼저 시범을 보여주거나 나이트를 번갈아 해보세요.</p></div>`;
+  document.body.appendChild(overlay);overlay.querySelector('button')?.focus();
+}
+function setPreference(key,value){const p=readData('preferences',{});p[key]=value;writeData('preferences',p);applyPreferences();openFamilySettings();}
+function applyPreferences(){document.documentElement?.classList.toggle('reduced-motion',readData('preferences',{}).motion===false);}
 
 // ===== 스킨 컬렉션 모달 =====
 function openSkinSelector() {

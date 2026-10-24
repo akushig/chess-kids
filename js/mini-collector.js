@@ -2,50 +2,37 @@
 // 특정 기물로 별을 수집, 적 순찰 회피
 
 const COLLECTOR_LEVELS = [
-  { piece:'wN', size:5, stars:[[0,4],[2,2],[4,4]], enemies:[], turns:14, par:8, name:'나이트' },
-  { piece:'wN', size:5, stars:[[0,0],[0,4],[4,4]], enemies:[{pos:[2,2],piece:'bR',path:[[2,2],[2,4],[2,0],[2,2]]}], turns:12, par:6, name:'나이트' },
-  { piece:'wB', size:6, stars:[[0,1],[2,3],[4,5]], enemies:[{pos:[1,1],piece:'bR',path:[[1,1],[1,5],[1,1]]}], turns:8, name:'비숍' },
-  { piece:'wR', size:6, stars:[[0,5],[3,0],[5,3],[1,2]], enemies:[{pos:[2,2],piece:'bB',path:[[2,2],[4,4],[2,2]]},{pos:[3,3],piece:'bN',path:[[3,3],[1,4],[3,3]]}], turns:12, name:'룩' },
-  { piece:'wQ', size:6, stars:[[0,0],[0,5],[5,0],[5,5],[2,3]], enemies:[{pos:[1,3],piece:'bR',path:[[1,3],[1,0],[1,5],[1,3]]},{pos:[4,2],piece:'bB',path:[[4,2],[2,0],[4,2]]}], turns:10, name:'퀸' },
+  {id:'stars-knight-one-v2',piece:'wN',size:5,stars:[[2,1]],enemies:[],turns:4,name:'나이트'},
+  {id:'stars-knight-two-v2',piece:'wN',size:5,stars:[[2,1],[0,2]],enemies:[],turns:6,name:'나이트'},
+  {id:'stars-bishop-v2',piece:'wB',size:6,stars:[[0,1],[2,3],[4,5]],enemies:[],turns:8,name:'비숍'},
+  {id:'stars-rook-v2',piece:'wR',size:6,stars:[[0,5],[3,0],[5,3],[1,2]],enemies:[],turns:12,name:'룩'},
+  {id:'stars-queen-v2',piece:'wQ',size:6,stars:[[0,0],[0,5],[5,5],[2,3]],enemies:[],turns:10,name:'퀸'},
 ];
 
-function goCollector(levelIdx) {
-  beginActivity('collector',{levelIdx});
+function goCollector(levelIdx,challenge=false) {
+  beginActivity('collector',{levelIdx,challenge});
   const lv = COLLECTOR_LEVELS[levelIdx || 0];
   const size = lv.size;
   state.cl = {
     levelIdx: levelIdx || 0,
+    challenge,moves:0,
     size: size,
     piece: lv.piece,
     pos: [size - 1, 0],
     stars: lv.stars.map(s => [...s]),
     starsLeft: lv.stars.length,
     enemies: lv.enemies.map(e => ({pos:[...e.pos], piece:e.piece, path:e.path.map(p=>[...p]), pathIdx:0})),
-    turnsLeft: lv.turns,
+    turnsLeft: challenge?lv.turns:10000,
     clear: false,
     failed: false,
     failMsg: '',
   };
+  state.cl.par=findCollectorSolvePath().length-1;
   showScreen('mini');
   renderCollector();
 }
 
-function getCollectorMoves(cl) {
-  const {pos, size, piece} = cl;
-  const [row, col] = pos;
-  const type = piece[1];
-  const moves = [];
-  const inB = (r,c) => r>=0 && r<size && c>=0 && c<size;
-  const isEnemy = (r,c) => cl.enemies.some(e => e.pos[0]===r && e.pos[1]===c);
-  const add = (r,c) => { if (inB(r,c) && !isEnemy(r,c)) moves.push([r,c]); };
-  const slide = (dr,dc) => { let r=row+dr,c=col+dc; while(inB(r,c)) { if(isEnemy(r,c)) break; moves.push([r,c]); r+=dr; c+=dc; } };
-
-  if (type==='N') { for (const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) add(row+dr,col+dc); }
-  else if (type==='B') { for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) slide(dr,dc); }
-  else if (type==='R') { for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) slide(dr,dc); }
-  else if (type==='Q') { for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]) slide(dr,dc); }
-  return moves;
-}
+function getCollectorMoves(cl) { return pathGameMoves(cl.piece,cl.pos,cl.size,[],cl.enemies.map(e=>e.pos)); }
 
 function renderCollector() {
   saveActiveSession();
@@ -61,7 +48,7 @@ function renderCollector() {
       let cls = 'board-cell '+(isLight?'light':'dark');
       let content = '';
       if (r===pr && c===pc) { cls+=' selected'; content=getPieceSVG(cl.piece,36); }
-      else if (cl.enemies.some(e=>e.pos[0]===r&&e.pos[1]===c)) { const e=cl.enemies.find(e=>e.pos[0]===r&&e.pos[1]===c); content=getPieceSVG(e.piece,36); cls+=' enemy-cell'; }
+      else if (cl.enemies.some(e=>e.pos[0]===r&&e.pos[1]===c)) { const e=cl.enemies.find(e=>e.pos[0]===r&&e.pos[1]===c); content='<span class="patrol-marker">🔶</span>'; cls+=' enemy-cell'; }
       else if (cl.stars.some(s=>s[0]===r&&s[1]===c)) { content='<span class="collector-star">⭐</span>'; cls+=' goal-cell'; }
       if (moves.some(([mr,mc])=>mr===r&&mc===c)) cls+=' move-hint';
       cells+=`<div class="${cls}" onclick="collectorClick(${r},${c})">${content}</div>`;
@@ -71,30 +58,30 @@ function renderCollector() {
   let msg;
   if (cl.clear) msg=`<div class="status-msg success">${t('collectorClear')}</div>`;
   else if (cl.failed) msg=`<div class="status-msg fail">${cl.failMsg}</div>`;
-  else msg=`<div class="status-msg">${t('collectorDesc')}</div>`;
+  else msg=`<div class="status-msg">${COLLECTOR_LEVELS[cl.levelIdx].name}로 별을 모아요. ${cl.challenge?'남은 이동 수 안에 도전해요.':'느긋하게 움직여도 괜찮아요.'}</div>`;
 
   const info=`<div class="mission-info">
     <div class="mission-speech">${t('collectorStars')}: ${cl.starsLeft > 0 ? '⭐'.repeat(cl.starsLeft) : '✓'}</div>
-    <div class="move-counter">${t('collectorTurns')}: ${cl.turnsLeft}</div>
+    <div class="move-counter">${cl.challenge?'남은 이동 '+cl.turnsLeft+'번':'이동 수 제한 없음'}</div>
   </div>`;
 
   const actions=(!cl.clear&&!cl.failed)?`<div class="mission-actions">
     <button class="icon-btn hint-btn" onclick="collectorHint()">💡 ${t('hintBtn')}</button>
-    <button class="icon-btn reset-btn" onclick="goCollector(${cl.levelIdx})">🔄 ${t('resetBtn')}</button>
+    <button class="icon-btn reset-btn" onclick="goCollector(${cl.levelIdx},${cl.challenge})">🔄 ${t('resetBtn')}</button>
   </div>`:'';
 
-  const retryBtn=cl.failed?`<button class="action-btn" onclick="goCollector(${cl.levelIdx})">${t('missionRetryBtn')}</button>`:'';
-  const nextBtn=cl.clear&&cl.levelIdx<COLLECTOR_LEVELS.length-1?`<button class="action-btn green" onclick="goCollector(${cl.levelIdx+1})">${t('btnNext')}</button>`:'';
+  const retryBtn=cl.failed?`<button class="action-btn" onclick="goCollector(${cl.levelIdx},${cl.challenge})">${t('missionRetryBtn')}</button>`:'';
+  const nextBtn=cl.clear&&cl.levelIdx<COLLECTOR_LEVELS.length-1?`<button class="action-btn green" onclick="goCollector(${cl.levelIdx+1},${cl.challenge})">${t('btnNext')}</button>`:'';
 
   document.getElementById('screen-mini').innerHTML=`
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
-        <h2>${t('collectorTitle')} Lv.${cl.levelIdx+1}</h2>
+        <h2>별 모으기 ${cl.levelIdx+1}</h2>
       </div>
-      ${msg} ${info}
+      ${msg} ${info}<button class="play-chip" onclick="goCollector(${cl.levelIdx},${!cl.challenge})">${cl.challenge?'연습으로 바꾸기':'이동 수 도전하기'}</button>
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${undoButton()} ${actions} ${retryBtn} ${nextBtn}
+      ${undoButton()} ${actions} ${retryBtn} ${nextBtn} ${cl.clear?finishLinks('goKnightSetup()','나이트와 탐험하기'):''}
     </div>`;
 }
 
@@ -109,7 +96,7 @@ function collectorClick(r,c) {
   const [pr,pc]=cl.pos;
   const boardEl=document.querySelector('#screen-mini .chess-board');
   cl.pos=[r,c];
-  cl.turnsLeft--;
+  cl.turnsLeft--;cl.moves++;
 
   animateMove(boardEl,pr,pc,r,c,cl.piece,()=>{
     // 별 수집
@@ -124,8 +111,8 @@ function collectorClick(r,c) {
 
     // 적에게 잡혔는지
     if (cl.enemies.some(e=>e.pos[0]===r&&e.pos[1]===c)) { cl.failed=true; cl.failMsg=t('collectorCaught'); }
-    else if (cl.starsLeft===0) { cl.clear=true; saveMiniGameStars('collector', cl.levelIdx||0, calculateStars(COLLECTOR_LEVELS[cl.levelIdx].turns-cl.turnsLeft, COLLECTOR_LEVELS[cl.levelIdx].par || [8,6,3,7,5][cl.levelIdx])); spawnParticles(); }
-    else if (cl.turnsLeft<=0) { cl.failed=true; cl.failMsg=t('collectorTimeout'); }
+    else if (cl.starsLeft===0) { cl.clear=true; saveMiniGameStars('collector', cl.levelIdx||0, calculateStars(cl.moves,cl.par)); spawnParticles(); }
+    else if (cl.challenge&&cl.turnsLeft<=0) { cl.failed=true; cl.failMsg=t('collectorTimeout'); }
 
     renderCollector();
   },cl.size);
@@ -197,5 +184,5 @@ function collectorHint() {
     }
     return;
   }
-  showHintPath(boardEl, path, cl.size, t('collectorHintPath'));
+  showHintArrow(boardEl,...path[0],...path[1],cl.size,'이 별부터 찾아봐요.');
 }

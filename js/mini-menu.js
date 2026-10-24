@@ -1,36 +1,12 @@
-// ===== 미니게임 메뉴 =====
-function goMiniMenu() {
-  showScreen('mini');
-  renderMiniMenu();
-}
-
-function renderMiniMenu() {
-  const games = [
-    { name: t('knightTourTitle'), desc: t('knightTourDesc'), icon: getPieceSVG('wN', 42), onclick: 'goKnightSetup()', color: 'mini-green' },
-    { name: t('survivalTitle'), desc: t('survivalDesc'), icon: getPieceSVG('wK', 42), onclick: 'goSurvival(0)', color: 'mini-red' },
-    { name: t('collectorTitle'), desc: t('collectorDesc'), icon: getPieceSVG('wQ', 42), onclick: 'goCollector(0)', color: 'mini-purple' },
-    { name: t('bombTitle'), desc: t('bombDesc'), icon: getPieceSVG('wR', 42), onclick: 'goBomb(0)', color: 'mini-orange' },
-    { name: t('defenseTitle'), desc: t('defenseDesc'), icon: getPieceSVG('wB', 42), onclick: 'goDefense(0)', color: 'mini-blue' },
+function goMiniMenu(){leaveActivity();showScreen('mini');renderMiniMenu();}
+function renderMiniMenu(){
+  const games=[
+    ['goKnightSetup()','♞','나이트 탐험','짧은 산책부터 모든 칸 완주까지','mini-green'],
+    ['goDefense(0)','🏰','성 지키기','다음 발자국을 보고 상대 말을 잡아요','mini-blue'],
+    ['goPuzzleLevelSelect()','💡','한 수 발견','말 잡기 · 왕 구하기 · 메이트','mini-purple'],
+    ['goCollector(0)','⭐','별 모으기','느긋하게 길을 찾고, 원하면 이동 수 도전','mini-orange'],
+    ['goSurvival(0)','🛡','왕 지키기','상대의 다음 움직임을 보고 안전하게','mini-red'],
+    ['goBomb(0)','💣','이동 수 도전','움직일 순서를 계획하는 선택 도전','mini-orange'],
   ];
-
-  const cards = games.map(g => `
-    <button class="menu-btn ${g.color}" onclick="${g.onclick}">
-      <span class="menu-icon">${g.icon}</span>
-      <div class="menu-label">
-        <div>${g.name}</div>
-        <div class="menu-sub">${g.desc}</div>
-      </div>
-      <span class="menu-arrow">›</span>
-    </button>
-  `).join('');
-
-  document.getElementById('screen-mini').innerHTML = `
-    <div class="screen-wrap">
-      <div class="screen-header">
-        <button class="back-btn" onclick="showScreen('home'); renderHome()">← ${t('btnBack')}</button>
-        <h2>${t('miniTitle')}</h2>
-      </div>
-      <div class="menu-grid">${cards}</div>
-    </div>
-  `;
+  document.getElementById('screen-mini').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="showScreen('home');renderHome()">← 홈</button><h2>놀이터</h2></div><div class="menu-grid">${games.map(([action,icon,name,desc,color])=>`<button class="menu-btn ${color}" onclick="${action}"><span class="menu-icon">${icon}</span><span class="menu-label">${name}<span class="menu-sub">${desc}</span></span><span>›</span></button>`).join('')}</div></div>`;
 }

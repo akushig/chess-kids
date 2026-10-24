@@ -3,12 +3,13 @@ function missionSize(mission=MISSIONS[state.missionPiece]?.[state.missionIdx]) {
 
 // --- 월드 선택 ---
 function goAdventure() {
+  leaveActivity();
   showScreen('learn');
   renderWorldSelect();
 }
 
 function renderWorldSelect() {
-  cancelActivityCallbacks();
+  leaveActivity();
   let cards = PIECE_ORDER.map(key => {
     const missions = MISSIONS[key];
     const cleared = getPieceClearCount(key);
@@ -32,7 +33,7 @@ function renderWorldSelect() {
         <button class="back-btn" onclick="showScreen('home'); renderHome()">← ${t('btnBack')}</button>
         <h2>${t('adventureTitle')}</h2>
       </div>
-      <div class="world-grid">${cards}</div>
+      <p class="section-note">룩부터 한 걸음씩. 좋아하는 말은 바로 골라도 좋아요.</p><div class="world-grid">${cards}</div><button class="action-btn secondary" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 상황 연습</button>
     </div>
   `;
 }
@@ -45,7 +46,7 @@ function goStageMap(pieceKey) {
 }
 
 function renderStageMap() {
-  cancelActivityCallbacks();
+  leaveActivity();
   const key = state.missionPiece;
   const missions = MISSIONS[key];
   let nodes = '';
@@ -70,7 +71,7 @@ function renderStageMap() {
         <button class="${cls}" ${locked ? 'disabled' : `onclick="goMissionPlay('${key}', ${i})"`}>
           <span class="stage-num">${i + 1}</span>
           <span class="stage-stars">${starDisplay}</span>
-        </button>
+        </button><span class="stage-label">${missions[i].optional?'<small>선택 도전</small>':''}${missions[i].desc.ko}</span>
       </div>
     `;
 
@@ -330,20 +331,21 @@ function showClearPopup(stars) {
   const hasNext = state.missionIdx < MISSIONS[state.missionPiece].length - 1;
   const nextBtn = hasNext
     ? `<button class="action-btn green" onclick="closeClearPopup(); goMissionPlay('${state.missionPiece}', ${state.missionIdx + 1})">${t('btnNext')}</button>`
-    : '';
+    : `<button class="action-btn green" onclick="closeClearPopup();${state.missionPiece==='N'?'goKnightSetup()':state.missionPiece==='R'?'goDefense(0)':'goPlay()'}">${state.missionPiece==='N'?'나이트와 탐험하기':state.missionPiece==='R'?'룩으로 성 지키기':'배운 말로 대전하기'}</button>`;
 
   const overlay = document.createElement('div');
   overlay.className = 'clear-overlay';
   overlay.id = 'clear-overlay';
   overlay.innerHTML = `
     <div class="clear-popup">
-      <div class="clear-title">${t('missionClear')}</div>
+      <div class="clear-title">✓ 완료 도장!</div>
       <div class="clear-stars">${starHtml}</div>
       <div class="clear-msg">${msg}</div>
       <div class="clear-btns">
         <button class="action-btn secondary" onclick="closeClearPopup(); renderStageMap()">${t('btnBack')}</button>
         <button class="action-btn" onclick="closeClearPopup(); goMissionPlay('${state.missionPiece}', ${state.missionIdx})">🔄</button>
         ${nextBtn}
+        <button class="action-btn secondary" onclick="closeClearPopup();showScreen('home');renderHome()">여기까지</button>
       </div>
     </div>
   `;

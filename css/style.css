@@ -1571,3 +1571,14 @@ button:disabled { opacity:.45; cursor:default; }
 .guide-methods,.play-options,.finish-actions {display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}
 .play-options { margin-top:16px; }
 .finish-actions .action-btn { width:auto;flex:1;min-width:120px;font-size:.9rem; }
+.home-topbar{display:flex;justify-content:space-between;gap:12px;width:100%;margin-bottom:10px;}
+.profile-button,.text-button{border:0;background:#ffffffd9;border-radius:14px;padding:12px 14px;color:var(--text);font:inherit;cursor:pointer;}
+.profile-button.active{outline:3px solid #398b78;}
+.home-greeting{font-size:.95rem;margin:4px 0 18px;}
+.resume-card{width:100%;display:flex;align-items:center;text-align:left;gap:14px;border:2px solid #fff;background:#fffbe8;border-radius:22px;padding:20px 16px;box-shadow:0 5px 0 #d6ba69;color:var(--text);font:inherit;cursor:pointer;margin-bottom:18px;}
+.resume-card strong{font-size:1.25rem;display:block;}.resume-card small{font-size:.85rem;line-height:1.5;display:block;margin-top:5px;}.resume-icon{font-size:2rem;}
+.home-wrap .menu-grid{margin-top:0;}.menu-sub{display:block;}.home-wrap .star-bar{border:0;font:inherit;cursor:pointer;margin-top:18px;}
+.home-wrap .star-bar small{font-size:.8rem;}.text-button{background:transparent;font-size:.85rem;}.profile-list{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0;}
+.family-popup p{line-height:1.65;}.family-popup{max-height:90vh;overflow:auto;}.new-skin-card{padding:16px;background:#fff3b0;border:2px solid #ffd93d;border-radius:15px;font:inherit;cursor:pointer;}
+.next-enemy{outline:3px dashed #6772aa;outline-offset:-5px;}.next-mark{position:absolute;right:4px;top:1px;color:#354b90;font-size:18px;pointer-events:none;}.parent-step{color:#9664b0!important;}.patrol-marker{font-size:1.6rem;}
+.stage-row{width:100%;gap:16px;justify-content:flex-start;}.stage-node{flex-shrink:0;}.stage-label{font-size:.95rem;line-height:1.6;background:#ffffffdd;padding:10px 14px;border-radius:14px;}.stage-label small{display:block;color:#826227;font-size:.75rem;}.stage-connector{margin-left:30px;}

@@ -147,7 +147,7 @@ function renderKnightTour() {
   const progress=kt.mode==='walk'?`🚩 깃발 찾기 · ${kt.moveCount}번 점프`:`👣 ${kt.visited}/${kt.visitGoal}칸`;
   document.getElementById('screen-mini').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="goKnightSetup()">← 목표 고르기</button><h2>나이트 ${title}</h2></div>
     ${kt.mode==='tour'?`<div class="kt-sizes">${KNIGHT_TOUR_LEVELS.map((lv,i)=>`<button class="kt-chip ${i===kt.levelIdx?'active':''}" onclick="goKnightTour(${i},'tour')">${lv.label}</button>`).join('')}</div>`:''}
-    <div class="status-msg ${kt.clear?'success':''}" role="status">${msg}</div><div class="mission-info"><div class="mission-speech">${kt.family?(kt.player===0?'🧒 내 차례':'🧑 함께하는 사람 차례'):progress}</div><div class="move-counter">${kt.family?progress:''}</div></div>
+    <div class="status-msg ${kt.clear?'success':''}" role="status">${msg}</div><div class="mission-info"><div class="mission-speech">${kt.family?(kt.player===0?'🧒 내 차례':'🧑 함께하는 사람 차례'):progress}</div>${kt.family?`<div class="move-counter">${progress}</div>`:''}</div>
     <div class="chess-board" style="grid-template-columns:repeat(${kt.size},1fr)">${cells}</div>
     <div class="mission-actions">${undoButton()}${!kt.clear&&!kt.stuck?'<button class="icon-btn hint-btn" onclick="knightTourHint()">💡 한 점프 보기</button><button class="icon-btn" onclick="knightTourDemo()">▶ 시범</button>':''}<button class="icon-btn" onclick="goKnightTour(${kt.levelIdx},'${kt.mode}')">🔄 다시</button></div>
     <div class="kt-options"><button class="kt-toggle ${kt.family?'on':''}" onclick="state.kt.family=!state.kt.family;renderKnightTour()">👪 ${kt.family?'번갈아 탐험 중':'함께 번갈아 하기'}</button><button class="kt-toggle ${settings.randomStart?'on':''}" onclick="ktToggleOption('randomStart')">🎲 다른 시작점 ${settings.randomStart?'켜짐':'꺼짐'}</button>${kt.mode==='tour'?`<button class="kt-toggle ${settings.branchWarn?'on':''}" onclick="ktToggleOption('branchWarn')">갈림길 알려주기 ${settings.branchWarn?'켜짐':'꺼짐'}</button>`:''}</div>
@@ -173,5 +173,5 @@ function knightTourHint(){
 }
 function knightTourDemo(){
   const kt=state.kt;if(state.animating||kt.clear||kt.stuck)return;const path=knightGoalPath().path;if(!path?.[1])return;
-  kt.demoUsed=true;animateMove(document.querySelector('#screen-mini .chess-board'),...path[0],...path[1],'wN',()=>renderKnightTour(),kt.size);
+  noteHelp(3);kt.demoUsed=true;animateMove(document.querySelector('#screen-mini .chess-board'),...path[0],...path[1],'wN',()=>renderKnightTour(),kt.size);
 }

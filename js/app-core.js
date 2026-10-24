@@ -1,5 +1,5 @@
 // ===== 앱 코어: 상태, 화면전환, 애니메이션, 파티클, 초기화 =====
-const APP_VERSION = '261025.2';
+const APP_VERSION = '261025.3';
 
 const state = {
   screen: 'home',
@@ -148,6 +148,7 @@ function spawnParticles() {
 // ===== 공통 힌트 화살표 유틸리티 =====
 function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
   if (!boardEl) return;
+  noteHelp(2);
   const cols = gridSize || 8;
   const cellSize = boardEl.offsetWidth / cols;
 
@@ -195,6 +196,7 @@ function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
 
 function showHintTarget(boardEl, targetR, targetC, gridSize, text) {
   if (!boardEl) return;
+  noteHelp(2);
   const cols = gridSize || 8;
   const idx = targetR * cols + targetC;
   const cell = boardEl.children[idx];
@@ -350,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }).catch(() => {});
   }
+  applyPreferences();
   renderHome();
   showScreen('home');
 });

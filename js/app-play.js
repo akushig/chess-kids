@@ -578,6 +578,7 @@ function playHint() {
   if(move){state.play.hintMove=move;renderPlay();showHintArrow(document.querySelector('#screen-play .chess-board'),...move,8,'화살표의 한 수를 직접 움직여 봐요.');}
 }
 function playDemo() {
+  noteHelp(3);
   if(state.animating||playIsOver()||(state.play.mode==='ai'&&state.game.turn!=='w'))return;
   playTimerPauseForHelp();
   const m=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),1);if(!m)return;
