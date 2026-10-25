@@ -18,7 +18,7 @@ function enhanceExperience(){
   cells.forEach((cell,i)=>{
    const piece=cell.querySelector('[data-piece]')?.getAttribute('data-piece');
    const side=piece?.[0]==='w'?'흰색':'검은색',name=piece?t(PIECE_NAMES[piece[1]]):'빈칸';
-   const goal=cell.classList.contains('goal-cell')?' 목표 칸':'';
+   const goal=(cell.classList.contains('goal-cell')?' 목표 칸':'')+(cell.classList.contains('castle-target')?' 캐슬링 가능':'')+(cell.classList.contains('castle-blocked')?' 캐슬링을 막는 칸':'');
    cell.setAttribute('role','gridcell');cell.setAttribute('aria-rowindex',Math.floor(i/size)+1);cell.setAttribute('aria-colindex',i%size+1);
    cell.setAttribute('aria-label',`${'abcdefgh'[i%size]}${size-Math.floor(i/size)} ${piece?side+' ':''}${name}${goal}${cell.classList.contains('move-hint')?' 이동 가능':''}${cell.classList.contains('danger-cell')?' 공격받는 칸':''}`);
    cell.setAttribute('aria-selected',cell.classList.contains('selected')?'true':'false');cell.tabIndex=i===(restoreKeyboardFocus?keyboardBoardIndex:selected)?0:-1;

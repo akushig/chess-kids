@@ -193,15 +193,28 @@ class ChessGame {
     return moves;
   }
 
+  // One source for both move legality and child-facing castling explanations.
+  castlingStatus(color, side) {
+    const row=color==='w'?7:0, kingSide=side==='king';
+    const info={allowed:false,reason:null,row,to:kingSide?6:2,rookFrom:kingSide?7:0,rookTo:kingSide?5:3,square:null};
+    const blocked=(reason,square=null)=>({...info,reason,square});
+    if(this.board[row][4]!==color+'K'||!this.castling[color+'K'])return blocked('king-moved');
+    if(this.board[row][info.rookFrom]!==color+'R')return blocked('rook-missing');
+    if(!this.castling[color+(kingSide?'R_h':'R_a')])return blocked('rook-moved');
+    const opp=color==='w'?'b':'w';
+    if(this.isAttacked(this.board,row,4,opp))return blocked('check',[row,4]);
+    for(const c of kingSide?[5,6]:[3,2,1])if(this.board[row][c])return blocked('occupied',[row,c]);
+    if(this.moveLeavesCheck(row,4,row,info.rookTo))return blocked('through-attacked',[row,info.rookTo]);
+    if(this.moveLeavesCheck(row,4,row,info.to))return blocked('destination-attacked',[row,info.to]);
+    return {...info,allowed:true};
+  }
+
   // 합법 이동
   legalMoves(row, col) {
     const piece=this.board[row]?.[col];if(!piece)return [];
     const raw=this.rawMoves(this.board,row,col,this.enPassant);
-    if(piece[1]==='K'&&row===(piece[0]==='w'?7:0)&&col===4&&this.castling[piece[0]+'K']){
-      const opp=piece[0]==='w'?'b':'w';
-      if(!this.isAttacked(this.board,row,col,opp))for(const [rook,target,through,spaces,key]of [[7,6,5,[5,6],'R_h'],[0,2,3,[1,2,3],'R_a']]){
-        if(this.castling[piece[0]+key]&&this.board[row][rook]===piece[0]+'R'&&spaces.every(c=>!this.board[row][c])&&!this.moveLeavesCheck(row,col,row,through)&&!this.moveLeavesCheck(row,col,row,target))raw.push([row,target]);
-      }
+    if(piece[1]==='K'&&row===(piece[0]==='w'?7:0)&&col===4){
+      for(const side of ['king','queen']){const info=this.castlingStatus(piece[0],side);if(info.allowed)raw.push([row,info.to]);}
     }
     return raw.filter(([r,c])=>this.board[r][c]?.[1]!=='K'&&!this.moveLeavesCheck(row,col,r,c));
   }

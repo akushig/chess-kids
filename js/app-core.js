@@ -41,7 +41,7 @@ function hideGameToast() {
   clearTimeout(gameToastTimer);
   document.getElementById('game-toast')?.remove();
 }
-function showGameToast(html, key = '', repeat = false) {
+function showGameToast(html, key = '', repeat = false, sticky = false) {
   if (!html || (!repeat && key && key === gameToastKey)) return;
   hideGameToast();
   gameToastKey = key;
@@ -57,7 +57,7 @@ function showGameToast(html, key = '', repeat = false) {
   document.body.appendChild(toast);
   if (prefs.voice) speakGuide(toast.querySelector('.game-toast-content').textContent);
   // Interactive rescue choices stay available until dismissed or the next move.
-  if (!toast.querySelector('.game-toast-content button')) gameToastTimer = setTimeout(hideGameToast, 6500);
+  if (!sticky && !toast.querySelector('.game-toast-content button')) gameToastTimer = setTimeout(()=>{hideGameToast();gameToastKey='';}, 6500);
 }
 function renderGameScreen(id, html) {
   const screen = document.getElementById(id), existing = screen.querySelector('.game-screen');

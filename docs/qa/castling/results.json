@@ -1,0 +1,173 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "color": "w",
+      "side": "king",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "w",
+      "side": "king",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "w",
+      "side": "queen",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "w",
+      "side": "queen",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "b",
+      "side": "king",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "b",
+      "side": "king",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "b",
+      "side": "queen",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "color": "b",
+      "side": "queen",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "w",
+      "side": "king",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "w",
+      "side": "king",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "w",
+      "side": "queen",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "w",
+      "side": "queen",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "b",
+      "side": "king",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "b",
+      "side": "king",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "b",
+      "side": "queen",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "color": "b",
+      "side": "queen",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "w",
+      "side": "king",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "w",
+      "side": "king",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "w",
+      "side": "queen",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "w",
+      "side": "queen",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "b",
+      "side": "king",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "b",
+      "side": "king",
+      "input": "rook",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "b",
+      "side": "queen",
+      "input": "target",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "color": "b",
+      "side": "queen",
+      "input": "rook",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

@@ -1705,3 +1705,15 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .game-toast-tools { display:flex; flex-direction:column; gap:4px; }
 .game-toast-tools button { min-width:40px; min-height:40px; border:0; border-radius:10px; background:#f3ecd9; cursor:pointer; }
 .game-toast-tools button[hidden] { display:none; }
+.castle-target.move-hint::after { display:none; }
+.castle-mark {
+  position:absolute; inset:3px; z-index:3; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; border:1px solid #23735f;
+  border-radius:8px; background:#effff2; color:#17523e; font-size:16px;
+  line-height:1; pointer-events:none;
+}
+.castle-mark small { font-size:9px; line-height:1.4; font-weight:900; white-space:nowrap; }
+.board-cell.castle-blocked { outline:3px dashed #bb3c25; outline-offset:-4px; }
+.castle-for-black .castle-mark { transform:rotate(180deg); }
+.game-toast-content p + p { margin-top:8px; }
+@media(min-width:700px) { .castle-mark{font-size:24px;}.castle-mark small{font-size:12px;} }
