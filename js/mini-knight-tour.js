@@ -218,7 +218,7 @@ function renderKnightTour() {
   const subtitle = { walk: '깃발까지 짧은 산책', explore: '10칸 탐험', tour: '모든 칸 방문' }[kt.mode];
   const progress = kt.mode === 'walk' ? '🚩 깃발 찾기' : `<strong>${kt.visited}</strong><span> / ${kt.visitGoal}칸 방문</span>`;
   const active = !kt.clear && !kt.stuck;
-  document.getElementById('screen-mini').innerHTML = `
+  renderGameScreen('screen-mini', `
     <div class="screen-wrap kt-screen">
       <div class="screen-header kt-header"><button class="back-btn" onclick="goMiniMenu()">← 놀이터</button><h2>나이트 투어</h2><span class="kt-subtitle">${subtitle}</span></div>
       <div class="kt-mode-nav" role="group" aria-label="탐험 목표">${[['walk', '산책'], ['explore', '탐험'], ['tour', '투어']].map(([mode, label]) => `<button aria-pressed="${kt.mode === mode}" onclick="ktSelectMode('${mode}')">${label}</button>`).join('')}</div>
@@ -246,7 +246,7 @@ function renderKnightTour() {
         </div>
       </details>
       ${kt.clear ? finishLinks(kt.mode === 'walk' ? `goKnightTour(${kt.levelIdx},'explore')` : kt.mode === 'explore' ? `goKnightTour(${kt.levelIdx},'tour')` : `goKnightTour(${kt.levelIdx},'tour')`, kt.mode === 'walk' ? '10칸 탐험하기' : kt.mode === 'explore' ? '모든 칸 도전하기' : '새 판 시작') : ''}
-    </div>`;
+    </div>`);
   saveActiveSession();
 }
 

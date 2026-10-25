@@ -29,7 +29,7 @@ function enhanceExperience(){
     if(event.key==='Enter'||event.key===' '){event.preventDefault();keyboardBoardIndex=i;restoreKeyboardFocus=true;cell.click();}
    };
   });
-  if(restoreKeyboardFocus&&!state.animating){cells[Math.min(keyboardBoardIndex,cells.length-1)]?.focus();restoreKeyboardFocus=false;}
+  if(restoreKeyboardFocus&&!state.animating){cells[Math.min(keyboardBoardIndex,cells.length-1)]?.focus({preventScroll:true});restoreKeyboardFocus=false;}
  }
  for(const node of screen.querySelectorAll('.status-msg,.mission-speech,.guide-card')){
   node.setAttribute('aria-live','polite');node.setAttribute('role','status');

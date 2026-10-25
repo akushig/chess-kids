@@ -222,7 +222,7 @@ function renderMissionBoard() {
     }
   }
 
-  const desc = state.missionNotice || mission.desc[currentLang] || mission.desc['ko'];
+  const desc = (state.missionFailed && state.missionNotice) || mission.desc[currentLang] || mission.desc['ko'];
 
   // 상단 정보: 말풍선 + 이동 카운터
   const infoBar = `
@@ -241,7 +241,7 @@ function renderMissionBoard() {
     </div>
   ` : '';
 
-  document.getElementById('screen-learn').innerHTML = `
+  renderGameScreen('screen-learn', `
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="renderStageMap()">← ${t('btnBack')}</button>
@@ -251,7 +251,7 @@ function renderMissionBoard() {
       <div class="chess-board mission-board" style="grid-template-columns:repeat(${size},1fr) !important">${cells}</div>
       ${actionBtns}
     </div>
-  `;
+  `);
 }
 
 function missionClick(r, c) {

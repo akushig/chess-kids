@@ -67,7 +67,7 @@ function renderBomb() {
   let msg;
   if (bm.clear) msg=`<div class="status-msg success">${t('bombClear')}</div>`;
   else if (bm.failed) msg=`<div class="status-msg fail">${t('bombExploded')}</div>`;
-  else msg=`<div class="status-msg">${bm.notice || (bm.challenge?'한 번 움직이면 남은 이동 수가 줄어요. 먼저 갈 곳을 골라요.':'이동 수 제한 없이 해제해봐요.')}</div>`;
+  else msg=`<div class="status-msg">${(bm.challenge?'한 번 움직이면 남은 이동 수가 줄어요. 먼저 갈 곳을 골라요.':'이동 수 제한 없이 해제해봐요.')}</div>`;
 
   const remaining = bm.bombs.filter(b=>!b.defused);
   const minTimer = remaining.length > 0 ? Math.min(...remaining.map(b=>b.timer)) : 0;
@@ -84,7 +84,7 @@ function renderBomb() {
   const retryBtn=bm.failed?`<button class="action-btn" onclick="goBomb(${bm.levelIdx},${bm.challenge})">${t('missionRetryBtn')}</button>`:'';
   const nextBtn=bm.clear&&bm.levelIdx<BOMB_LEVELS.length-1?`<button class="action-btn green" onclick="goBomb(${bm.levelIdx+1},${bm.challenge})">${t('btnNext')}</button>`:'';
 
-  document.getElementById('screen-mini').innerHTML=`
+  renderGameScreen('screen-mini', `
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
@@ -93,7 +93,7 @@ function renderBomb() {
       ${msg} ${info}<button class="play-chip" onclick="goBomb(${bm.levelIdx},${!bm.challenge})">${bm.challenge?'느긋하게 연습하기':'이동 수 도전하기'}</button>
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
       ${undoButton()} ${actions} ${retryBtn} ${nextBtn} ${bm.clear?finishLinks('goCollector(0)','별 모으러 가기'):''}
-    </div>`;
+    </div>`);
 }
 
 function bombClick(r,c) {
@@ -177,11 +177,7 @@ function bombHint() {
 
   const path = findBombSolvePath();
   if (!path) {
-    const speech = document.querySelector('.mission-speech');
-    if (speech) {
-      speech.innerHTML = '⚠️ ' + t('bombUnsolvable');
-      speech.classList.add('hint-active', 'hint-unsolvable');
-    }
+    showGameToast('⚠️ ' + t('bombUnsolvable'), '', true);
     return;
   }
   showHintArrow(boardEl,...path[0],...path[1],bm.size,'이 한 걸음부터 계획해봐요.');

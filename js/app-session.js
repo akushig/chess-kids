@@ -6,6 +6,7 @@ const SESSION_KEYS = {
 };
 function copyData(value) { return JSON.parse(JSON.stringify(value)); }
 function beginActivity(kind,params={}) {
+  gameLayoutSession++;
   saveActiveSession(); cancelActivityCallbacks();
   state.activeKind=kind;state.activityParams=params;state.actionHistory=[];
   state.supportLevel=0;
@@ -54,6 +55,7 @@ function undoActivity() {
 }
 function resumeActivity(kind) {
   const saved=kind?getSavedSession(readData('sessions',{})[kind]):getSavedSession();if(!saved)return;
+  gameLayoutSession++;
   if(state.play)playStop();cancelActivityCallbacks();
   state.supportLevel=saved.snapshot.supportLevel||0;state.activeKind=saved.kind;state.activityParams=saved.params;state.actionHistory=saved.history||[];restoreSnapshot(saved.snapshot);
   state.puzzleWaiting=false;state.puzzleRun=(state.puzzleRun||0)+1;

@@ -1,0 +1,629 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "label": "ai check appears"
+    },
+    {
+      "width": 360,
+      "label": "ai dismiss rescue"
+    },
+    {
+      "width": 360,
+      "label": "ai reopen rescue"
+    },
+    {
+      "width": 360,
+      "label": "ai invalid move explanation"
+    },
+    {
+      "width": 360,
+      "label": "ai many captures"
+    },
+    {
+      "width": 360,
+      "label": "ai hint overlay"
+    },
+    {
+      "width": 360,
+      "label": "ai draw and timer end"
+    },
+    {
+      "width": 360,
+      "label": "ai reset counters"
+    },
+    {
+      "width": 360,
+      "label": "friend check appears"
+    },
+    {
+      "width": 360,
+      "label": "friend dismiss rescue"
+    },
+    {
+      "width": 360,
+      "label": "friend reopen rescue"
+    },
+    {
+      "width": 360,
+      "label": "friend invalid move explanation"
+    },
+    {
+      "width": 360,
+      "label": "friend many captures"
+    },
+    {
+      "width": 360,
+      "label": "friend hint overlay"
+    },
+    {
+      "width": 360,
+      "label": "friend draw and timer end"
+    },
+    {
+      "width": 360,
+      "label": "friend reset counters"
+    },
+    {
+      "width": 360,
+      "label": "mission long feedback"
+    },
+    {
+      "width": 360,
+      "label": "mission feedback clears"
+    },
+    {
+      "width": 360,
+      "label": "mission hint"
+    },
+    {
+      "width": 360,
+      "label": "mission outcome"
+    },
+    {
+      "width": 360,
+      "label": "puzzle long feedback"
+    },
+    {
+      "width": 360,
+      "label": "puzzle feedback clears"
+    },
+    {
+      "width": 360,
+      "label": "puzzle hint"
+    },
+    {
+      "width": 360,
+      "label": "puzzle outcome"
+    },
+    {
+      "width": 360,
+      "label": "collector long feedback"
+    },
+    {
+      "width": 360,
+      "label": "collector feedback clears"
+    },
+    {
+      "width": 360,
+      "label": "collector hint"
+    },
+    {
+      "width": 360,
+      "label": "collector outcome"
+    },
+    {
+      "width": 360,
+      "label": "bomb long feedback"
+    },
+    {
+      "width": 360,
+      "label": "bomb feedback clears"
+    },
+    {
+      "width": 360,
+      "label": "bomb hint"
+    },
+    {
+      "width": 360,
+      "label": "bomb outcome"
+    },
+    {
+      "width": 360,
+      "label": "defense long feedback"
+    },
+    {
+      "width": 360,
+      "label": "defense feedback clears"
+    },
+    {
+      "width": 360,
+      "label": "defense hint"
+    },
+    {
+      "width": 360,
+      "label": "defense outcome"
+    },
+    {
+      "width": 360,
+      "label": "survival long feedback"
+    },
+    {
+      "width": 360,
+      "label": "survival feedback clears"
+    },
+    {
+      "width": 360,
+      "label": "survival hint"
+    },
+    {
+      "width": 360,
+      "label": "survival outcome"
+    },
+    {
+      "width": 360,
+      "label": "knight full route"
+    },
+    {
+      "width": 360,
+      "label": "knight close route"
+    },
+    {
+      "width": 360,
+      "label": "knight branch alert"
+    },
+    {
+      "width": 360,
+      "label": "knight blocked route"
+    },
+    {
+      "width": 360,
+      "label": "knight undo"
+    },
+    {
+      "width": 360,
+      "label": "voice controls"
+    },
+    {
+      "width": 360,
+      "label": "scrolled knight hint closes"
+    },
+    {
+      "width": 360,
+      "label": "scrolled settings close"
+    },
+    {
+      "width": 360,
+      "label": "scrolled undo"
+    },
+    {
+      "width": 360,
+      "label": "knight animated move"
+    },
+    {
+      "width": 360,
+      "label": "friend animated move"
+    },
+    {
+      "width": 360,
+      "label": "toast closes"
+    },
+    {
+      "width": 768,
+      "label": "ai check appears"
+    },
+    {
+      "width": 768,
+      "label": "ai dismiss rescue"
+    },
+    {
+      "width": 768,
+      "label": "ai reopen rescue"
+    },
+    {
+      "width": 768,
+      "label": "ai invalid move explanation"
+    },
+    {
+      "width": 768,
+      "label": "ai many captures"
+    },
+    {
+      "width": 768,
+      "label": "ai hint overlay"
+    },
+    {
+      "width": 768,
+      "label": "ai draw and timer end"
+    },
+    {
+      "width": 768,
+      "label": "ai reset counters"
+    },
+    {
+      "width": 768,
+      "label": "friend check appears"
+    },
+    {
+      "width": 768,
+      "label": "friend dismiss rescue"
+    },
+    {
+      "width": 768,
+      "label": "friend reopen rescue"
+    },
+    {
+      "width": 768,
+      "label": "friend invalid move explanation"
+    },
+    {
+      "width": 768,
+      "label": "friend many captures"
+    },
+    {
+      "width": 768,
+      "label": "friend hint overlay"
+    },
+    {
+      "width": 768,
+      "label": "friend draw and timer end"
+    },
+    {
+      "width": 768,
+      "label": "friend reset counters"
+    },
+    {
+      "width": 768,
+      "label": "mission long feedback"
+    },
+    {
+      "width": 768,
+      "label": "mission feedback clears"
+    },
+    {
+      "width": 768,
+      "label": "mission hint"
+    },
+    {
+      "width": 768,
+      "label": "mission outcome"
+    },
+    {
+      "width": 768,
+      "label": "puzzle long feedback"
+    },
+    {
+      "width": 768,
+      "label": "puzzle feedback clears"
+    },
+    {
+      "width": 768,
+      "label": "puzzle hint"
+    },
+    {
+      "width": 768,
+      "label": "puzzle outcome"
+    },
+    {
+      "width": 768,
+      "label": "collector long feedback"
+    },
+    {
+      "width": 768,
+      "label": "collector feedback clears"
+    },
+    {
+      "width": 768,
+      "label": "collector hint"
+    },
+    {
+      "width": 768,
+      "label": "collector outcome"
+    },
+    {
+      "width": 768,
+      "label": "bomb long feedback"
+    },
+    {
+      "width": 768,
+      "label": "bomb feedback clears"
+    },
+    {
+      "width": 768,
+      "label": "bomb hint"
+    },
+    {
+      "width": 768,
+      "label": "bomb outcome"
+    },
+    {
+      "width": 768,
+      "label": "defense long feedback"
+    },
+    {
+      "width": 768,
+      "label": "defense feedback clears"
+    },
+    {
+      "width": 768,
+      "label": "defense hint"
+    },
+    {
+      "width": 768,
+      "label": "defense outcome"
+    },
+    {
+      "width": 768,
+      "label": "survival long feedback"
+    },
+    {
+      "width": 768,
+      "label": "survival feedback clears"
+    },
+    {
+      "width": 768,
+      "label": "survival hint"
+    },
+    {
+      "width": 768,
+      "label": "survival outcome"
+    },
+    {
+      "width": 768,
+      "label": "knight full route"
+    },
+    {
+      "width": 768,
+      "label": "knight close route"
+    },
+    {
+      "width": 768,
+      "label": "knight branch alert"
+    },
+    {
+      "width": 768,
+      "label": "knight blocked route"
+    },
+    {
+      "width": 768,
+      "label": "knight undo"
+    },
+    {
+      "width": 768,
+      "label": "voice controls"
+    },
+    {
+      "width": 768,
+      "label": "scrolled knight hint closes"
+    },
+    {
+      "width": 768,
+      "label": "scrolled settings close"
+    },
+    {
+      "width": 768,
+      "label": "scrolled undo"
+    },
+    {
+      "width": 768,
+      "label": "knight animated move"
+    },
+    {
+      "width": 768,
+      "label": "friend animated move"
+    },
+    {
+      "width": 768,
+      "label": "toast closes"
+    },
+    {
+      "width": 1280,
+      "label": "ai check appears"
+    },
+    {
+      "width": 1280,
+      "label": "ai dismiss rescue"
+    },
+    {
+      "width": 1280,
+      "label": "ai reopen rescue"
+    },
+    {
+      "width": 1280,
+      "label": "ai invalid move explanation"
+    },
+    {
+      "width": 1280,
+      "label": "ai many captures"
+    },
+    {
+      "width": 1280,
+      "label": "ai hint overlay"
+    },
+    {
+      "width": 1280,
+      "label": "ai draw and timer end"
+    },
+    {
+      "width": 1280,
+      "label": "ai reset counters"
+    },
+    {
+      "width": 1280,
+      "label": "friend check appears"
+    },
+    {
+      "width": 1280,
+      "label": "friend dismiss rescue"
+    },
+    {
+      "width": 1280,
+      "label": "friend reopen rescue"
+    },
+    {
+      "width": 1280,
+      "label": "friend invalid move explanation"
+    },
+    {
+      "width": 1280,
+      "label": "friend many captures"
+    },
+    {
+      "width": 1280,
+      "label": "friend hint overlay"
+    },
+    {
+      "width": 1280,
+      "label": "friend draw and timer end"
+    },
+    {
+      "width": 1280,
+      "label": "friend reset counters"
+    },
+    {
+      "width": 1280,
+      "label": "mission long feedback"
+    },
+    {
+      "width": 1280,
+      "label": "mission feedback clears"
+    },
+    {
+      "width": 1280,
+      "label": "mission hint"
+    },
+    {
+      "width": 1280,
+      "label": "mission outcome"
+    },
+    {
+      "width": 1280,
+      "label": "puzzle long feedback"
+    },
+    {
+      "width": 1280,
+      "label": "puzzle feedback clears"
+    },
+    {
+      "width": 1280,
+      "label": "puzzle hint"
+    },
+    {
+      "width": 1280,
+      "label": "puzzle outcome"
+    },
+    {
+      "width": 1280,
+      "label": "collector long feedback"
+    },
+    {
+      "width": 1280,
+      "label": "collector feedback clears"
+    },
+    {
+      "width": 1280,
+      "label": "collector hint"
+    },
+    {
+      "width": 1280,
+      "label": "collector outcome"
+    },
+    {
+      "width": 1280,
+      "label": "bomb long feedback"
+    },
+    {
+      "width": 1280,
+      "label": "bomb feedback clears"
+    },
+    {
+      "width": 1280,
+      "label": "bomb hint"
+    },
+    {
+      "width": 1280,
+      "label": "bomb outcome"
+    },
+    {
+      "width": 1280,
+      "label": "defense long feedback"
+    },
+    {
+      "width": 1280,
+      "label": "defense feedback clears"
+    },
+    {
+      "width": 1280,
+      "label": "defense hint"
+    },
+    {
+      "width": 1280,
+      "label": "defense outcome"
+    },
+    {
+      "width": 1280,
+      "label": "survival long feedback"
+    },
+    {
+      "width": 1280,
+      "label": "survival feedback clears"
+    },
+    {
+      "width": 1280,
+      "label": "survival hint"
+    },
+    {
+      "width": 1280,
+      "label": "survival outcome"
+    },
+    {
+      "width": 1280,
+      "label": "knight full route"
+    },
+    {
+      "width": 1280,
+      "label": "knight close route"
+    },
+    {
+      "width": 1280,
+      "label": "knight branch alert"
+    },
+    {
+      "width": 1280,
+      "label": "knight blocked route"
+    },
+    {
+      "width": 1280,
+      "label": "knight undo"
+    },
+    {
+      "width": 1280,
+      "label": "voice controls"
+    },
+    {
+      "width": 1280,
+      "label": "scrolled knight hint closes"
+    },
+    {
+      "width": 1280,
+      "label": "scrolled settings close"
+    },
+    {
+      "width": 1280,
+      "label": "scrolled undo"
+    },
+    {
+      "width": 1280,
+      "label": "knight animated move"
+    },
+    {
+      "width": 1280,
+      "label": "friend animated move"
+    },
+    {
+      "width": 1280,
+      "label": "toast closes"
+    }
+  ],
+  "errors": []
+}

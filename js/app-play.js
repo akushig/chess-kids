@@ -140,6 +140,9 @@ function renderPlay() {
   saveActiveSession();
   if (state.play.mode === 'friend') renderPlayFriend();
   else renderPlayAi();
+  const guide = playGuideHTML();
+  if (guide) showGameToast(guide, 'play|' + state.play.notice + '|' + state.game.status + '|' + state.game.turn);
+  else { hideGameToast(); gameToastKey = ''; }
 }
 
 function playBoardHTML(faceToFace) {
@@ -186,7 +189,7 @@ function renderPlayAi() {
       : `<div class="status-msg dim">${t('playAiTurn')}</div>`;
   }
 
-  document.getElementById('screen-play').innerHTML = `
+  renderGameScreen('screen-play', `
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goPlay()">← ${t('btnBack')}</button>
@@ -194,13 +197,12 @@ function renderPlayAi() {
         <span class="play-badge">${PLAY_LEVEL_ICONS[level]} ${t('playLevel' + level)}</span>
       </div>
       ${statusMsg}
-      ${playGuideHTML()}
       <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => getPieceSVG(p, 24)).join('')}</div>
       ${playBoardHTML(false)}
       <div class="captured-pieces" id="captured-bottom">${game.captured.w.map(p => getPieceSVG(p, 24)).join('')}</div>
       ${playActionsHTML()}
     </div>
-  `;
+  `);
 }
 
 // 친구와 대전: 위쪽(검은색) 패널은 180° 돌려서 마주 앉은 친구가 바로 읽게 함
@@ -210,14 +212,13 @@ function renderPlayFriend() {
 
   const panel = side => {
     const active = !over && game.turn === side;
-    let msg, reason = '', cls = active ? 'active' : '';
+    let msg, cls = active ? 'active' : '';
     if (game.status === 'checkmate') {
       const lost = game.turn === side;
       msg = lost ? t('playLoseShort') : t('playWin');
       cls = lost ? 'lose' : 'win';
     } else if (game.status === 'draw') {
       msg = t('playDraw');
-      reason = `<div class="p2-reason">${t(PLAY_DRAW_KEYS[game.drawReason])}</div>`;
       cls = 'draw';
     } else if (p.timeoutSide === side) {
       msg = t('playTimeout');
@@ -227,7 +228,7 @@ function renderPlayFriend() {
       msg = t('playFriendTurn');
     }
     const time = p.timer && !over ? `<span class="p2-time">${p.timer}</span>` : '';
-    const bar = p.timer && !over ? `<div class="p2-bar"><div class="p2-bar-fill"></div></div>` : '';
+    const bar = p.timer ? `<div class="p2-bar"><div class="p2-bar-fill"></div></div>` : '';
     const capturedId = side === 'w' ? 'captured-bottom' : 'captured-top';
     return `
       <div class="p2-panel ${side === 'b' ? 'p2-top' : ''} ${cls}" id="p2-panel-${side}">
@@ -239,14 +240,13 @@ function renderPlayFriend() {
           </div>
           ${time}
         </div>
-        ${reason}
         ${bar}
         <div class="captured-pieces" id="${capturedId}">${game.captured[side].map(pc => getPieceSVG(pc, 24)).join('')}</div>
       </div>
     `;
   };
 
-  document.getElementById('screen-play').innerHTML = `
+  renderGameScreen('screen-play', `
     <div class="screen-wrap play-2p">
       <div class="screen-header">
         <button class="back-btn" onclick="goPlay()">← ${t('btnBack')}</button>
@@ -254,12 +254,11 @@ function renderPlayFriend() {
         ${p.timer ? `<span class="play-badge">⏱ ${playTimerLabel(p.timer)}</span>` : ''}
       </div>
       ${panel('b')}
-      ${playGuideHTML()}
       ${playBoardHTML(p.face !== false)}
       ${panel('w')}
       ${playActionsHTML()}
     </div>
-  `;
+  `);
   if (playTimerHandle) playTimerPaint();
 }
 
@@ -554,6 +553,7 @@ function playAttackOverlay() {
 }
 function playGuideHTML() {
   const g=state.game,p=state.play;
+  if(g.status==='draw')return `<div class="guide-card">${t(PLAY_DRAW_KEYS[g.drawReason])}</div>`;
   if(p.notice)return `<div class="guide-card" role="status">${p.notice}</div>`;
   if(g.status!=='check'||!p.help)return '';
   if(p.mode==='ai'&&g.turn==='b')return '<div class="guide-card">상대 왕을 공격했어요. 컴퓨터가 어떻게 피하는지 살펴봐요.</div>';
@@ -561,7 +561,7 @@ function playGuideHTML() {
   return `<div class="guide-card" role="status"><strong>왕이 공격받고 있어요. 먼저 안전하게 해요.</strong><div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small></div>`;
 }
 function playActionsHTML() {
-  return `<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
+  return `${state.game.status==='check'&&state.play.help?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
 }
 function playRestartRequest() {
   if(playIsOver()||!state.actionHistory?.length){playStart();return;}

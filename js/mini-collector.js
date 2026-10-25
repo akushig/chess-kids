@@ -58,7 +58,7 @@ function renderCollector() {
   let msg;
   if (cl.clear) msg=`<div class="status-msg success">${t('collectorClear')}</div>`;
   else if (cl.failed) msg=`<div class="status-msg fail">${cl.failMsg}</div>`;
-  else msg=`<div class="status-msg">${cl.notice||COLLECTOR_LEVELS[cl.levelIdx].name+'로 별을 모아요.'} ${cl.challenge?'남은 이동 수 안에 도전해요.':'느긋하게 움직여도 괜찮아요.'}</div>`;
+  else msg=`<div class="status-msg">${COLLECTOR_LEVELS[cl.levelIdx].name+'로 별을 모아요.'} ${cl.challenge?'남은 이동 수 안에 도전해요.':'느긋하게 움직여도 괜찮아요.'}</div>`;
 
   const info=`<div class="mission-info">
     <div class="mission-speech">${t('collectorStars')}: ${cl.starsLeft > 0 ? '⭐'.repeat(cl.starsLeft) : '✓'}</div>
@@ -73,7 +73,7 @@ function renderCollector() {
   const retryBtn=cl.failed?`<button class="action-btn" onclick="goCollector(${cl.levelIdx},${cl.challenge})">${t('missionRetryBtn')}</button>`:'';
   const nextBtn=cl.clear&&cl.levelIdx<COLLECTOR_LEVELS.length-1?`<button class="action-btn green" onclick="goCollector(${cl.levelIdx+1},${cl.challenge})">${t('btnNext')}</button>`:'';
 
-  document.getElementById('screen-mini').innerHTML=`
+  renderGameScreen('screen-mini', `
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
@@ -82,7 +82,7 @@ function renderCollector() {
       ${msg} ${info}<button class="play-chip" onclick="goCollector(${cl.levelIdx},${!cl.challenge})">${cl.challenge?'연습으로 바꾸기':'이동 수 도전하기'}</button>
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
       ${undoButton()} ${actions} ${retryBtn} ${nextBtn} ${cl.clear?finishLinks('goKnightSetup()','나이트와 탐험하기'):''}
-    </div>`;
+    </div>`);
 }
 
 function collectorClick(r,c) {
@@ -178,11 +178,7 @@ function collectorHint() {
 
   const path = findCollectorSolvePath();
   if (!path) {
-    const speech = document.querySelector('.mission-speech');
-    if (speech) {
-      speech.innerHTML = '⚠️ ' + t('collectorUnsolvable');
-      speech.classList.add('hint-active', 'hint-unsolvable');
-    }
+    showGameToast('⚠️ ' + t('collectorUnsolvable'), '', true);
     return;
   }
   showHintArrow(boardEl,...path[0],...path[1],cl.size,'이 별부터 찾아봐요.');

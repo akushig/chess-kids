@@ -1663,3 +1663,45 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 @media(max-width:370px) { .kt-subtitle{font-size:.68rem;}.kt-alert-toggle{font-size:.74rem;gap:6px;}.kt-size-picker button{padding:8px;}.kt-route-number{min-width:21px;height:21px;font-size:.7rem;} }
 .kt-screen .kt-status { box-shadow:none;backdrop-filter:none;font-weight:400; }
 .kt-hint-panel .kt-hint-message { background:transparent;border-radius:0;padding:0;font-weight:400;flex:none;box-shadow:none;color:#6d674e; }
+
+/* Game feedback must never change the board's position or dimensions. */
+.screen:has(.game-screen), .game-screen { overflow-anchor:none; }
+.game-screen { justify-content:flex-start; }
+.game-screen > * { flex-grow:0; flex-shrink:0; }
+.game-screen > .status-msg {
+  width:100%; max-width:560px; height:76px; min-height:76px;
+  flex:none; box-sizing:border-box; overflow:auto; position:relative;
+  font-size:.9rem; line-height:1.55; padding:10px 14px;
+}
+.game-screen > .mission-info { height:48px; min-height:48px; flex:none; }
+.game-screen .mission-info .mission-speech {
+  min-width:0; height:100%; box-sizing:border-box; overflow:auto;
+}
+.game-screen:has(.mission-board) > .mission-info { height:84px; min-height:84px; }
+.game-screen .move-counter { flex-shrink:0; }
+.game-screen .read-guide { position:absolute; top:6px; right:6px; margin:0; }
+.game-screen .status-msg:has(.read-guide),
+.game-screen .mission-speech:has(.read-guide) { padding-right:48px; }
+.game-screen .captured-pieces, .game-screen .captured-pieces:empty {
+  display:flex; flex:none; height:32px; min-height:32px; box-sizing:border-box;
+  overflow-x:auto; overflow-y:hidden;
+}
+.game-screen .captured-pieces svg { flex:0 0 24px; }
+.game-screen .p2-panel { height:104px; min-height:104px; flex:none; box-sizing:border-box; }
+.game-screen .p2-head, .game-screen .p2-bar { flex-shrink:0; }
+.game-screen .p2-panel .captured-pieces { margin-top:auto; height:26px; min-height:26px; }
+.game-screen.kt-screen > .kt-status { height:76px; min-height:76px; }
+.game-screen .chess-board { flex-shrink:0; }
+.game-toast {
+  position:fixed; z-index:1000; left:50%; bottom:max(12px,env(safe-area-inset-bottom));
+  transform:translateX(-50%); width:calc(100% - 24px); max-width:560px;
+  box-sizing:border-box; display:flex; gap:8px; padding:14px;
+  background:#fffdf4; color:var(--text); border:2px solid #edce77;
+  border-radius:18px; box-shadow:0 6px 30px #25354c40;
+  font-size:.9rem; line-height:1.6;
+}
+.game-toast-content { flex:1; min-width:0; max-height:32vh; overflow:auto; }
+.game-toast .guide-card { width:auto; padding:0; border:0; margin:0; background:none; box-shadow:none; }
+.game-toast-tools { display:flex; flex-direction:column; gap:4px; }
+.game-toast-tools button { min-width:40px; min-height:40px; border:0; border-radius:10px; background:#f3ecd9; cursor:pointer; }
+.game-toast-tools button[hidden] { display:none; }

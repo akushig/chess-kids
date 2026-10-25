@@ -34,9 +34,49 @@ const MISSION_BOARD_SIZE = 6;
 
 // ===== 화면 전환 =====
 let screenEpoch = 0;
+// Keep the board in the same document and viewport position across game renders.
+// Feedback lives outside the screen so it cannot resize the board's ancestors.
+let gameToastTimer, gameToastKey = '', gameLayoutSession = 0;
+function hideGameToast() {
+  clearTimeout(gameToastTimer);
+  document.getElementById('game-toast')?.remove();
+}
+function showGameToast(html, key = '', repeat = false) {
+  if (!html || (!repeat && key && key === gameToastKey)) return;
+  hideGameToast();
+  gameToastKey = key;
+  const toast = document.createElement('aside');
+  if (!toast.setAttribute) return; // Non-DOM content test harness.
+  toast.id = 'game-toast'; toast.className = 'game-toast';
+  toast.setAttribute('aria-label', '게임 안내');
+  toast.innerHTML = `<div class="game-toast-content" role="status" aria-live="polite">${html}</div><div class="game-toast-tools"><button type="button" class="toast-read" aria-label="안내 듣기">🔊</button><button type="button" class="toast-close" aria-label="안내 닫기">✕</button></div>`;
+  toast.querySelector('.toast-close').onclick = hideGameToast;
+  toast.querySelector('.toast-read').onclick = () => speakGuide(toast.querySelector('.game-toast-content').textContent);
+  const prefs = readData('preferences', {});
+  if (!prefs.voice) toast.querySelector('.toast-read').hidden = true;
+  document.body.appendChild(toast);
+  if (prefs.voice) speakGuide(toast.querySelector('.game-toast-content').textContent);
+  // Interactive rescue choices stay available until dismissed or the next move.
+  if (!toast.querySelector('.game-toast-content button')) gameToastTimer = setTimeout(hideGameToast, 6500);
+}
+function renderGameScreen(id, html) {
+  const screen = document.getElementById(id), existing = screen.querySelector('.game-screen');
+  const previous = existing?.dataset?.session === String(gameLayoutSession) ? existing : null;
+  const scrollY = window.scrollY || 0;
+  const height = previous ? Math.max(previous.getBoundingClientRect().height, (window.innerHeight || 0) + scrollY) : 0;
+  screen.innerHTML = html.replace('screen-wrap', 'screen-wrap game-screen');
+  const wrap = screen.querySelector('.game-screen');
+  if (wrap) wrap.dataset.session = String(gameLayoutSession);
+  if (wrap && height) wrap.style.minHeight = height + 'px';
+  const notice = ({mission: state.missionNotice, puzzle: state.puzzleNotice, collector: state.cl?.notice, bomb: state.bm?.notice, defense: state.df?.notice, survival: state.sv?.notice})[state.activeKind];
+  if (notice) showGameToast(notice, state.activeKind + '|' + notice);
+  else if (state.activeKind !== 'play') { hideGameToast(); gameToastKey = ''; }
+  if (previous && window.scrollTo) window.scrollTo({top: scrollY, behavior: 'instant'});
+}
 function laterInScreen(callback,delay) { const epoch=screenEpoch; return setTimeout(()=>{if(epoch===screenEpoch)callback();},delay); }
-function cancelActivityCallbacks() { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
+function cancelActivityCallbacks() { hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
 function showScreen(name) {
+  hideGameToast(); gameToastKey='';
   if (state.screen !== name) { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
   if (state.screen !== name) saveActiveSession?.();
   state.screen = name;
@@ -183,18 +223,13 @@ function showHintArrow(boardEl, fromR, fromC, toR, toC, gridSize, text) {
   boardEl.appendChild(arrow);
 
   // 텍스트 표시
-  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
-  if (speech && text) {
-    speech.innerHTML = '💡 ' + text;
-    speech.classList.add('hint-active');
-  }
+  if (text) showGameToast('💡 ' + text, '', true);
 
   // 3초 후 제거
   setTimeout(() => {
     if (fromCell) fromCell.classList.remove('hint-highlight');
     if (toCell) toCell.classList.remove('hint-highlight');
     if (arrow.parentNode) arrow.remove();
-    if (speech) speech.classList.remove('hint-active');
   }, 3000);
 }
 
@@ -206,15 +241,10 @@ function showHintTarget(boardEl, targetR, targetC, gridSize, text) {
   const cell = boardEl.querySelectorAll('.board-cell')[idx];
   if (cell) cell.classList.add('hint-highlight');
 
-  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
-  if (speech && text) {
-    speech.innerHTML = '💡 ' + text;
-    speech.classList.add('hint-active');
-  }
+  if (text) showGameToast('💡 ' + text, '', true);
 
   setTimeout(() => {
     if (cell) cell.classList.remove('hint-highlight');
-    if (speech) speech.classList.remove('hint-active');
   }, 3000);
 }
 
@@ -271,11 +301,7 @@ function showHintPath(boardEl, path, gridSize, text) {
   boardEl.appendChild(markerEl);
 
   // 텍스트
-  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
-  if (speech && text) {
-    speech.innerHTML = '💡 ' + text;
-    speech.classList.add('hint-active');
-  }
+  if (text) showGameToast('💡 ' + text, '', true);
 }
 
 // moves: [[fromR, fromC, toR, toC], ...] 각 수의 출발/도착 배열 (퍼즐용)
@@ -325,19 +351,11 @@ function showHintMoves(boardEl, moves, gridSize, text) {
   }
   boardEl.appendChild(markerEl);
 
-  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
-  if (speech && text) {
-    speech.innerHTML = '💡 ' + text;
-    speech.classList.add('hint-active');
-  }
+  if (text) showGameToast('💡 ' + text, '', true);
 }
 
 function showHintUnsolvable() {
-  const speech = document.querySelector('#screen-' + state.screen + ' .mission-speech');
-  if (speech) {
-    speech.innerHTML = '⚠️ ' + t('hintUnsolvable');
-    speech.classList.add('hint-active', 'hint-unsolvable');
-  }
+  showGameToast('⚠️ ' + t('hintUnsolvable'), '', true);
 }
 
 // ===== 초기화 =====

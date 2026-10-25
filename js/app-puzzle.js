@@ -63,11 +63,11 @@ function renderPuzzleBoard(){
     if(pc?.[1]==='K'&&(g.status==='check'||g.status==='checkmate')&&pc[0]===g.turn)cls+=' danger-cell';
     cells+=`<div class="${cls}" onclick="puzzleClick(${r},${c})">${pc?getPieceSVG(pc):''}</div>`;
   }
-  document.getElementById('screen-puzzle').innerHTML=`<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="state.puzzleRun++;renderPuzzleLevelSelect()">← 장면 고르기</button><h2>한 수 발견 ${pos+1}/${group.length}</h2></div>
-    <div class="status-msg ${state.puzzleSolved?'success':''}" role="status">${state.puzzleSolved?({capture:'목표 말을 잡았어요! ✓ 완료 도장',escape:'왕을 안전하게 했어요! ✓ 완료 도장',fork:'왕과 다른 말을 동시에 노리고 있어요! ✓ 완료 도장',checkmate:'왕이 공격받고 피할 수도 없어요. 체크메이트! ✓',checkmate2:'어떤 응수에도 메이트를 만들었어요! ✓'})[p.type]:state.puzzleNotice||p.desc[currentLang]||p.desc.ko}</div>
+  renderGameScreen('screen-puzzle', `<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="state.puzzleRun++;renderPuzzleLevelSelect()">← 장면 고르기</button><h2>한 수 발견 ${pos+1}/${group.length}</h2></div>
+    <div class="status-msg ${state.puzzleSolved?'success':''}" role="status">${state.puzzleSolved?({capture:'목표 말을 잡았어요! ✓ 완료 도장',escape:'왕을 안전하게 했어요! ✓ 완료 도장',fork:'왕과 다른 말을 동시에 노리고 있어요! ✓ 완료 도장',checkmate:'왕이 공격받고 피할 수도 없어요. 체크메이트! ✓',checkmate2:'어떤 응수에도 메이트를 만들었어요! ✓'})[p.type]:p.desc[currentLang]||p.desc.ko}</div>
     <div class="chess-board">${cells}</div><div class="mission-speech" aria-live="polite">${state.puzzleWaiting?'상대가 움직여요. 잠깐 살펴봐요.':''}</div>
     <div class="mission-actions">${!state.puzzleSolved?`<button class="icon-btn" onclick="puzzleHint()" ${state.puzzleWaiting?'disabled':''}>💡 한 수 보기</button><button class="icon-btn" onclick="puzzleUndo()" ${!state.actionHistory?.length||state.puzzleWaiting?'disabled':''}>↶ 되돌리기</button>`:''}<button class="icon-btn" onclick="renderPuzzle()">🔄 다시</button></div>
-    ${state.puzzleSolved?`<button class="action-btn green" onclick="${next?`state.puzzleIndex=${PUZZLES.indexOf(next)};renderPuzzle()`:'renderPuzzleLevelSelect()'}">${next?'다음 장면':'다른 장면 발견하기'}</button><button class="action-btn secondary" onclick="showScreen('home');renderHome()">여기까지</button>`:''}</div>`;
+    ${state.puzzleSolved?`<button class="action-btn green" onclick="${next?`state.puzzleIndex=${PUZZLES.indexOf(next)};renderPuzzle()`:'renderPuzzleLevelSelect()'}">${next?'다음 장면':'다른 장면 발견하기'}</button><button class="action-btn secondary" onclick="showScreen('home');renderHome()">여기까지</button>`:''}</div>`);
 }
 function puzzleClick(r,c){
   if(state.puzzleSolved||state.animating||state.puzzleWaiting||state.puzzleGame.turn!=='w')return;

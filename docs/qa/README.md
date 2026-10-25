@@ -1,6 +1,6 @@
 # 2026-10-25 개발 검수
 
-검수 빌드: `2026.10.25.5` · Node 20 · Playwright 1.64.1 / Chromium headless
+검수 빌드: `2026.10.25.6` · Node 20 · Playwright 1.64.1 / Chromium headless
 
 | 검사 | 결과 |
 |---|---|
@@ -15,9 +15,10 @@
 | 초기 배치 perft depth 3 | 8,902개 일치 |
 | 저장·재개·기록 이관·내용 재배열·애니메이션 중 종료 | 통과 |
 | 실제 브라우저 화면과 입력 | 360×780, 768×1024, 1280×900 통과 |
+| 게임 진행 중 보드 위치·크기 고정 | 3개 화면 폭 × 52개 시나리오 통과 |
 | 오프라인 새로고침·전체 스킨·Worker 컴퓨터 응수 | 통과 |
 
-[나이트 투어 UX 수정 검수](knight-tour/README.md) · [브라우저 결과 JSON](browser-results.json) · [독립 퍼즐 대조 결과](puzzle-results.txt)
+[게임 중 보드 위치 고정 검수](board-layout/README.md) · [나이트 투어 UX 수정 검수](knight-tour/README.md) · [브라우저 결과 JSON](browser-results.json) · [독립 퍼즐 대조 결과](puzzle-results.txt)
 
 ## 검수 화면
 
