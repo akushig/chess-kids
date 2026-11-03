@@ -1,10 +1,10 @@
 // ===== 대전 화면 + 리워드 화면 =====
-// 대전: 컴퓨터(난이도 5단계) 또는 친구(위·아래 마주 보기 + 한 수 제한 시간)
+// 대전: 컴퓨터(난이도 10단계) 또는 친구(위·아래 마주 보기 + 한 수 제한 시간)
 
 const PLAY_TIMER_OPTIONS = [0, 15, 30, 60];
-const PLAY_LEVEL_ICONS = ['🐣', '🐥', '🐱', '🦁', '🐲'];
+const PLAY_LEVEL_ICONS = ['🐣', '🐤', '🐥', '🐱', '🦊', '🐻', '🦁', '🐲', '🐉', '👑'];
 const PLAY_AI_MIN_DELAY = 400;  // 컴퓨터가 너무 빨리 두면 아이가 수를 못 따라감
-const PLAY_TIMEOUT_LEVEL = 2;   // 시간 초과 때 대신 두는 수의 수준 (보통)
+const PLAY_TIMEOUT_LEVEL = AI_ASSIST_LEVEL;
 const PLAY_DRAW_KEYS = {
   stalemate: 'playDrawStalemate',
   kings: 'playDrawKings',
@@ -24,13 +24,21 @@ function getPlaySettings() {
   try { s = JSON.parse(safeStore.getItem('play_settings')) || {}; } catch { s = {}; }
   return {
     mode: s.mode === 'friend' ? 'friend' : 'ai',
-    level: Number.isInteger(s.level) && AI_LEVELS[s.level] ? s.level : (activeProfile==='adult'?2:0),
+    level: aiLevelIndex(s.level,s.levelVersion??1,activeProfile==='adult'?AI_ASSIST_LEVEL:0),
+    levelVersion: AI_DIFFICULTY_VERSION,
     timer: PLAY_TIMER_OPTIONS.includes(s.timer) ? s.timer : 0,
     help:s.help !== false, autoMove:!!s.autoMove, small:!!s.small, face:s.face !== false,
   };
 }
 function savePlaySettings(s) {
-  try { safeStore.setItem('play_settings', JSON.stringify(s)); } catch {}
+  try { safeStore.setItem('play_settings', JSON.stringify({...s,level:aiLevelIndex(s.level),levelVersion:AI_DIFFICULTY_VERSION})); } catch {}
+}
+
+function playUpgradeDifficulty(play) {
+  return {...play,level:aiLevelIndex(play.level,play.levelVersion??1),levelVersion:AI_DIFFICULTY_VERSION};
+}
+function playLevelLabel(level) {
+  return t('playLevelLabel').replace('{n}',level+1)+' · '+t('playLevel'+level);
 }
 
 // --- 설정 화면 ---
@@ -52,13 +60,13 @@ function renderPlaySetup() {
   let options;
   if (s.mode === 'ai') {
     const levels = AI_LEVELS.map((_, i) => `
-      <button class="play-level ${s.level === i ? 'active' : ''}" onclick="playSetOption('level', ${i})">
+      <button class="play-level ${s.level === i ? 'active' : ''}" aria-label="${playLevelLabel(i)}" aria-pressed="${s.level===i}" onclick="playSetOption('level', ${i})">
+        <span class="play-level-number">${i+1}</span>
         <span class="play-level-icon">${PLAY_LEVEL_ICONS[i]}</span>
         <span class="play-level-name">${t('playLevel' + i)}</span>
-        <span class="play-level-desc">${t('playLevelDesc' + i)}</span>
       </button>
     `).join('');
-    options = `<div class="play-section-title">${t('playDifficulty')}</div><div class="play-levels">${levels}</div>`;
+    options = `<div class="play-section-title">${t('playDifficulty')}</div><div class="play-levels play-level-picker" role="group" aria-label="${t('playDifficulty')}">${levels}</div><div class="play-level-summary" role="status"><strong>${playLevelLabel(s.level)}</strong><p>${t('playLevelDesc'+s.level)}</p></div><details class="play-level-guide"><summary>${t('playLevelCompare')}</summary><table><thead><tr><th>${t('playDifficulty')}</th><th>${t('playLevelDifference')}</th></tr></thead><tbody>${AI_LEVELS.map((_,i)=>`<tr><th scope="row">${playLevelLabel(i)}</th><td>${t('playLevelDesc'+i)}</td></tr>`).join('')}</tbody></table></details>`;
   } else {
     const timers = PLAY_TIMER_OPTIONS.map(sec => `
       <button class="play-chip ${s.timer === sec ? 'active' : ''}" onclick="playSetOption('timer', ${sec})">${playTimerLabel(sec)}</button>
@@ -100,6 +108,7 @@ function playSetOption(key, value) {
   s[key] = value;
   savePlaySettings(s);
   renderPlaySetup();
+  if(key==='level')document.querySelector('.play-level[aria-pressed="true"]')?.focus?.({preventScroll:true});
 }
 
 // --- 대국 시작/종료 ---
@@ -111,7 +120,7 @@ function playStart() {
   state.play = {
     mode: s.mode,
     help:s.help, autoMove:s.autoMove,face:s.face,small:s.small,notice:'',
-    level: s.level,
+    level: s.level, levelVersion:AI_DIFFICULTY_VERSION,
     timer: s.mode === 'friend' ? s.timer : 0,
     deadline: 0,
     pausedLeft: null,
@@ -199,7 +208,7 @@ function renderPlayAi() {
       <div class="screen-header">
         <button class="back-btn" onclick="goPlay()">← ${t('btnBack')}</button>
         <h2>${t('playTitle')}</h2>
-        <span class="play-badge">${PLAY_LEVEL_ICONS[level]} ${t('playLevel' + level)}</span>
+        <span class="play-badge">${PLAY_LEVEL_ICONS[level]} ${playLevelLabel(level)}</span>
       </div>
       ${statusMsg}
       <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => getPieceSVG(p, 24)).join('')}</div>
@@ -404,7 +413,7 @@ function playRequestAi(position, level, done) {
         for (const id of Object.keys(playAiPending)) {
           const job = playAiPending[id];
           delete playAiPending[id];
-          job.done(aiChooseMove(job.position, job.level));
+          job.done(aiChooseMove(job.position, job.level,{timeLimitMs:250}));
         }
       };
     } catch {
@@ -416,7 +425,7 @@ function playRequestAi(position, level, done) {
     playAiPending[id] = { position, level, done };
     playAiWorker.postMessage({ id, position, level });
   } else {
-    setTimeout(() => done(aiChooseMove(position, level)), 0);
+    setTimeout(() => done(aiChooseMove(position, level,{timeLimitMs:250})), 0);
   }
 }
 
@@ -630,13 +639,13 @@ function playTimerPauseForHelp() {
 function playHint() {
   if(state.animating||playIsOver()||(state.play.mode==='ai'&&state.game.turn!=='w'))return;
   playTimerPauseForHelp();
-  const move=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),1);
+  const move=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),AI_HINT_LEVEL);
   if(move){state.play.hintMove=move;renderPlay();showHintArrow(document.querySelector('#screen-play .chess-board'),...move,8,'화살표의 한 수를 직접 움직여 봐요.');}
 }
 function playDemo() {
   if(state.animating||playIsOver()||(state.play.mode==='ai'&&state.game.turn!=='w'))return;
   playTimerPauseForHelp();
-  const m=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),1);if(!m)return;
+  const m=playRescues()[0]?.move||aiChooseMove(playPosition(state.game),AI_HINT_LEVEL);if(!m)return;
   noteHelp(3);
   animateMove(document.querySelector('#screen-play .chess-board'),...m,state.game.board[m[0]][m[1]],()=>{state.play.notice='이렇게 움직일 수 있어요. 이제 직접 해볼까요?';renderPlay();});
 }

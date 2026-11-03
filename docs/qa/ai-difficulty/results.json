@@ -1,0 +1,152 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "build": "2026.11.03.1",
+      "levels": 10,
+      "migration": true,
+      "resumeUndo": true,
+      "workerResponsive": true,
+      "searches": [
+        {
+          "level": 8,
+          "completedDepth": 6,
+          "nodes": 3337,
+          "elapsedMs": 3,
+          "random": false,
+          "move": [
+            6,
+            4,
+            4,
+            4
+          ]
+        },
+        {
+          "level": 9,
+          "completedDepth": 8,
+          "nodes": 25908,
+          "elapsedMs": 8,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        },
+        {
+          "level": 10,
+          "completedDepth": 10,
+          "nodes": 206121,
+          "elapsedMs": 39,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "build": "2026.11.03.1",
+      "levels": 10,
+      "migration": true,
+      "resumeUndo": true,
+      "workerResponsive": true,
+      "searches": [
+        {
+          "level": 8,
+          "completedDepth": 6,
+          "nodes": 3337,
+          "elapsedMs": 3,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        },
+        {
+          "level": 9,
+          "completedDepth": 8,
+          "nodes": 25908,
+          "elapsedMs": 8,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        },
+        {
+          "level": 10,
+          "completedDepth": 10,
+          "nodes": 206121,
+          "elapsedMs": 34,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "build": "2026.11.03.1",
+      "levels": 10,
+      "migration": true,
+      "resumeUndo": true,
+      "workerResponsive": true,
+      "searches": [
+        {
+          "level": 8,
+          "completedDepth": 6,
+          "nodes": 3337,
+          "elapsedMs": 3,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        },
+        {
+          "level": 9,
+          "completedDepth": 8,
+          "nodes": 25908,
+          "elapsedMs": 8,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            5
+          ]
+        },
+        {
+          "level": 10,
+          "completedDepth": 10,
+          "nodes": 206121,
+          "elapsedMs": 34,
+          "random": false,
+          "move": [
+            7,
+            4,
+            6,
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

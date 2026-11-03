@@ -22,6 +22,7 @@ function activitySnapshot() {
 function rememberAction() { state.actionHistory ||= [];state.actionHistory.push(activitySnapshot());if(state.actionHistory.length>120)state.actionHistory.shift(); }
 function restoreSnapshot(snap) {
   Object.assign(state,copyData(snap.values));state.randomSeed=snap.randomSeed;state.supportLevel=Math.max(state.supportLevel||0,snap.supportLevel||0);
+  if(state.activeKind==='play'&&state.play)state.play=playUpgradeDifficulty(state.play);
   if(state.game)state.game=Object.assign(new ChessGame(),state.game);
   if(state.puzzleGame)state.puzzleGame=Object.assign(new ChessGame(),state.puzzleGame);
 }
@@ -90,6 +91,8 @@ function getSavedSession(saved=readData('last_session',null)){
     if(!PUZZLES[index]||!validBoard(v.puzzleGame?.board,8))return null;v.puzzleIndex=index;v.puzzleLevel=PUZZLES[index].level;for(const snap of saved.history||[])if(snap.values){snap.values.puzzleIndex=index;snap.values.puzzleLevel=v.puzzleLevel;}
   }else if(saved.kind==='play'){
     if(!validBoard(v.game?.board,8)||!['w','b'].includes(v.game.turn)||!v.play)return null;
+    v.play=playUpgradeDifficulty(v.play);
+    for(const snap of saved.history||[])if(snap.values?.play)snap.values.play=playUpgradeDifficulty(snap.values.play);
     if(saved.rulesVersion!==2){
       for(const game of [v.game,...(saved.history||[]).map(s=>s.values?.game).filter(Boolean)]){
         for(const k of Object.keys(game.castling||{}))game.castling[k]=false;

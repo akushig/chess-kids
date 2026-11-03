@@ -2,14 +2,29 @@
 // 규칙은 ChessGame과 같이 캐슬링·앙파상·네 가지 승격을 지원한다.
 // 보드는 0x88 배열(sq = 행*16 + 열, 0행이 흑 쪽), 기물 코드는 흰색 1~6 / 검은색 9~14.
 
-// depth: 탐색 깊이, quiesce: 잡기 연쇄 끝까지 보기, margin: 최선 수와 이 점수(센티폰) 차이 안의 수 중 무작위
+// Indices are zero-based; displayed difficulty is 1–10. Preserve the old anchors.
+const AI_DIFFICULTY_VERSION = 2;
+const AI_LEGACY_LEVELS = [0, 2, 4, 6, 7];
+const AI_HINT_LEVEL = 2;   // Previously Easy.
+const AI_ASSIST_LEVEL = 4; // Previously Normal.
+// depth: plies, quiesce: capture follow-ups, margin: centipawns below the best score.
 const AI_LEVELS = [
-  { random: true },                                  // 매우 쉬움: 아무 수나
-  { depth: 1, quiesce: false, margin: 150, timeMs:250 },         // 쉬움: 눈앞의 기물만 노림
-  { depth: 2, quiesce: true, margin: 60, timeMs:600 },           // 보통: 공짜로 내주는 기물은 피함
-  { depth: 3, quiesce: true, margin: 20, timeMs: 1500 },  // 어려움
-  { depth: 6, quiesce: true, margin: 5, timeMs: 1200 },   // 매우 어려움: 시간 안에서 최대한 깊게
+  { random: true },
+  { depth: 1, quiesce: false, margin: 300, timeMs:150, randomChance:0.5 },
+  { depth: 1, quiesce: false, margin: 150, timeMs:250 },
+  { depth: 2, quiesce: false, margin: 100, timeMs:400 },
+  { depth: 2, quiesce: true, margin: 60, timeMs:600 },
+  { depth: 3, quiesce: true, margin: 40, timeMs:900 },
+  { depth: 3, quiesce: true, margin: 20, timeMs:1500 },
+  { depth: 6, quiesce: true, margin: 5, timeMs:1200 },
+  { depth: 8, quiesce: true, margin: 0, timeMs:2500 },
+  { depth:10, quiesce: true, margin: 0, timeMs:5000 },
 ];
+function aiLevelIndex(value, version=AI_DIFFICULTY_VERSION, fallback=0) {
+  if(!Number.isInteger(value))return fallback;
+  if(version!==AI_DIFFICULTY_VERSION)return AI_LEGACY_LEVELS[value]??fallback;
+  return AI_LEVELS[value]?value:fallback;
+}
 
 const AI_VAL = [0, 100, 320, 330, 500, 900, 20000];
 const AI_CODE = { P: 1, N: 2, B: 3, R: 4, Q: 5, K: 6 };
@@ -300,6 +315,7 @@ const aiMoveBuf = [], aiKeyBuf = [];
 for (let i = 0; i < AI_MAX_PLY; i++) { aiMoveBuf.push(new Int32Array(256)); aiKeyBuf.push(new Int32Array(256)); }
 let aiNodes = 0, aiDeadline = 0, aiAborted = false, aiQuiesce = true, aiExtendLimit = 0;
 let aiKillers = [];
+let aiLastSearch = null;
 
 function aiOrderKeys(pos, moves, keys, n, ply) {
   const b = pos.board, k = aiKillers[ply];
@@ -326,7 +342,7 @@ function aiPickNext(moves, keys, i, n) {
 }
 
 function aiTimeUp() {
-  if ((++aiNodes & 2047) === 0 && aiDeadline && Date.now() > aiDeadline) aiAborted = true;
+  if ((++aiNodes & 255) === 0 && aiDeadline && Date.now() >= aiDeadline) aiAborted = true;
   return aiAborted;
 }
 
@@ -397,19 +413,24 @@ function aiLegalRootMoves(pos) {
 // position: { board: 8x8 ('wP' 등 또는 null), turn: 'w'|'b', enPassant: [r,c]|null,
 //             halfmove: 50수 규칙 카운트, repeated: 이미 두 번 나온 장면 키 목록 }
 // 반환: [fromR, fromC, toR, toC] 또는 null(둘 수 있는 수 없음)
-function aiChooseMove(position, levelIdx) {
-  const level = AI_LEVELS[levelIdx] || AI_LEVELS[1];
+function aiChooseMove(position, levelIdx, options={}) {
+  const level = AI_LEVELS[aiLevelIndex(levelIdx,AI_DIFFICULTY_VERSION,AI_HINT_LEVEL)];
+  const started=Date.now();
+  aiLastSearch={completedDepth:0,nodes:0,elapsedMs:0,random:false};
   const pos = aiFromPosition(position);
   let moves = aiLegalRootMoves(pos);
   if (!moves.length) return null;
   let pick = moves[Math.floor(Math.random() * moves.length)];
 
-  if (!level.random) {
+  const random=level.random||!!(level.randomChance&&Math.random()<level.randomChance);
+  aiLastSearch.random=!!random;
+  if (!random) {
     aiNodes = 0;
     aiAborted = false;
     aiQuiesce = level.quiesce;
     aiKillers = [];
-    aiDeadline = level.timeMs ? Date.now() + level.timeMs : 0;
+    const timeMs=Math.min(level.timeMs,options.timeLimitMs??level.timeMs);
+    aiDeadline = started + timeMs;
     const ruleDraws = aiRuleDrawMoves(pos, moves, position);
     let scores = null;
     for (let depth = 1; depth <= level.depth; depth++) {
@@ -428,9 +449,9 @@ function aiChooseMove(position, levelIdx) {
         cur.set(m, score);
         if (score > best) best = score;
       }
-      if (aiAborted && scores) break;
-      scores = cur;
       if (aiAborted) break;
+      scores = cur;
+      aiLastSearch.completedDepth=depth;
       // 다음 깊이는 이번 점수 순으로 탐색해서 가지치기를 빠르게
       moves = moves.filter(m => cur.has(m)).sort((a, b) => cur.get(b) - cur.get(a));
       if (best >= AI_MATE - AI_MAX_PLY) break;
@@ -442,6 +463,8 @@ function aiChooseMove(position, levelIdx) {
       pick = cands[Math.floor(Math.random() * cands.length)];
     }
   }
+  aiLastSearch.nodes=random?0:aiNodes;
+  aiLastSearch.elapsedMs=Date.now()-started;
   const from = pick & 127, to = (pick >> 7) & 127;
   const move=[from>>4,from&7,to>>4,to&7],flags=pick>>14;if(flags&4)move.push(AI_NAMES[(flags>>4)||5][1]);return move;
 }
@@ -452,6 +475,6 @@ if (typeof document === 'undefined' && typeof self !== 'undefined' && typeof imp
     const { id, position, level } = e.data;
     let move = null;
     try { move = aiChooseMove(position, level); } catch (err) { move = null; }
-    self.postMessage({ id, move });
+    self.postMessage({ id, move, search:aiLastSearch });
   };
 }

@@ -766,6 +766,18 @@ body {
 .play-level-icon { grid-row: 1 / 3; font-size: 1.8rem; text-align: center; }
 .play-level-name { font-size: 1rem; font-weight: 900; color: var(--text); }
 .play-level-desc { font-size: 0.75rem; font-weight: 700; color: var(--text-light); }
+.play-level-picker { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.play-level-picker .play-level { display:flex; flex-direction:column; justify-content:center; gap:3px; padding:7px 3px; min-width:0; min-height:94px; text-align:center; }
+.play-level-number { font-size:.9rem; font-weight:900; color:var(--text); }
+.play-level-picker .play-level-icon { grid-row:auto; font-size:1.35rem; line-height:1.2; }
+.play-level-picker .play-level-name { font-size:.65rem; line-height:1.25; min-height:2.5em; display:flex; align-items:center; justify-content:center; word-break:keep-all; }
+.play-level-summary { min-height:76px; padding:10px 14px; border-radius:14px; background:#fff; line-height:1.5; font-size:.85rem; }
+.play-level-summary p { margin-top:3px; color:var(--text-light); font-size:.8rem; }
+.play-level-guide { background:#ffffffc9; border-radius:12px; padding:10px 12px; font-size:.78rem; }
+.play-level-guide summary { cursor:pointer; font-weight:800; min-height:24px; }
+.play-level-guide table { width:100%; border-collapse:collapse; margin-top:8px; text-align:left; }
+.play-level-guide th,.play-level-guide td { padding:8px 4px; border-bottom:1px solid #d7e2e6; vertical-align:top; }
+.play-level-guide tbody th { width:38%; }
 .play-timers { display: flex; gap: 8px; }
 .play-note {
   font-size: 0.8rem;
