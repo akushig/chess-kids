@@ -74,8 +74,9 @@ function renderGameScreen(id, html) {
   if (previous && window.scrollTo) window.scrollTo({top: scrollY, behavior: 'instant'});
 }
 function laterInScreen(callback,delay) { const epoch=screenEpoch; return setTimeout(()=>{if(epoch===screenEpoch)callback();},delay); }
-function cancelActivityCallbacks() { hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
+function cancelActivityCallbacks() { if(typeof playCloseDialog==='function')playCloseDialog(false);hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
 function showScreen(name) {
+  if(state.screen!==name&&typeof playCloseDialog==='function')playCloseDialog(false);
   hideGameToast(); gameToastKey='';
   if (state.screen !== name) { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
   if (state.screen !== name) saveActiveSession?.();

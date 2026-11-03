@@ -1,3 +1,4 @@
+const {acknowledgePlayEvent}=require('./browser-helpers.cjs');
 // Optional browser integration test: set CHESS_PLAYWRIGHT_MODULE and CHESS_BROWSER_EXECUTABLE.
 const {chromium}=require(process.env.CHESS_PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs');
@@ -13,6 +14,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await page.evaluate(()=>{goMissionPlay('K',3);});await page.locator('#screen-learn .board-cell').nth(22).click();await page.waitForFunction(()=>state.missionFailed);
  await page.getByRole('button',{name:/되돌리기/}).click();assert.equal(await page.evaluate(()=>state.missionFailed),false);
  await page.evaluate(()=>{playStart();state.game=ChessGame.fromFEN('4r2k/8/8/8/8/8/R7/4K3 w - - 0 1');renderPlay();});
+ await acknowledgePlayEvent(page);
  await page.getByRole('button',{name:/길 막기/}).waitFor();
  fs.mkdirSync('/tmp/chess-kids-ui',{recursive:true});await page.screenshot({path:'/tmp/chess-kids-ui/smoke-check-mobile.png',fullPage:true,animations:'disabled'});
  await page.getByRole('button',{name:/길 막기/}).click();

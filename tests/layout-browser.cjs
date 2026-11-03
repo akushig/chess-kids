@@ -1,3 +1,4 @@
+const {acknowledgePlayEvent}=require('./browser-helpers.cjs');
 // Regression: feedback, captures, hints and outcomes cannot move an active board.
 const {chromium}=require(process.env.CHESS_PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs');
@@ -24,6 +25,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
    for(const mode of ['ai','friend']){
     await page.evaluate(mode=>{playStart();state.play.mode=mode;state.play.timer=30;renderPlay();window.scrollTo(0,0);},mode);await page.waitForTimeout(400);
     await stable(mode+' check appears',()=>{state.game=ChessGame.fromFEN('4r2k/8/8/8/8/8/R7/4K3 w - - 0 1');renderPlay();});
+    await acknowledgePlayEvent(page);
     assert.ok(await page.getByRole('button',{name:/길 막기/}).count());
     await stable(mode+' dismiss rescue',()=>document.querySelector('.toast-close').click());
     await stable(mode+' reopen rescue',()=>document.querySelector('[onclick^="showGameToast(playGuideHTML"]').click());

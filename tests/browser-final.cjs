@@ -1,3 +1,4 @@
+const {acknowledgePlayEvent}=require('./browser-helpers.cjs');
 const {chromium}=require(process.env.CHESS_PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const output=process.env.CHESS_QA_OUTPUT||'/tmp/chess-kids-ui';
@@ -22,6 +23,7 @@ const output=process.env.CHESS_QA_OUTPUT||'/tmp/chess-kids-ui';
    await page.evaluate(()=>{playStart();state.play.mode='friend';state.game=ChessGame.fromFEN('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');renderPlay();});
    await page.locator('#screen-play .board-cell').nth(60).click();await page.locator('#screen-play .board-cell').nth(62).click();assert.equal(await page.evaluate(()=>state.game.board[7][5]),'wR');
    await page.evaluate(()=>{playStart();state.game=ChessGame.fromFEN('4r2k/8/8/8/8/8/R7/4K3 w - - 0 1');renderPlay();});
+   await acknowledgePlayEvent(page);
    if(viewport.width===360)await page.screenshot({path:output+'/check-mobile.png',fullPage:true,animations:'disabled'});
    if(viewport.width===768)await page.screenshot({path:output+'/check-tablet.png',fullPage:true,animations:'disabled'});
    for(const fn of ['goKnightTour(0,"walk")','goCollector(0)','goBomb(0)','goDefense(0)','goSurvival(0)','goPuzzleLevel(4)']){

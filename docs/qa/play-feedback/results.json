@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "build": "2026.11.03.2",
+      "difficultyPopup": true,
+      "essentialCheck": true,
+      "castlePair": true,
+      "eventPersistence": true,
+      "timerAndAiPaused": true,
+      "results": true,
+      "stationaryBoard": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "build": "2026.11.03.2",
+      "difficultyPopup": true,
+      "essentialCheck": true,
+      "castlePair": true,
+      "eventPersistence": true,
+      "timerAndAiPaused": true,
+      "results": true,
+      "stationaryBoard": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "build": "2026.11.03.2",
+      "difficultyPopup": true,
+      "essentialCheck": true,
+      "castlePair": true,
+      "eventPersistence": true,
+      "timerAndAiPaused": true,
+      "results": true,
+      "stationaryBoard": true
+    }
+  ],
+  "errors": []
+}

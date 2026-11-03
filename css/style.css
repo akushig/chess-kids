@@ -1678,6 +1678,7 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 
 /* Game feedback must never change the board's position or dimensions. */
 .screen:has(.game-screen), .game-screen { overflow-anchor:none; }
+.screen.active:has(.game-screen) { animation:none; }
 .game-screen { justify-content:flex-start; }
 .game-screen > * { flex-grow:0; flex-shrink:0; }
 .game-screen > .status-msg {
@@ -1729,3 +1730,50 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .castle-for-black .castle-mark { transform:rotate(180deg); }
 .game-toast-content p + p { margin-top:8px; }
 @media(min-width:700px) { .castle-mark{font-size:24px;}.castle-mark small{font-size:12px;} }
+
+/* Readable information dialogs and essential game-state feedback. */
+.play-difficulty-heading { display:flex; align-items:center; gap:4px; }
+.play-info-button { width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; }
+.play-info-button span { width:23px; height:23px; border:2px solid #365868; border-radius:50%; background:#fff; color:#264955; font:bold 17px/19px sans-serif; text-align:center; }
+.play-dialog-overlay { z-index:1200; padding:16px; }
+.play-dialog { width:100%; max-width:720px; max-height:calc(100dvh - 32px); display:flex; flex-direction:column; background:#fffdf8; border-radius:22px; box-shadow:0 12px 48px #192b4566; overflow:hidden; }
+.play-dialog header { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; padding:16px 16px 10px; flex:none; }
+.play-dialog h2 { font-size:1.15rem; line-height:1.4; margin:0; word-break:keep-all; overflow-wrap:anywhere; }
+.play-dialog-close { flex:none; width:40px; height:40px; border:0; border-radius:12px; background:#e9efef; font-size:1.05rem; cursor:pointer; }
+.play-dialog-body { overflow:auto; overscroll-behavior:contain; min-height:0; padding:0 16px 12px; line-height:1.6; }
+.play-dialog footer { display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 16px; flex:none; border-top:1px solid #e6e9e8; }
+.play-dialog footer .action-btn { flex:1 1 180px; width:auto; min-height:44px; font-size:.9rem; padding:12px; margin:0; }
+.play-difficulty-table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:.74rem; line-height:1.55; }
+.play-difficulty-table th,.play-difficulty-table td { padding:9px 4px; text-align:left; vertical-align:top; border-bottom:1px solid #d5dfdf; overflow-wrap:anywhere; }
+.play-difficulty-table thead th { position:sticky; top:0; background:#eaf4ef; z-index:1; }
+.play-difficulty-table th:first-child { width:12%; }
+.play-difficulty-table th:nth-child(2) { width:22%; }
+.play-difficulty-table th:last-child { width:21%; }
+.play-dialog-note { font-size:.74rem; color:#58676d; margin-top:12px; }
+.play-dialog--event { max-width:440px; }
+.play-dialog--event .play-dialog-body { text-align:center; }
+.play-event-icon { text-align:center; font-size:3.5rem; line-height:1.2; padding:4px; }
+.play-event-king { display:flex; justify-content:center; }
+.play-event-explanation { font-size:1rem; font-weight:700; margin:8px 0; }
+.play-event-warning { color:#9b2036; background:#fff0ec; border:2px solid #ce4453; border-radius:12px; padding:10px; margin-top:10px; }
+.play-event-moves { display:grid; gap:8px; margin:12px 0; text-align:left; }
+.play-event-moves > div { display:flex; align-items:center; gap:12px; padding:8px 12px; border:2px solid #55a4a4; border-radius:12px; background:#eefbfa; }
+.play-event-moves svg { flex-shrink:0; }
+.play-state { display:flex; align-items:center; gap:10px; }
+.play-state-icon { font-size:1.8rem; flex:none; }
+.play-state > div { min-width:0; }
+.play-state strong { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:clamp(.9rem,3vw,1.05rem); line-height:1.2; }
+.play-state small { display:block; font-size:.75rem; line-height:1.35; font-weight:700; margin-top:3px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.play-state.warn { border:2px solid #b02f3d; background:#fff0e8; color:#932130; }
+.game-screen .p2-head { height:46px; }
+.p2-panel.in-check { background:#fff0e8; border-color:#b02f3d; }
+.p2-panel.in-check .p2-name { color:#932130; font-size:.9rem; line-height:1.25; font-weight:900; }
+.p2-panel.in-check .p2-msg { font-size:.75rem; white-space:normal; line-height:1.3; }
+.board-cell.checked-king { box-shadow:inset 0 0 0 4px #ba263d; background-image:repeating-linear-gradient(135deg,transparent 0,transparent 7px,#e6344933 7px,#e6344933 11px); }
+.play-cell-alert,.play-cell-special { position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:6; border-radius:0 0 5px 5px; padding:1px 3px; white-space:nowrap; pointer-events:none; font-size:9px; line-height:1.25; font-weight:900; color:white; background:#b32039; }
+.play-cell-special { background:#176f76; }
+.chess-board.face-to-face .board-cell.pc-b > .play-cell-alert,.chess-board.face-to-face .board-cell.pc-b > .play-cell-special { transform:translateX(-50%) rotate(180deg); top:auto; bottom:0; }
+.castle-completed { box-shadow:inset 0 0 0 3px #1c8d97; }
+.game-toast:has(.play-check-guide) { border-color:#b02f3d; background:#fff4ef; }
+.play-check-guide > strong { display:block; font-size:1rem; color:#962338; line-height:1.4; }
+@media(min-width:700px) { .play-difficulty-table{font-size:.88rem;}.play-dialog h2{font-size:1.35rem;}.play-cell-alert,.play-cell-special{font-size:11px;} }

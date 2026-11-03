@@ -1,3 +1,4 @@
+const {acknowledgePlayEvent}=require('./browser-helpers.cjs');
 const {chromium}=require(process.env.CHESS_PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
@@ -9,7 +10,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
    await page.route('https://fonts.googleapis.com/**',r=>r.abort());await page.goto(process.env.CHESS_TEST_URL||'http://127.0.0.1:8765',{waitUntil:'domcontentloaded'});
    await page.evaluate(()=>{writeData('preferences',{motion:false});applyPreferences();});
    const cells=()=>page.locator('#screen-play .board-cell'),board=()=>page.locator('#screen-play .chess-board').boundingBox();
-   async function setup(fen){await page.evaluate(fen=>{playStart();state.play.mode='friend';state.play.small=false;state.game=ChessGame.fromFEN(fen);renderPlay();scrollTo(0,0);},fen);await page.waitForTimeout(360);}
+   async function setup(fen){await page.evaluate(fen=>{playStart();state.play.mode='friend';state.play.small=false;state.game=ChessGame.fromFEN(fen);renderPlay();scrollTo(0,0);},fen);await page.waitForTimeout(360);await acknowledgePlayEvent(page);}
    function same(before,after){for(const k of ['x','y','width','height'])assert.ok(Math.abs(before[k]-after[k])<.6,'board moved '+k);}
    for(const color of ['w','b'])for(const side of ['king','queen'])for(const input of ['target','rook']){
     const row=color==='w'?7:0,to=side==='king'?6:2,rook=side==='king'?7:0;
@@ -22,6 +23,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
     }
     await cells().nth(row*8+(input==='target'?to:rook)).click();await page.waitForFunction(()=>!state.animating);same(before,await board());
     assert.equal(await page.evaluate(({row,to,color})=>state.game.board[row][to]===color+'K'&&state.game.board[row][to===6?5:3]===color+'R',{row,to,color}),true);
+    assert.match(await page.locator('#play-dialog').innerText(),/캐슬링/);await acknowledgePlayEvent(page);
     assert.match(await page.locator('#game-toast').innerText(),/캐슬링이에요/);results.push({width,color,side,input,passed:true});
    }
    await setup('5r1k/8/8/8/8/8/8/R3K2R w KQ - 0 1');const before=await board();await cells().nth(60).click();await cells().nth(62).click();

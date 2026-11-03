@@ -1,10 +1,10 @@
 # 2026-11-03 개발 검수
 
-검수 빌드: `2026.11.03.1` · Node 20 · Playwright 1.64.1 / Chromium headless
+검수 빌드: `2026.11.03.2` · Node 20 · Playwright 1.64.1 / Chromium headless
 
 | 검사 | 결과 |
 |---|---|
-| Node 회귀 검사 | 51개 통과 |
+| Node 회귀 검사 | 57개 통과 |
 | 모든 모험의 경로·최단 수·실제 입력 재생 | 48단계 통과 |
 | 수집·폭탄의 해결 경로와 최고 보상 | 각 5단계 통과 |
 | 성 지키기 승리 경로와 적 중복 점유 | 4단계 통과 |
@@ -15,12 +15,13 @@
 | 초기 배치 perft depth 3 | 8,902개 일치 |
 | 저장·재개·기록 이관·내용 재배열·애니메이션 중 종료 | 통과 |
 | 실제 브라우저 화면과 입력 | 360×780, 768×1024, 1280×900 통과 |
+| 난이도 팝업·체크·특별 수·대국 종료 인지 | 팝업·시계·AI 대기·재개·보드 고정 검증 |
 | 컴퓨터 10단계·이전 난이도 이관·최고 단계 Worker 응수 | 360·768·1280px 통과 |
 | 캐슬링 안내·차단 이유·두 가지 조작 | 3개 화면 폭, 양쪽 색·방향 검증 |
 | 게임 진행 중 보드 위치·크기 고정 | 3개 화면 폭 × 52개 시나리오 통과 |
 | 오프라인 새로고침·전체 스킨·Worker 컴퓨터 응수 | 통과 |
 
-[컴퓨터 10단계 검수](ai-difficulty/README.md) · [캐슬링 개선 검수](castling/README.md) · [게임 중 보드 위치 고정 검수](board-layout/README.md) · [나이트 투어 UX 수정 검수](knight-tour/README.md) · [브라우저 결과 JSON](browser-results.json) · [독립 퍼즐 대조 결과](puzzle-results.txt)
+[대전 상태 안내 검수](play-feedback/README.md) · [컴퓨터 10단계 검수](ai-difficulty/README.md) · [캐슬링 개선 검수](castling/README.md) · [게임 중 보드 위치 고정 검수](board-layout/README.md) · [나이트 투어 UX 수정 검수](knight-tour/README.md) · [브라우저 결과 JSON](browser-results.json) · [독립 퍼즐 대조 결과](puzzle-results.txt)
 
 ## 검수 화면
 

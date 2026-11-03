@@ -18,6 +18,7 @@ let playTimerHandle = null;
 let playAiWorker = null;    // null: 아직 안 만듦, false: 워커를 못 씀
 let playAiSeq = 0;
 const playAiPending = {};
+let playDialogState = null;
 
 function getPlaySettings() {
   let s = {};
@@ -39,6 +40,35 @@ function playUpgradeDifficulty(play) {
 }
 function playLevelLabel(level) {
   return t('playLevelLabel').replace('{n}',level+1)+' · '+t('playLevel'+level);
+}
+
+function playCloseDialog(resume=true) {
+  const dialog=playDialogState;if(!dialog)return;
+  playDialogState=null;dialog.element.remove();
+  document.getElementById('app').inert=false;
+  document.removeEventListener('keydown',dialog.onKey);
+  if(resume){
+    if(dialog.previous?.isConnected)dialog.previous.focus({preventScroll:true});
+    dialog.onDismiss?.();
+  }
+}
+function playShowDialog(kind,title,html,actions,onDismiss) {
+  if(playDialogState?.kind===kind)return;
+  playCloseDialog(false);hideGameToast();gameToastKey='';
+  const overlay=document.createElement('div');if(!overlay.setAttribute)return;
+  overlay.id='play-dialog';overlay.className='clear-overlay play-dialog-overlay';overlay.dataset.kind=kind;
+  overlay.innerHTML=`<section class="play-dialog play-dialog--${kind}" role="dialog" aria-modal="true" aria-labelledby="play-dialog-title"><header><h2 id="play-dialog-title">${title}</h2><button class="play-dialog-close" aria-label="${t('playDialogClose')}">✕</button></header><div class="play-dialog-body">${html}</div><footer></footer></section>`;
+  const onKey=e=>{if(e.key==='Escape'){e.preventDefault();playCloseDialog();}};
+  playDialogState={kind,element:overlay,previous:document.activeElement,onDismiss,onKey};
+  overlay.querySelector('.play-dialog-close').onclick=()=>playCloseDialog();
+  for(const action of actions){const button=document.createElement('button');button.className='action-btn '+(action.secondary?'secondary':'');button.textContent=action.label;button.onclick=()=>{playCloseDialog(!action.action);action.action?.();};overlay.querySelector('footer').appendChild(button);}
+  document.body.appendChild(overlay);document.getElementById('app').inert=true;
+  document.addEventListener('keydown',onKey);overlay.querySelector('footer button').focus({preventScroll:true});
+  if(readData('preferences',{}).voice&&kind==='event')speakGuide(title+' '+overlay.querySelector('.play-dialog-body').textContent);
+}
+function playShowDifficultyHelp() {
+  const rows=AI_LEVELS.map((level,i)=>`<tr><th scope="row">${i+1}</th><td>${t('playLevel'+i)}</td><td>${t('playLevelDetails'+i)}</td><td>${level.random?t('playNoSearch'):t('playSeconds').replace('{n}',level.timeMs/1000)}</td></tr>`).join('');
+  playShowDialog('difficulty',t('playLevelHelpTitle'),`<table class="play-difficulty-table"><thead><tr><th>${t('playLevelNumber')}</th><th>${t('playLevelName')}</th><th>${t('playLevelDifference')}</th><th>${t('playThinkBudget')}</th></tr></thead><tbody>${rows}</tbody></table><p class="play-dialog-note">${t('playLevelHelpNote')}</p>`,[{label:t('playUnderstood')}]);
 }
 
 // --- 설정 화면 ---
@@ -66,7 +96,7 @@ function renderPlaySetup() {
         <span class="play-level-name">${t('playLevel' + i)}</span>
       </button>
     `).join('');
-    options = `<div class="play-section-title">${t('playDifficulty')}</div><div class="play-levels play-level-picker" role="group" aria-label="${t('playDifficulty')}">${levels}</div><div class="play-level-summary" role="status"><strong>${playLevelLabel(s.level)}</strong><p>${t('playLevelDesc'+s.level)}</p></div><details class="play-level-guide"><summary>${t('playLevelCompare')}</summary><table><thead><tr><th>${t('playDifficulty')}</th><th>${t('playLevelDifference')}</th></tr></thead><tbody>${AI_LEVELS.map((_,i)=>`<tr><th scope="row">${playLevelLabel(i)}</th><td>${t('playLevelDesc'+i)}</td></tr>`).join('')}</tbody></table></details>`;
+    options = `<div class="play-section-title play-difficulty-heading"><span>${t('playDifficulty')}</span><button class="play-info-button" aria-label="${t('playLevelHelpTitle')}" title="${t('playLevelHelpTitle')}" aria-haspopup="dialog" onclick="playShowDifficultyHelp()"><span aria-hidden="true">!</span></button></div><div class="play-levels play-level-picker" role="group" aria-label="${t('playDifficulty')}">${levels}</div><div class="play-level-summary" role="status"><strong>${playLevelLabel(s.level)}</strong><p>${t('playLevelDesc'+s.level)}</p></div>`;
   } else {
     const timers = PLAY_TIMER_OPTIONS.map(sec => `
       <button class="play-chip ${s.timer === sec ? 'active' : ''}" onclick="playSetOption('timer', ${sec})">${playTimerLabel(sec)}</button>
@@ -123,7 +153,7 @@ function playStart() {
     level: s.level, levelVersion:AI_DIFFICULTY_VERSION,
     timer: s.mode === 'friend' ? s.timer : 0,
     deadline: 0,
-    pausedLeft: null,
+    pausedLeft: s.mode==='friend'&&s.timer?s.timer*1000:null,
     buzzed: null,
     timeoutSide: null,  // 시간 초과로 대신 둔 쪽 (그 패널에 안내 표시)
   };
@@ -133,6 +163,7 @@ function playStart() {
 }
 
 function playStop() {
+  playCloseDialog(false);
   playToken++;
   if(playAiWorker){playAiWorker.terminate();playAiWorker=null;}
   for(const id of Object.keys(playAiPending))delete playAiPending[id];
@@ -144,20 +175,78 @@ function playIsOver() {
   return state.game.status === 'checkmate' || state.game.status === 'draw';
 }
 
+function playStateKey() {const g=state.game;return g.positionKey()+'|'+g.status+'|'+g.drawReason;}
+function playStatusCopy() {
+  const g=state.game,p=state.play,side=t(g.turn==='w'?'playWhite':'playBlack');
+  if(g.status==='checkmate'){
+    const winner=t(g.turn==='w'?'playBlack':'playWhite');
+    return {tone:g.turn==='b'||p.mode==='friend'?'success':'fail',icon:g.turn==='b'||p.mode==='friend'?'🏆':'🏁',title:p.mode==='friend'?t('playSideWins').replace('{side}',winner):t(g.turn==='b'?'playVictory':'playComputerWins'),detail:t('playMateExplained')};
+  }
+  if(g.status==='draw')return {tone:'draw',icon:'🤝',title:t('playDrawTitle'),detail:g.drawReason==='stalemate'?t('playStalemateExplained'):t(PLAY_DRAW_KEYS[g.drawReason])};
+  if(g.status==='check')return {tone:'warn',icon:'⚠️',title:p.mode==='ai'?t(g.turn==='w'?'playMyKingCheck':'playOpponentKingCheck'):t('playSideCheck').replace('{side}',side),detail:t('playCheckRestriction')};
+  const title=p.mode==='ai'?t(g.turn==='w'?'playYourTurn':'playAiTurn'):t('playSideTurn').replace('{side}',side);
+  return {tone:g.turn==='b'&&p.mode==='ai'?'dim':'',icon:g.turn==='b'&&p.mode==='ai'?'🤖':'♟',title,detail:p.moveEvent?.special==='castle'?t('playCastleComplete'):p.notice||t('playChoosePiece')};
+}
+function playStatusHTML() {
+  const copy=playStatusCopy();
+  return `<div class="status-msg play-state ${copy.tone}" role="status"><span class="play-state-icon" aria-hidden="true">${copy.icon}</span><div><strong>${copy.title}</strong><small>${copy.detail}</small></div></div>`;
+}
+function playSyncEvent() {
+  const p=state.play,g=state.game,key=playStateKey();
+  if(p.moveEvent&&p.moveEvent.key!==key){p.moveEvent=null;if(playDialogState?.kind==='event')playCloseDialog(false);}
+  if(!p.moveEvent&&(playIsOver()||(g.status==='check'&&!p.seenChecks?.[g.turn])))p.moveEvent={kind:playIsOver()?'result':'check',key,acknowledged:false};
+}
+function playAcknowledgeEvent() {
+  const p=state.play;
+  if(p.moveEvent)p.moveEvent.acknowledged=true;
+  if(state.game.status==='check'){p.seenChecks||={};p.seenChecks[state.game.turn]=true;}
+  saveActiveSession();renderPlay();playNextTurn();
+  if(typeof queueMicrotask==='function')queueMicrotask(()=>{
+    const cells=document.querySelectorAll('#screen-play .board-cell'),move=state.game.lastMove;
+    const target=document.querySelector('#screen-play .checked-king')||(move?cells[move[2]*8+move[3]]:cells[0]);
+    if(target){target.tabIndex=0;target.focus({preventScroll:true});}
+  });
+}
+function playPresentEvent(force=false) {
+  const p=state.play,g=state.game,event=p.moveEvent;
+  if(!event||(!force&&(event.acknowledged||(event.kind==='check'&&p.seenChecks?.[g.turn]))))return;
+  const copy=playStatusCopy(),side=t(event.color==='b'?'playBlack':'playWhite');
+  let title=copy.title,body=`<p class="play-event-explanation">${copy.detail}</p>`,icon=copy.icon;
+  if(event.special==='castle'){
+    title=t('playCastleTitle');icon='🏰';
+    const square=([r,c])=>'abcdefgh'[c]+(8-r);
+    body=`<p class="play-event-explanation">${t('playCastleExplained').replace('{side}',side)}</p><div class="play-event-moves"><div>${getPieceSVG(event.color+'K',36)}<span>${t(PIECE_NAMES.K)} <strong>${square(event.kingFrom)} → ${square(event.kingTo)}</strong></span></div><div>${getPieceSVG(event.color+'R',36)}<span>${t(PIECE_NAMES.R)} <strong>${square(event.rookFrom)} → ${square(event.rookTo)}</strong></span></div></div>`;
+  }else if(event.special==='promotion'){
+    title=t('playPromotionTitle');icon='✨';body=`<p class="play-event-explanation">${t('playPromotionExplained').replace('{side}',side).replace('{piece}',t(PIECE_NAMES[event.promotion]))}</p>`;
+  }
+  if(event.kind==='check')body=`<div class="play-event-king">${getPieceSVG(g.turn+'K',64)}</div><p class="play-event-explanation">${t('playCheckExplained')}</p>`;
+  else if(g.status==='check')body+=`<p class="play-event-warning"><strong>${copy.title}</strong><br>${t('playCheckRestriction')}</p>`;
+  if(playIsOver()){title=copy.title;icon=copy.icon;if(event.special)body+=`<p class="play-event-explanation">${copy.detail}</p>`;}
+  const label=playIsOver()?t('playSeeFinalBoard'):g.status==='check'&&(p.mode==='friend'||g.turn==='w')?t('playLookAtKing'):t('playContinue');
+  const actions=[{label}];if(playIsOver())actions.push({label:t('playNewGame'),secondary:true,action:()=>playStart()});
+  playTimerPauseForHelp();
+  playShowDialog('event',title,`<div class="play-event-icon" aria-hidden="true">${icon}</div>${body}${!playIsOver()?`<p class="play-dialog-note">${t('playReadingPause')}</p>`:''}`,actions,playAcknowledgeEvent);
+}
+
 // --- 화면 ---
 function renderPlay() {
+  playSyncEvent();
   if(state.play.help&&state.game.status==='check')noteHelp(1);
   saveActiveSession();
   if (state.play.mode === 'friend') renderPlayFriend();
   else renderPlayAi();
   const guide = playGuideHTML();
-  if (guide) showGameToast(guide, 'play|' + state.play.notice + '|' + state.game.status + '|' + state.game.turn);
+  if (guide&&!playDialogState) showGameToast(guide, 'play|' + state.play.notice + '|' + state.game.status + '|' + state.game.turn, false, state.game.status==='check'||!!state.play.moveEvent?.special);
   else { hideGameToast(); gameToastKey = ''; }
+  playPresentEvent();
 }
 
 function playBoardHTML(faceToFace) {
   const game = state.game;
   const selected=game.selected, selectedKing=selected&&game.board[selected[0]][selected[1]]===game.turn+'K';
+  const checked=(game.status==='check'||game.status==='checkmate')?game.findKing(game.turn):null;
+  const attackers=checked&&state.play.help?game.attackers(game.board,...checked,game.turn==='w'?'b':'w'):[];
+  const event=state.play.moveEvent;
   let cells = '';
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -168,9 +257,9 @@ function playBoardHTML(faceToFace) {
       if (game.validMoves && game.validMoves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
       if (game.lastMove && ((game.lastMove[0]===r&&game.lastMove[1]===c)||(game.lastMove[2]===r&&game.lastMove[3]===c))) cls+=' last-move';
       if(state.play.castleBlocked?.[0]===r&&state.play.castleBlocked?.[1]===c)cls+=' castle-blocked';
+      const isCheckedKing=checked&&r===checked[0]&&c===checked[1];
+      if(isCheckedKing)cls+=' checked-king';
       if (state.play.help && game.status==='check') {
-        const king=game.findKing(game.turn),attackers=game.attackers(game.board,...king,game.turn==='w'?'b':'w');
-        if(r===king[0]&&c===king[1])cls+=' checked-king';
         if(attackers.some(([ar,ac])=>ar===r&&ac===c))cls+=' attacking-piece';
         if(game.board[r][c]?.[0]===game.turn&&game.legalMoves(r,c).length)cls+=' rescue-piece';
       }
@@ -178,7 +267,9 @@ function playBoardHTML(faceToFace) {
       const castleTarget=selectedKing&&r===selected[0]&&Math.abs(c-selected[1])===2&&game.validMoves.some(([mr,mc])=>mr===r&&mc===c);
       if(castleTarget)cls+=' castle-target';
       const pieceContent = piece ? getPieceSVG(piece) : '';
-      cells += `<div class="${cls}" onclick="playClick(${r},${c})">${pieceContent}${castleTarget?'<span class="castle-mark" aria-hidden="true">🏰<small>캐슬링</small></span>':''}</div>`;
+      const castlePart=event?.special==='castle'?(r===event.kingTo[0]&&c===event.kingTo[1]?'king':r===event.rookTo[0]&&c===event.rookTo[1]?'rook':null):null;
+      if(castlePart)cls+=' castle-completed';
+      cells += `<div class="${cls}" onclick="playClick(${r},${c})">${pieceContent}${castleTarget?'<span class="castle-mark" aria-hidden="true">🏰<small>캐슬링</small></span>':''}${isCheckedKing?`<span class="play-cell-alert" aria-hidden="true">${t(game.status==='checkmate'?'playMateTag':'playCheck')}</span>`:castlePart?`<span class="play-cell-special" aria-hidden="true">${t(castlePart==='king'?PIECE_NAMES.K:PIECE_NAMES.R)} ↔</span>`:''}</div>`;
     }
   }
   return `<div class="chess-board${faceToFace ? ' face-to-face' : ''}${faceToFace&&game.turn==='b'?' castle-for-black':''}">${cells}${playAttackOverlay()}</div>`;
@@ -188,20 +279,7 @@ function renderPlayAi() {
   const game = state.game;
   const level = state.play.level;
 
-  let statusMsg = '';
-  if (game.status === 'checkmate') {
-    statusMsg = game.turn === 'b'
-      ? `<div class="status-msg success">${t('playCheckmate')}</div>`
-      : `<div class="status-msg fail">${t('playLose')}</div>`;
-  } else if (game.status === 'draw') {
-    statusMsg = `<div class="status-msg draw">${t('playDraw')}<div class="status-sub">${t(PLAY_DRAW_KEYS[game.drawReason])}</div></div>`;
-  } else if (game.status === 'check') {
-    statusMsg = `<div class="status-msg warn">${t('playCheck')}</div>`;
-  } else {
-    statusMsg = game.turn === 'w'
-      ? `<div class="status-msg">${t('playYourTurn')}</div>`
-      : `<div class="status-msg dim">${t('playAiTurn')}</div>`;
-  }
+  const statusMsg = playStatusHTML();
 
   renderGameScreen('screen-play', `
     <div class="screen-wrap">
@@ -237,10 +315,11 @@ function renderPlayFriend() {
     } else if (p.timeoutSide === side) {
       msg = t('playTimeout');
     } else if (active) {
-      msg = game.status === 'check' ? t('playCheck') : t('playYourTurn');
+      msg = game.status === 'check' ? t('playCheckRestriction') : t('playYourTurn');
     } else {
       msg = t('playFriendTurn');
     }
+    if(game.status==='check')cls+=' in-check';
     const time = p.timer && !over ? `<span class="p2-time">${p.timer}</span>` : '';
     const bar = p.timer ? `<div class="p2-bar"><div class="p2-bar-fill"></div></div>` : '';
     const capturedId = side === 'w' ? 'captured-bottom' : 'captured-top';
@@ -249,7 +328,7 @@ function renderPlayFriend() {
         <div class="p2-head">
           <span class="p2-king">${getPieceSVG(side + 'K', 32)}</span>
           <div class="p2-text">
-            <div class="p2-name">${t(side === 'w' ? 'playWhite' : 'playBlack')}</div>
+            <div class="p2-name">${game.status==='check'?playStatusCopy().title:t(side === 'w' ? 'playWhite' : 'playBlack')}</div>
             <div class="p2-msg">${msg}</div>
           </div>
           ${time}
@@ -279,7 +358,8 @@ function renderPlayFriend() {
 // --- 수 두기 ---
 function playClick(r, c) {
   const game = state.game, p = state.play;
-  if (state.animating || playIsOver()) return;
+  if (state.animating || playDialogState) return;
+  if(playIsOver()){playPresentEvent(true);return;}
   if (p.mode === 'ai' && game.turn !== 'w') return;
 
   if (game.selected) {
@@ -292,7 +372,7 @@ function playClick(r, c) {
       else {
         // A blocked king→rook gesture must still let the player select that rook.
         if(rookTap)game.select(r,c);
-        p.notice=playCastlingReason(info);p.castleBlocked=info.square;renderPlay();
+        p.notice=playCastlingReason(info);p.castleBlocked=info.square;gameToastKey='';renderPlay();
       }
       return;
     }
@@ -305,11 +385,12 @@ function playClick(r, c) {
   }
 
   if(game.selected && game.board[r][c]?.[0] !== game.turn) {
-    p.notice=explainPlayMove(game,...game.selected,r,c);renderPlay();return;
+    p.notice=explainPlayMove(game,...game.selected,r,c);gameToastKey='';renderPlay();return;
   }
   game.select(r,c);
   p.castleBlocked=null;
   p.notice=game.selected&&!game.validMoves.length?(game.status==='check'?'이 말로는 왕을 구할 수 없어요. 방패 표시가 있는 말을 살펴봐요.':'길이 막혀 있어요. 다른 말을 골라볼까요?'):'';
+  if(p.notice)gameToastKey='';
   renderPlay();
 }
 
@@ -324,25 +405,37 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
   rememberAction();
   state.play.notice='';state.play.castleBlocked=null;state.play.guideMethod=null;state.play.pausedLeft=null;
   playTimerStop();
+  state.play.pausedLeft=state.play.timer?state.play.timer*1000:null;
   game.move(fr, fc, tr, tc,promotion);
-  if(piece[1]==='K'&&Math.abs(tc-fc)===2)state.play.notice='왕과 룩이 함께 움직였어요. 캐슬링이에요.';
+  const castle=piece[1]==='K'&&Math.abs(tc-fc)===2;
+  if(castle)state.play.notice='왕과 룩이 함께 움직였어요. 캐슬링이에요.';
   if(piece[1]==='P'&&(tr===0||tr===7))state.play.notice='폰이 새로운 말로 변했어요!';
   game.lastMove=[fr,fc,tr,tc];
+  const special=castle?'castle':piece[1]==='P'&&(tr===0||tr===7)?'promotion':null;
+  state.play.moveEvent=special||game.status==='check'||playIsOver()?{kind:playIsOver()?'result':special||'check',special,color:mover,promotion,key:playStateKey(),acknowledged:false,...(castle?{kingFrom:[fr,fc],kingTo:[tr,tc],rookFrom:[fr,tc===6?7:0],rookTo:[fr,tc===6?5:3]}:{})}:null;
+  if(wasCheck&&!special&&game.status==='playing')state.play.notice=t('playKingSafe');
   if(wasCheck&&(state.play.mode==='friend'||mover==='w'))awardStars('achievements','play-first-rescue',1);
   if(captured&&(state.play.mode==='friend'||mover==='w'))awardStars('achievements','play-first-capture',1);
   if(playIsOver())awardStars('achievements','play-first-finish-'+state.play.mode,1);
   saveActiveSession();
-  animateMove(boardEl, fr, fc, tr, tc, piece, () => {
+  const finishMove=() => {
     if (token !== playToken) return;
+    state.animating=false;
     if (captured) {
       animateCapture(boardEl, tr, tc, captured, mover === 'w' ? 'captured-bottom' : 'captured-top');
     }
     renderPlay();
     playNextTurn();
-  });
+  };
+  if(castle){
+    let remaining=2;const complete=()=>{if(--remaining===0)finishMove();else state.animating=true;};
+    animateMove(boardEl,fr,fc,tr,tc,piece,complete);
+    animateMove(boardEl,fr,tc===6?7:0,fr,tc===6?5:3,mover+'R',complete);
+  }else animateMove(boardEl,fr,fc,tr,tc,piece,finishMove);
 }
 
 function playNextTurn() {
+  if(playDialogState)return;
   const game = state.game, p = state.play;
   if (game.status === 'checkmate') {
     if (p.mode === 'friend' || game.turn === 'b') spawnParticles();
@@ -433,7 +526,7 @@ function playRequestAi(position, level, done) {
 function playTimerStart() {
   playTimerStop();
   const p = state.play;
-  if (!p || p.mode !== 'friend' || !p.timer || playIsOver()) return;
+  if (!p || playDialogState || p.mode !== 'friend' || !p.timer || playIsOver()) return;
   p.deadline = Date.now() + (p.pausedLeft ?? p.timer * 1000);
   p.pausedLeft = null;
   p.buzzed = null;
@@ -451,6 +544,8 @@ function playTimerStop() {
 }
 
 function playTimerTick() {
+  if(playDialogState)return;
+  if(playIsOver()){playTimerStop();return;}
   if (state.screen !== 'play') { playTimerStop(); return; }
   playTimerPaint();
   if (Date.now() >= state.play.deadline) {
@@ -462,14 +557,17 @@ function playTimerTick() {
 
 // 남은 시간이 줄수록 패널·보드를 주황 → 빨강으로 강조, 마지막 3초는 진동
 function playTimerPaint() {
+  if(playIsOver())return;
   const p = state.play;
   const panel = document.getElementById('p2-panel-' + state.game.turn);
   if (!panel) return;
+  const time=panel.querySelector('.p2-time'),bar=panel.querySelector('.p2-bar-fill');
+  if(!time||!bar)return;
   const left = Math.max(0, p.deadline - Date.now());
   const secs = Math.ceil(left / 1000);
   const stage = secs <= 5 ? 'danger' : secs <= Math.min(10, Math.ceil(p.timer / 2)) ? 'warn' : '';
-  panel.querySelector('.p2-time').textContent = secs;
-  panel.querySelector('.p2-bar-fill').style.width = (left / (p.timer * 1000) * 100) + '%';
+  time.textContent = secs;
+  bar.style.width = (left / (p.timer * 1000) * 100) + '%';
   panel.classList.toggle('warn', stage === 'warn');
   panel.classList.toggle('danger', stage === 'danger');
   const boardEl = document.querySelector('#screen-play .chess-board');
@@ -482,7 +580,7 @@ function playTimerPaint() {
 
 function playTimeoutMove() {
   const game = state.game;
-  if (state.animating || playIsOver()) return;
+  if (state.animating || playDialogState || playIsOver()) return;
   const move = playLegalOrFallback(aiChooseMove(playPosition(game), PLAY_TIMEOUT_LEVEL));
   if (!move) return;
   state.play.timeoutSide = game.turn;
@@ -580,15 +678,14 @@ function playAttackOverlay() {
 }
 function playGuideHTML() {
   const g=state.game,p=state.play;
-  if(g.status==='draw')return `<div class="guide-card">${t(PLAY_DRAW_KEYS[g.drawReason])}</div>`;
-  if(p.notice)return `<div class="guide-card" role="status">${p.notice}</div>`;
-  if(g.status!=='check'||!p.help)return '';
+  if(playIsOver())return '';
+  if(g.status!=='check')return p.notice?`<div class="guide-card" role="status">${p.notice}</div>`:'';
   if(p.mode==='ai'&&g.turn==='b')return '<div class="guide-card">상대 왕을 공격했어요. 컴퓨터가 어떻게 피하는지 살펴봐요.</div>';
   const rescues=playRescues(),labels={escape:'👑 왕 피하기',capture:'🎯 공격자 잡기',block:'🛡 길 막기'};
-  return `<div class="guide-card" role="status"><strong>왕이 공격받고 있어요. 먼저 안전하게 해요.</strong><div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small></div>`;
+  return `<div class="guide-card play-check-guide" role="status"><strong>⚠️ ${t('playCheck')} ${t('playCheckRestriction')}</strong>${p.notice?`<p>${p.notice}</p>`:''}${p.help?`<div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small>`:`<p>${t('playCheckExplained')}</p>`}</div>`;
 }
 function playActionsHTML() {
-  return `${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'&&state.play.help?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
+  return `${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
 }
 function playRestartRequest() {
   if(playIsOver()||!state.actionHistory?.length){playStart();return;}
