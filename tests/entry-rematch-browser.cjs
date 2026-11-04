@@ -53,6 +53,8 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
   await play.locator('.play-chip').filter({hasText:'모든 말로 한 판'}).click();await play.getByRole('button',{name:'🤖 컴퓨터와 새 판 시작',exact:true}).click();
   assert.equal(await position(),await ev(f=>ChessGame.fromFEN(f).positionKey(),SMALL));
   await cells().nth(48).click();await cells().nth(40).click();await page.waitForFunction(()=>state.game.turn==='w'&&state.actionHistory.length>=2,null,{timeout:15000});
+  // The computer may reply with a check (e.g. Rd8xd1+); its explanation must be acknowledged first.
+  await acknowledgePlayEvent(page);if(await page.locator('#game-toast .toast-close').count())await page.locator('#game-toast .toast-close').click();
   const savedGame=await ev(()=>JSON.stringify([state.game.board,state.actionHistory.length,playConfigOf(state.play)]));
   await play.getByRole('button',{name:'저장하고 나가기',exact:true}).click();assert.match(await primary('체스 대전').innerText(),/▶ 이어하기.*컴퓨터 5단계.*짧은 판/s);
   await primary('체스 대전').click();assert.equal(await play.getByRole('button',{name:/▶ 하던 판 이어하기/}).count(),1);
