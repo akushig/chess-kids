@@ -50,13 +50,23 @@ const PROFILE_BACKUP_LIMIT=10*1024*1024;
 function createProfileBackup(id=activeProfile){
  const p=allProfiles().find(p=>p.id===id);if(!p)throw Error('프로필을 찾지 못했어요.');
  if(id===activeProfile)saveActiveSession();
- return {format:'chess-kids-profile',version:1,exportedAt:new Date().toISOString(),profile:{name:p.name,icon:p.icon},data:profileData(id)};
+ const data=profileData(id);
+ return {format:'chess-kids-profile',version:profileBackupVersion(data),exportedAt:new Date().toISOString(),profile:{name:p.name,icon:p.icon},data};
 }
 function downloadProfile(id=activeProfile){
  try{
   const backup=createProfileBackup(id),blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
   link.href=url;link.download='chess-profile-'+backup.profile.name.replace(/[^\p{L}\p{N}_-]/gu,'_')+'-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
  }catch(e){profileMessage('내보내지 못했어요',e.message);}
+}
+// Files that contain a rule-puzzle session are version 2: older apps refuse them with "update the app"
+// instead of misreading the board. Every other file stays version 1 so it still opens in older apps.
+const PROFILE_BACKUP_VERSIONS=[1,2];
+function profileBackupVersion(data){
+ const records=[];
+ try{records.push(...Object.values(JSON.parse(data.sessions||'{}')||{}));}catch{}
+ try{records.push(JSON.parse(data.last_session||'null'));}catch{}
+ return records.some(s=>s?.version===2)?2:1;
 }
 function profilePlainObject(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 function checkBackupJSON(v,depth=0,counter={n:0}){
@@ -81,7 +91,7 @@ function backupSnapshotValid(kind,v){
   const p=v.play;return gameValid(v.game)&&p&&['ai','friend'].includes(p.mode)&&Number.isInteger(p.level)&&p.level>=0&&p.level<10&&[0,15,30,60].includes(p.timer)&&[null,undefined,'castle','promotion'].includes(p.moveEvent?.special)&&(!p.moveEvent?.special||p.moveEvent.special==='promotion'||[p.moveEvent.kingFrom,p.moveEvent.kingTo,p.moveEvent.rookFrom,p.moveEvent.rookTo].every(coord));
  }
  const key={knight:'kt',collector:'cl',bomb:'bm',defense:'df',survival:'sv'}[kind],g=v[key];if(!g||!Number.isInteger(g.size)||g.size<3||g.size>8||!coord(g.pos||g.kingPos))return false;
- if(kind==='knight')return ['walk','explore','tour'].includes(g.mode)&&board(g.board,g.size,true)&&Number.isInteger(g.moveCount)&&Number.isInteger(g.visited)&&Number.isInteger(g.visitGoal)&&(!g.goal||coord(g.goal))&&(!g.hint||['next','path'].includes(g.hint.style)&&coords(g.hint.path));
+ if(kind==='knight')return (g.mode==='puzzle'?ktPuzzleStateValid(g):['walk','explore','tour'].includes(g.mode))&&board(g.board,g.size,true)&&Number.isInteger(g.moveCount)&&Number.isInteger(g.visited)&&Number.isInteger(g.visitGoal)&&(!g.goal||coord(g.goal))&&(!g.hint||['next','path'].includes(g.hint.style)&&coords(g.hint.path));
  if(['collector','bomb'].includes(kind)&&typeof g.challenge!=='boolean')return false;
  if(kind==='collector')return piece(g.piece)&&coords(g.stars)&&Number.isInteger(g.starsLeft)&&Number.isInteger(g.turnsLeft)&&Array.isArray(g.enemies)&&g.enemies.every(e=>coord(e.pos)&&piece(e.piece)&&coords(e.path)&&Number.isInteger(e.pathIdx));
  if(kind==='bomb')return piece(g.piece)&&coords(g.blocks)&&Array.isArray(g.bombs)&&g.bombs.every(b=>coord(b.pos)&&Number.isInteger(b.timer)&&typeof b.defused==='boolean');
@@ -89,7 +99,7 @@ function backupSnapshotValid(kind,v){
  return piece(g.piece)&&Number.isInteger(g.waveIdx)&&Number.isInteger(g.breached)&&Number.isInteger(g.maxBreach)&&Array.isArray(g.enemies)&&g.enemies.every(e=>coord(e.pos)&&piece(e.p))&&Array.isArray(g.waves)&&g.waves.every(w=>Array.isArray(w)&&w.every(e=>coord(e.pos)&&piece(e.p)));
 }
 function validateBackupSession(saved){
- if(!saved||saved.version!==1||!SESSION_KEYS[saved.kind]||!profilePlainObject(saved.snapshot)||!Array.isArray(saved.history)||saved.history.length>120)return false;
+ if(!saved||![1,2].includes(saved.version)||!SESSION_KEYS[saved.kind]||!profilePlainObject(saved.snapshot)||!Array.isArray(saved.history)||saved.history.length>120)return false;
  try{
   const restrict=snap=>{if(profilePlainObject(snap?.values))snap.values=Object.fromEntries(Object.entries(snap.values).filter(([key])=>SESSION_KEYS[saved.kind].includes(key)));};
   restrict(saved.snapshot);saved.history.forEach(restrict);
@@ -101,7 +111,7 @@ function parseProfileBackup(text){
  if(typeof text!=='string'||text.length>PROFILE_BACKUP_LIMIT)throw Error('10MB 이하의 프로필 파일을 골라 주세요.');
  let file;try{file=JSON.parse(text);}catch{throw Error('올바른 JSON 파일이 아니에요. 체스 앱에서 내보낸 파일을 골라 주세요.');}
  if(file?.format!=='chess-kids-profile')throw Error('체스 앱에서 내보낸 프로필 파일이 아니에요.');
- if(file.version!==1)throw Error('이 버전의 파일은 불러올 수 없어요. 앱을 업데이트하고 다시 시도해 주세요.');
+ if(!PROFILE_BACKUP_VERSIONS.includes(file.version))throw Error('이 버전의 파일은 불러올 수 없어요. 앱을 업데이트하고 다시 시도해 주세요.');
  if(!profileNameValid(file.profile?.name)||!PROFILE_ICONS.includes(file.profile?.icon)||!profilePlainObject(file.data)||Object.keys(file.data).length>500)throw Error('프로필 정보가 올바르지 않아요.');
  const data=Object.create(null);
  for(const [key,rawValue]of Object.entries(file.data)){

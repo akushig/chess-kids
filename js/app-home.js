@@ -28,7 +28,7 @@ function renderHome() {
 function homeEntryDetail(kind){
   const saved=activitySaved(kind),open=saved&&!saved.complete,v=open?saved.snapshot.values:null;
   if(kind==='play')return {saved:open,desc:open?playSavedDetail(v.play):'컴퓨터와 10단계 · 같은 기기에서 함께 두기'};
-  if(kind==='knight')return {saved:open,desc:open?`${KNIGHT_MODE_NAMES[v.kt.mode]} · ${v.kt.size}×${v.kt.size} · ${v.kt.moveCount}번 점프`:'모든 칸을 한 번씩 · 짧은 산책부터 전체 투어까지'};
+  if(kind==='knight')return {saved:open,desc:open?knightSavedDetail(v.kt):'모든 칸을 한 번씩 · 산책부터 전체 투어·규칙 문제까지'};
   const next=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));
   return {saved:open,desc:open?`${t(PIECE_NAMES[v.missionPiece])} ${v.missionIdx+1}단계 · 모험`:next>=0?'룩부터 말 움직임을 한 걸음씩':'배우고 싶은 말을 모험 지도에서 골라요'};
 }

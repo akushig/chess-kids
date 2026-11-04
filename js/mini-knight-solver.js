@@ -22,11 +22,12 @@ function ktNeighbors(size) {
   return KT_NEIGHBORS[size];
 }
 
-// board: true = 이미 방문한 칸, start: 현재 위치 [r, c]
+// board: true = 설 수 없는 칸(이미 방문했거나 판에 없는 칸), start: 현재 위치 [r, c]
+// marks: 순서 표식 [[r,c], ...]. k번째 표식은 앞의 표식을 모두 지난 뒤에만 밟을 수 있다.
 // 반환: { path: [[r,c], ...] } 완주 경로(현재 위치 포함)
 //       { path: null }          완주 불가 확정
 //       { timeout: true }       탐색 한도 초과 (판단 보류)
-function ktFindPath(board, size, start, nodeLimit) {
+function ktFindPath(board, size, start, nodeLimit, marks = null) {
   const nb = ktNeighbors(size);
   const N = size * size;
   const used = new Uint8Array(N);
@@ -40,6 +41,14 @@ function ktFindPath(board, size, start, nodeLimit) {
   }
   const s = start[0] * size + start[1];
   used[s] = 1;
+  // 표식 순서: 지난 표식은 앞에서부터 이어져 있어야 하고, 다음 표식만 밟을 수 있다.
+  const markOrder = new Int8Array(N).fill(-1);
+  let nextMark = 0;
+  if (marks?.length) {
+    marks.forEach(([r, c], k) => { markOrder[r * size + c] = k; });
+    while (nextMark < marks.length && used[marks[nextMark][0] * size + marks[nextMark][1]]) nextMark++;
+    for (let k = nextMark; k < marks.length; k++) if (used[marks[k][0] * size + marks[k][1]]) return { path: null };
+  }
   if (left === 0) return { path: [start] };
 
   // 나이트는 매번 칸 색이 바뀌므로, 남은 칸의 색 개수가 맞지 않으면 불가능
@@ -147,16 +156,17 @@ function ktFindPath(board, size, start, nodeLimit) {
     if (failed[cur].has(key)) return false;
     if (++nodes > nodeLimit) { timedOut = true; return false; }
     if (!feasible(cur, left)) { failed[cur].add(key); return false; }
-    const cands = nb[cur].filter(j => !used[j]).sort((a, b) => deg[a] - deg[b] || far[b] - far[a]);
+    const cands = nb[cur].filter(j => !used[j] && (markOrder[j] < 0 || markOrder[j] === nextMark)).sort((a, b) => deg[a] - deg[b] || far[b] - far[a]);
     for (const v of cands) {
-      used[v] = 1; flip(v);
+      const mark = markOrder[v] >= 0;
+      used[v] = 1; flip(v); if (mark) nextMark++;
       for (const w of nb[v]) deg[w]--;
       path.push(v);
       if (dfs(v, left - 1)) return true;
       if (timedOut) return false;
       path.pop();
       for (const w of nb[v]) deg[w]++;
-      used[v] = 0; flip(v);
+      used[v] = 0; flip(v); if (mark) nextMark--;
     }
     failed[cur].add(key);
     return false;

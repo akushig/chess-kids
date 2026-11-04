@@ -31,7 +31,8 @@ function activityComplete() {
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
-  const saved={version:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
+  // Rule-puzzle sessions are version 2 so an app that does not know the rules never opens them as plain tours.
+  const saved={version:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
   // Save remaining time, never a deadline that elapses while the app is closed.
   if(saved.kind==='play'&&saved.snapshot.values.play?.timer) saved.snapshot.values.play.pausedLeft=Math.max(0,state.play.pausedLeft??state.play.deadline-Date.now());
   const sessions=readData('sessions',{});if(saved.complete)delete sessions[saved.kind];else sessions[saved.kind]=saved;
@@ -82,7 +83,9 @@ function finishLinks(action='goMiniMenu()',label='다른 놀이 보기',extra=''
 }
 
 function getSavedSession(saved=readData('last_session',null)){
-  if(!saved||saved.version!==1||!SESSION_KEYS[saved.kind]||!saved.snapshot?.values)return null;
+  if(!saved||!SESSION_KEYS[saved.kind]||!saved.snapshot?.values)return null;
+  const rulePuzzle=saved.kind==='knight'&&saved.snapshot.values.kt?.mode==='puzzle';
+  if(saved.version!==(rulePuzzle?2:1))return null;
   const v=saved.snapshot.values,validBoard=(b,size)=>Array.isArray(b)&&b.length===size&&b.every(row=>Array.isArray(row)&&row.length===size);
   if(saved.kind==='mission'){
     const index=saved.params?.id?MISSIONS[v.missionPiece]?.findIndex(m=>m.id===saved.params.id):v.missionIdx;
@@ -110,13 +113,15 @@ function getSavedSession(saved=readData('last_session',null)){
     if(!data||!Number.isInteger(data.size)||data.size<3||data.size>8||!Array.isArray(data.pos||data.kingPos))return null;
     const levels={collector:COLLECTOR_LEVELS,bomb:BOMB_LEVELS,defense:DEFENSE_LEVELS,survival:SURVIVAL_LEVELS,knight:KNIGHT_TOUR_LEVELS}[saved.kind];
     const index=saved.kind==='knight'?levels.findIndex(lv=>lv.size===data.size):saved.params?.id?levels.findIndex(lv=>lv.id===saved.params.id):data.levelIdx;
-    if(index<0||!levels[index])return null;data.levelIdx=index;for(const snap of saved.history||[])if(snap.values?.[key])snap.values[key].levelIdx=index;
+    if(index<0||!levels[index])return null;
+    if(saved.kind==='knight'&&(rulePuzzle?!ktPuzzleStateValid(data)||!(saved.history||[]).every(s=>s.values?.kt&&ktPuzzleStateValid(s.values.kt)):(saved.history||[]).some(s=>s.values?.kt?.mode==='puzzle')))return null;
+    data.levelIdx=index;for(const snap of saved.history||[])if(snap.values?.[key])snap.values[key].levelIdx=index;
   }
   return saved;
 }
 
 const ACTIVITY_NAMES={mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
-const KNIGHT_MODE_NAMES={walk:'산책',explore:'10칸 탐험',tour:'전체 투어'};
+const KNIGHT_MODE_NAMES={walk:'산책',explore:'10칸 탐험',tour:'전체 투어',puzzle:'규칙 문제'};
 function ongoingActivities(){return Object.entries(readData('sessions',{})).filter(([kind,s])=>!!getSavedSession(s)&&!s.complete).sort((a,b)=>b[1].updatedAt-a[1].updatedAt);}
 function openSavedActivities(){
  const entries=ongoingActivities();if(!entries.length)return;
@@ -132,7 +137,9 @@ function recommendedActivity(){
   return {action:last.level===5?'enterActivity(\'survival\')':'enterActivity(\'defense\')',title:'발견한 수로 놀기',description:'방금 익힌 기술을 움직이는 놀이에서 써봐요.'};
  }
  if(saved?.complete&&saved.kind==='knight'){
-  const kt=saved.snapshot.values.kt,mode=kt.mode==='walk'?'explore':'tour';return {action:`goKnightTour(${kt.levelIdx},'${mode}')`,title:mode==='explore'?'나이트 10칸 탐험':'나이트 완주 도전',description:'방금 해낸 탐험에서 한 걸음 더 가볼까요?'};
+  const kt=saved.snapshot.values.kt,mode=kt.mode==='walk'?'explore':'tour';
+  if(kt.mode==='puzzle'){const next=ktNextPuzzle(kt.puzzle.id);return next?{action:`openKnightPuzzle('${next.id}')`,title:'다음 규칙 문제',description:`${KNIGHT_PUZZLE_RULES[next.rule]} · ${next.title}`}:{action:'goKnightPuzzles()',title:'규칙 문제 고르기',description:'10판을 모두 지나왔어요. 다시 해보고 싶은 판을 골라요.'};}
+  return {action:`goKnightTour(${kt.levelIdx},'${mode}')`,title:mode==='explore'?'나이트 10칸 탐험':'나이트 완주 도전',description:'방금 해낸 탐험에서 한 걸음 더 가볼까요?'};
  }
  if(saved?.complete&&saved.kind==='mission'){
   const {missionPiece:piece,missionIdx:index}=saved.snapshot.values,nextIndex=nextBasicMission(piece,index),next=MISSIONS[piece][nextIndex];
@@ -165,7 +172,7 @@ function requestNewActivity(kind,start=()=>startDefaultActivity(kind)){
 function savedActivityCard(kind){
   const saved=activitySaved(kind);if(!saved||saved.complete)return '';
   const v=saved.snapshot.values;
-  const detail=kind==='mission'?`${t(PIECE_NAMES[v.missionPiece])} ${v.missionIdx+1}단계`:kind==='knight'?`${KNIGHT_MODE_NAMES[v.kt.mode]} · ${v.kt.moveCount}번 점프`:kind==='play'?playSavedDetail(v.play):'하던 판이 기다려요';
+  const detail=kind==='mission'?`${t(PIECE_NAMES[v.missionPiece])} ${v.missionIdx+1}단계`:kind==='knight'?knightSavedDetail(v.kt):kind==='play'?playSavedDetail(v.play):'하던 판이 기다려요';
   // The play entry is already the new-game selector: say when the saved board would be replaced instead.
   const after=kind==='play'?'<p class="saved-activity-note">아래에서 고른 새 판은 시작할 때 하던 판을 바꿀지 먼저 물어봐요.</p>':`<button class="text-button" onclick="pickNewActivity('${kind}')">새 판 고르기</button>`;
   return `<div class="saved-activity"><button class="action-btn green" onclick="resumeActivity('${kind}')">▶ ${kind==='play'?'하던 판':ACTIVITY_NAMES[kind]} 이어하기 · ${detail}</button>${after}</div>`;

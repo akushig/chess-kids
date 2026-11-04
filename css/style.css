@@ -1826,3 +1826,20 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .saved-activity-note{margin:0;font-size:.8rem;line-height:1.45;color:#2f4656;text-align:center;word-break:keep-all}
 .play-start{white-space:normal;word-break:keep-all}
 .nowrap{white-space:nowrap}
+/* 기사의 여행 규칙 문제: 판에 없는 칸은 방문한 칸(✓)과 다른 빗금, 표식은 번호 배지 */
+.kt-screen .board-cell.kt-hole{background:repeating-linear-gradient(135deg,#55626b 0 5px,#3f4a52 5px 10px)!important;box-shadow:inset 0 0 0 2px #2c353b;cursor:not-allowed}
+.kt-mark-badge{display:flex;align-items:center;justify-content:center;width:72%;height:72%;max-width:40px;max-height:40px;border-radius:50%;background:#fff4d1;border:2px solid #b7791f;color:#7a4a05;font-weight:900;font-size:clamp(.85rem,4vw,1.3rem);line-height:1}
+.kt-mark--next .kt-mark-badge{background:#ffd35a;border-color:#8a5300;box-shadow:0 0 0 3px #ffffffcc,0 0 0 5px #d08a00}
+.kt-mark--passed .kt-mark-badge{background:#d9efe9;border-color:#4b8f7f;color:#2d6457;opacity:.85}
+.kt-mark--later .kt-mark-badge{opacity:.9}
+.kt-next-mark{font-weight:900;color:#8a5300}
+.kt-puzzle-note{margin:0 0 8px;font-size:.85rem;line-height:1.5}
+.kp-list{display:grid;gap:10px}
+.kp-card{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid #cfdccf;border-radius:16px;background:#fffffff0;color:#243343;font:inherit;text-align:left;cursor:pointer}
+.kp-card:focus-visible{outline:3px solid #2f7d6b;outline-offset:2px}
+.kp-preview{display:grid;flex:none;width:64px;height:64px;border-radius:8px;overflow:hidden;border:2px solid #7a6a4f}
+.kp-preview span{display:flex;align-items:center;justify-content:center;font-size:.55rem;line-height:1;font-weight:900;color:#5b3a00}
+.kp-light{background:#f2dfb8}.kp-dark{background:#c29b62}.kp-hole{background:repeating-linear-gradient(135deg,#55626b 0 3px,#3f4a52 3px 6px)}
+.kp-text{display:grid;gap:2px;min-width:0}.kp-text strong{font-size:.98rem;word-break:keep-all}.kp-text small{font-size:.78rem;color:#3e5463;word-break:keep-all}
+.kp-status{font-size:.78rem;color:#1f6b52}
+.kp-group .section-note{margin-top:0}

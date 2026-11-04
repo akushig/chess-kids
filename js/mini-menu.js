@@ -3,7 +3,7 @@ function renderMiniMenu(){
   state.miniOrigin='mini';
   const groups=[
     ['탐험과 발견',[
-      ['knight','♞','기사의 여행 · 나이트 투어','산책 3점프 → 10칸 → 전체 투어','mini-green'],
+      ['knight','♞','기사의 여행 · 나이트 투어','산책 3점프 → 10칸 → 전체 투어 · 규칙 문제 10판','mini-green'],
       ['puzzle','💡','한 수 발견','말 잡기 · 왕 구하기 · 메이트','mini-purple']]],
     ['길찾기',[['collector','⭐','별 모으기','기본 · 이동 제한 없이 별까지 가요','mini-orange'],['bomb','🎯','이동 수 도전','선택 도전 · 각 목표의 남은 수를 보고 순서를 계획해요','mini-orange']]],
     ['잡기와 안전',[['defense','🏰','성 지키기','화살표 발자국을 보고 연습 말을 잡아요','mini-blue'],['survival','🛡','왕 지키기','다음 공격을 피해 깃발을 모아요','mini-red']]],
