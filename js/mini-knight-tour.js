@@ -154,7 +154,9 @@ function ktAnalyze(kt) {
 }
 
 // Back returns to where the knight was opened: home (primary entry) or the playground.
-function ktBackButton() {
+// A rule puzzle goes back to its list; the list and free tours go back to home or the playground.
+function ktBackButton(puzzle = state.activeKind === 'knight' && state.kt?.mode === 'puzzle') {
+  if (puzzle) return '<button class="back-btn" onclick="goKnightPuzzles()">← 규칙 문제</button>';
   return state.miniOrigin === 'home'
     ? '<button class="back-btn" onclick="showScreen(\'home\');renderHome()">← 홈</button>'
     : '<button class="back-btn" onclick="goMiniMenu()">← 놀이터</button>';
@@ -264,7 +266,7 @@ function renderKnightPuzzles() {
       return `<button class="kp-card" onclick="openKnightPuzzle('${p.id}')">${ktPuzzlePreview(p)}<span class="kp-text"><strong>${i + 1}. ${p.title}</strong><small>${KNIGHT_PUZZLE_STAGES[p.stage]} · ${p.size}×${p.size} · ${p.size * p.size - p.blocked.length}칸${p.marks.length ? ' · 표식 ' + p.marks.length + '개' : ''}</small>${status ? `<b class="kp-status">${status}</b>` : ''}</span></button>`;
     }).join('')}</div></section>`;
   }).join('');
-  document.getElementById('screen-mini').innerHTML = `<div class="screen-wrap"><div class="screen-header"><button class="back-btn" onclick="enterActivity('knight')">← 나이트 투어</button><h2>규칙 문제</h2></div><p class="section-note">새 규칙이 있는 판 10개예요. 되돌리기·힌트·갈림길 알림을 그대로 쓸 수 있어요.</p>${current ? `<div class="saved-activity"><button class="action-btn green" onclick="resumeActivity('knight')">▶ 하던 규칙 문제 이어하기 · ${ktPuzzleSpec(current)?.title || ''} · ${current.moveCount}번 점프</button></div>` : ''}${groups}</div>`;
+  document.getElementById('screen-mini').innerHTML = `<div class="screen-wrap"><div class="screen-header">${ktBackButton(false)}<h2>규칙 문제</h2></div><p class="section-note">새 규칙이 있는 판 10개예요. 되돌리기·힌트·갈림길 알림을 그대로 쓸 수 있어요.</p>${current ? `<div class="saved-activity"><button class="action-btn green" onclick="resumeActivity('knight')">▶ 하던 규칙 문제 이어하기 · ${ktPuzzleSpec(current)?.title || ''} · ${current.moveCount}번 점프</button></div>` : ''}${groups}</div>`;
 }
 
 function knightGoalPath(kt = state.kt) {

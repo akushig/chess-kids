@@ -38,6 +38,10 @@ const output=process.env.CHESS_PUZZLE_QA_OUTPUT||'/tmp/chess-knight-puzzle-qa';f
   await mini.getByRole('button',{name:'힌트 보기',exact:true}).click();await mini.getByRole('button',{name:'전체 경로',exact:true}).click();
   assert.equal(await mini.locator('.kt-route-number').count(),18);assert.equal(await mini.locator('.kt-hole .kt-route-number').count(),0);same(plusBoard,await board(),'route hint');
   if(w===360)await page.screenshot({path:`${output}/shape-hint-${w}.png`,fullPage:true,animations:'disabled'});
+  // Back from a puzzle goes to the puzzle list (board kept); back from the list goes to where the knight was opened.
+  await mini.getByRole('button',{name:'← 규칙 문제',exact:true}).click();assert.equal(await mini.locator('.kp-card').count(),10);assert.equal(await ev(()=>state.activeKind),null);
+  assert.match(await mini.locator('.kp-card').nth(1).innerText(),/▶ 하던 판/);await mini.locator('.kp-card').nth(1).click();assert.equal(await ev(()=>state.kt.moveCount),1,'same board, no confirmation');
+  await mini.getByRole('button',{name:'← 규칙 문제',exact:true}).click();await mini.getByRole('button',{name:'← 홈',exact:true}).click();assert.equal(await ev(()=>state.screen),'home');
 
   // Reload and continue from the home entry, with undo.
   await page.reload({waitUntil:'domcontentloaded'});const entry=page.locator('#screen-home .home-primary .menu-btn').filter({hasText:'기사의 여행'});

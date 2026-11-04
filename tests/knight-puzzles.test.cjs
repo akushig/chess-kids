@@ -124,3 +124,14 @@ test('choosing, finishing and moving to the next board keeps saved progress and 
  run("goKnightTour(0,'tour')");assert.equal(run('state.kt.puzzle'),undefined);assert.equal(run('JSON.stringify(ktMoves(state.kt))'),run('JSON.stringify(getKnightMoves(...state.kt.pos,state.kt.size,state.kt.board))'),'free tours are unchanged');
  assert.match(elements.get('screen-mini').innerHTML,/onclick="goKnightPuzzles\(\)">규칙 문제/);
 });
+
+test('back from a rule puzzle returns to its list, and the list returns to where the knight was opened',()=>{
+ const {run,elements}=load();
+ run("renderHome();enterActivity('knight')");assert.match(elements.get('screen-mini').innerHTML,/onclick="showScreen\('home'\);renderHome\(\)">← 홈/,'free tours keep the home back');
+ run("goKnightPuzzles();openKnightPuzzle('knight-order-two-5-v1');knightTourClick(3,2)");
+ let html=elements.get('screen-mini').innerHTML;assert.match(html,/onclick="goKnightPuzzles\(\)">← 규칙 문제/);assert.doesNotMatch(html,/← 홈/);
+ run('goKnightPuzzles()');html=elements.get('screen-mini').innerHTML;
+ assert.equal(run('state.activeKind'),null);assert.match(html,/1\. 두 모서리.*▶ 하던 판/s,'the board is kept');assert.match(html,/onclick="showScreen\('home'\);renderHome\(\)">← 홈/);assert.doesNotMatch(html,/enterActivity\('knight'\)">←/,'no list ↔ puzzle loop');
+ run("openKnightPuzzle('knight-order-two-5-v1')");assert.equal(run('state.kt.moveCount'),1,'the same board resumes');
+ run("goMiniMenu();goKnightPuzzles()");assert.match(elements.get('screen-mini').innerHTML,/onclick="goMiniMenu\(\)">← 놀이터/);
+});
