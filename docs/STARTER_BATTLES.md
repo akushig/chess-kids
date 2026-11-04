@@ -39,3 +39,26 @@
 ## 6. 관찰할 것
 
 모험을 마친 아이가 첫 대전 버튼을 스스로 누르는지, 대전 중 말 움직임 보기를 쓰는지, 그 뒤 모험으로 돌아가는지 아니면 대전을 계속하는지. 기록 양식은 [규칙 문제 §7](KNIGHT_RULE_PUZZLES.md)의 표를 그대로 쓴다.
+
+## 7. 구현 결과 · 빌드 `2026.11.05.2`
+
+상태 구분: **구현 완료 · 자동 검증(단위+실제 브라우저) 완료 · 실제 사용자 관찰 없음**. 배포는 [인수인계 §11](DEVELOPMENT_HANDOFF.md)에 기록한다.
+
+| 파일 | 변경 |
+|---|---|
+| `js/app-play.js` | `PLAY_PRESETS` 4판, `playStarterBattle`, 시작 안내·제목·캐슬링 안내, 설정 기록(첫 대전은 단계·도움만), 끝까지 둔 판의 별, `playGuideChipHTML`/`playPieceGuideBoard`/`playPieceGuide`, 대전 입구의 첫 대전 목록 |
+| `js/app-session.js` | 저장판의 판 키 검사, 성장 기록 줄, 모험 완료 뒤 연결·추천(비숍·퀸) |
+| `js/app-adventure.js` | 완료 창: 룩·나이트는 기존 연결 다음에 첫 대전 버튼 |
+| `js/app-profiles.js` | 백업 가져오기의 판 키 검사 |
+| `css/style.css`, `js/version.js` | 첫 대전 목록·말 움직임 그림 스타일, 빌드 번호 |
+| `tests/starter-battles.test.cjs`, `tests/starter-battles-browser.cjs` | 신규 검사. `tests/rematch.test.cjs`는 설정 객체에 새 `preset` 칸이 생겨 기대값만 늘렸다 |
+
+검증:
+- `npm test` **107/107**(첫 대전 6개 추가). 4판의 대칭·시작 시 잡을 말 없음·캐슬링 없음·컴퓨터 첫 수, 시작 안내와 제목, 설정 화면 선택 불변, 별·성장 기록, 재대결·다음 단계 판 유지, 새 앱 복원·되돌리기, 잘못된 판 키 3종 거부, 백업 파일 버전 1 유지와 가져오기·변조 거부, 말 6종 그림 칸 수(나이트·룩·비숍·왕 8, 퀸 16, 폰 2+잡는 칸 2), 시계 정지·재개, 모험 완료 창 연결(비숍·퀸 첫 버튼, 룩·나이트 두 번째 버튼)과 추천.
+- `npm run test:browser` **12개 묶음 모두 통과**(신규 `starter-battles-browser` 포함).
+- 화면 증거: [대전 입구의 첫 대전](product-review/starter-battles/starters-360.png), [말 움직임 보기](product-review/starter-battles/piece-guide-360.png), [모험 완료에서 연결](product-review/starter-battles/adventure-link-360.png), [결과 JSON](product-review/starter-battles/results.json).
+
+남은 관찰·한계:
+- 4판의 재미와 난이도는 관찰 전이다. 특히 1단계(무작위로 두는 상대)와의 첫 대전이 너무 쉽거나, 반대로 퀸 판에서 퀸을 금방 잃어 의욕을 잃는지.
+- 폰과 왕은 첫 대전이 없다. 두 말은 모든 판에 들어 있고, 모험을 마치면 기존처럼 대전 입구로 간다.
+- 말 움직임 그림은 빈 판에서의 움직임만 보여준다. 실제 판의 막힘·체크는 기존 안내가 맡는다.
