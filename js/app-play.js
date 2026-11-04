@@ -62,7 +62,7 @@ function playShowDialog(kind,title,html,actions,onDismiss) {
   playDialogState={kind,element:overlay,previous:document.activeElement,onDismiss,onKey};
   overlay.querySelector('.play-dialog-close').onclick=()=>playCloseDialog();
   if(kind==='event')overlay.querySelector('.dialog-read').onclick=()=>speakGuide(title+' '+overlay.querySelector('.play-dialog-body').textContent);
-  for(const action of actions){const button=document.createElement('button');button.className='action-btn '+(action.secondary?'secondary':'');button.textContent=action.label;button.onclick=()=>{playCloseDialog(!action.action);action.action?.();};overlay.querySelector('footer').appendChild(button);}
+  for(const action of actions){const button=document.createElement('button');button.className='action-btn '+(action.secondary?'secondary':action.tone||'');button.textContent=action.label;button.onclick=()=>{playCloseDialog(!action.action);action.action?.();};overlay.querySelector('footer').appendChild(button);}
   document.body.appendChild(overlay);document.getElementById('app').inert=true;
   document.addEventListener('keydown',onKey);overlay.querySelector('footer button').focus({preventScroll:true});
   if(readData('preferences',{}).voice&&kind==='event')speakGuide(title+' '+overlay.querySelector('.play-dialog-body').textContent);
@@ -144,10 +144,51 @@ function playSetOption(key, value) {
 }
 
 // --- 대국 시작/종료 ---
-function playStart() {
+// 한 판의 실제 설정. 저장판을 복원한 뒤에도 전역 설정이 아니라 이 판을 기준으로 다시 둔다.
+function playConfigOf(play) {
+  const friend = play?.mode === 'friend';
+  return {
+    mode: friend ? 'friend' : 'ai',
+    level: aiLevelIndex(play?.level, play?.levelVersion ?? 1, 0),
+    levelVersion: AI_DIFFICULTY_VERSION,
+    timer: friend && PLAY_TIMER_OPTIONS.includes(play.timer) ? play.timer : 0,
+    help: play?.help !== false, autoMove: !!play?.autoMove, small: !!play?.small, face: play?.face !== false,
+  };
+}
+// 마지막으로 둔 설정을 설정 화면에도 반영한다. 다른 모드의 선택(예: 함께 두기 시간)은 지우지 않는다.
+function playRememberConfig(c) {
+  const s = getPlaySettings();
+  savePlaySettings(c.mode === 'ai'
+    ? {...s, mode: 'ai', level: c.level, help: c.help, small: c.small}
+    : {...s, mode: 'friend', timer: c.timer, face: c.face, autoMove: c.autoMove, help: c.help, small: c.small});
+}
+function playConfigSummary(c) {
+  const parts = c.mode === 'ai' ? [PLAY_LEVEL_ICONS[c.level] + ' ' + playLevelLabel(c.level)] : [t('playModeFriend'), '⏱ ' + playTimerLabel(c.timer), t(c.face ? 'playFaceOn' : 'playFaceOff')];
+  return [...parts, t(c.small ? 'playSmallBoard' : 'playFullBoard'), t(c.help ? 'playHelpOn' : 'playHelpOff')].join(' · ');
+}
+// 다음 단계는 컴퓨터에게 사람이 이겼고 더 높은 단계가 있을 때만, 누를 때만 적용한다.
+function playNextLevelIndex() {
+  const g = state.game, p = state.play;
+  if (!p || p.mode !== 'ai' || g?.status !== 'checkmate' || g.turn !== 'b') return null;
+  const level = playConfigOf(p).level;
+  return level < AI_LEVELS.length - 1 ? level + 1 : null;
+}
+function playRematch() {
+  if (!playIsOver()) return playRestartRequest();
+  playStart(state.play);
+}
+function playNextLevel() {
+  const next = playNextLevelIndex();
+  if (next === null) return;
+  playStart({...playConfigOf(state.play), level: next});
+}
+
+function playStart(config) {
+  // config가 없으면 설정 화면의 전역 설정으로 시작한다.
+  const s = config ? playConfigOf(config) : getPlaySettings();
+  if (config) playRememberConfig(s);
   beginActivity('play');
   playStop();
-  const s = getPlaySettings();
   state.game = s.small ? ChessGame.fromFEN('3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1') : new ChessGame();
   state.play = {
     mode: s.mode,
@@ -225,7 +266,16 @@ function playPresentEvent(force=false) {
   else if(g.status==='check')body+=`<p class="play-event-warning"><strong>${copy.title}</strong><br>${t('playCheckRestriction')}</p>`;
   if(playIsOver()){title=copy.title;icon=copy.icon;if(event.special)body+=`<p class="play-event-explanation">${copy.detail}</p>`;}
   const label=playIsOver()?t('playSeeFinalBoard'):g.status==='check'&&(p.mode==='friend'||g.turn==='w')?t('playLookAtKing'):t('playContinue');
-  const actions=[{label}];if(playIsOver())actions.push({label:t('playNewGame'),secondary:true,action:()=>playStart()});
+  const actions=[{label,secondary:playIsOver()}];
+  if(playIsOver()){
+    // 첫 초점은 '마지막 판 보기'. 재대결·다음 단계는 사용자가 고를 때만 시작한다.
+    const next=playNextLevelIndex();
+    actions.push({label:t('playRematch'),action:playRematch});
+    if(next!==null)actions.push({label:t('playNextLevel').replace('{n}',next+1),tone:'green',action:playNextLevel});
+    actions.push({label:t('playChangeSettings'),secondary:true,action:goPlay});
+    const top=p.mode==='ai'&&g.status==='checkmate'&&g.turn==='b'&&next===null;
+    body+=`${top?`<p class="play-event-explanation">${t('playTopLevelWin')}</p>`:''}<p class="play-dialog-note play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(p))}</p>`;
+  }
   playTimerPauseForHelp();
   playShowDialog('event',title,`<div class="play-event-icon" aria-hidden="true">${icon}</div>${body}${!playIsOver()?`<p class="play-dialog-note">${t('playReadingPause')}</p>`:''}`,actions,playAcknowledgeEvent);
 }
@@ -691,12 +741,19 @@ function playGuideHTML() {
   return `<div class="guide-card play-check-guide" role="status"><strong>⚠️ ${t('playCheck')} ${t('playCheckRestriction')}</strong>${p.notice?`<p>${p.notice}</p>`:''}${p.help?`<div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small>`:`<p>${t('playCheckExplained')}</p>`}</div>`;
 }
 function playActionsHTML() {
-  return `${state.play.moveEvent?.special&&state.play.moveEvent.acknowledged?'<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>':''}${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
+  return `${state.play.moveEvent?.special&&state.play.moveEvent.acknowledged?'<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>':''}${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div>${playIsOver()?playFinishActionsHTML():`<div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">저장하고 나가기</button></div>`}`;
 }
+// 끝난 판 아래: 같은 상대 재대결 · (이긴 경우) 다음 단계 · 설정 바꾸기 · 마치기. 확인 창 없이 바로 시작한다.
+function playFinishActionsHTML() {
+  const next=playNextLevelIndex();
+  return `<div class="finish-actions play-finish-actions"><button class="action-btn" onclick="playRematch()">${t('playRematch')}</button>${next!==null?`<button class="action-btn green" onclick="playNextLevel()">${t('playNextLevel').replace('{n}',next+1)}</button>`:''}<button class="action-btn secondary" onclick="goPlay()">${t('playChangeSettings')}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div><p class="play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(state.play))}</p><button class="text-button play-rescue-practice" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 연습</button>`;
+}
+// 대국 중 새 판은 교체를 확인하고, 확인하면 이 판과 같은 설정으로 시작한다.
 function playRestartRequest() {
-  if(playIsOver()||!state.actionHistory?.length){playStart();return;}
+  const config=playConfigOf(state.play);
+  if(playIsOver()||!state.actionHistory?.length){playStart(config);return;}
   playTimerPauseForHelp();
-  showChoice('지금 판 대신 새 판을 시작할까요?',[{label:'새 판 시작',action:()=>playStart()},{label:'이어서 두기',action:()=>playTimerStart()}]);
+  showChoice(t('playRestartConfirm'),[{label:'새 판 시작',action:()=>playStart(config)},{label:'이어서 두기',action:()=>playTimerStart()}],()=>playTimerStart());
 }
 function explainPlayMove(g,fr,fc,tr,tc) {
   const p=g.board[fr][fc];
