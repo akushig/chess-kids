@@ -53,7 +53,6 @@ function showGameToast(html, key = '', repeat = false, sticky = false) {
   toast.querySelector('.toast-close').onclick = hideGameToast;
   toast.querySelector('.toast-read').onclick = () => speakGuide(toast.querySelector('.game-toast-content').textContent);
   const prefs = readData('preferences', {});
-  if (!prefs.voice) toast.querySelector('.toast-read').hidden = true;
   document.body.appendChild(toast);
   if (prefs.voice) speakGuide(toast.querySelector('.game-toast-content').textContent);
   // Interactive rescue choices stay available until dismissed or the next move.
@@ -74,8 +73,9 @@ function renderGameScreen(id, html) {
   if (previous && window.scrollTo) window.scrollTo({top: scrollY, behavior: 'instant'});
 }
 function laterInScreen(callback,delay) { const epoch=screenEpoch; return setTimeout(()=>{if(epoch===screenEpoch)callback();},delay); }
-function cancelActivityCallbacks() { if(typeof playCloseDialog==='function')playCloseDialog(false);hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
+function cancelActivityCallbacks() { closeActivityDialog(false); if(typeof playCloseDialog==='function')playCloseDialog(false);hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
 function showScreen(name) {
+  if(state.screen!==name)closeActivityDialog(false);
   if(state.screen!==name&&typeof playCloseDialog==='function')playCloseDialog(false);
   hideGameToast(); gameToastKey='';
   if (state.screen !== name) { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
@@ -135,6 +135,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
 
 // ===== 캡처 애니메이션 =====
 function animateCapture(boardEl, toR, toC, capturedPieceKey, targetId) {
+  if(!boardEl||readData('preferences',{}).motion===false||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
   const cellSize = boardEl.offsetWidth / 8;
   const boardRect = boardEl.getBoundingClientRect();
   const targetEl = document.getElementById(targetId);
@@ -375,13 +376,31 @@ document.addEventListener('DOMContentLoaded', () => {
   showScreen('home');
 });
 
-function showChoice(message,choices) {
-  const old=document.getElementById('choice-overlay');if(old)old.remove();
-  const overlay=document.createElement('div');overlay.className='clear-overlay';overlay.id='choice-overlay';
-  overlay.innerHTML=`<div class="clear-popup" role="dialog" aria-modal="true" aria-label="선택"><p>${message}</p><div class="clear-btns"></div></div>`;
-  for(const choice of choices){const b=document.createElement('button');b.className='action-btn';b.textContent=choice.label;b.onclick=()=>{overlay.remove();choice.action();};overlay.querySelector('.clear-btns').appendChild(b);}
-  document.body.appendChild(overlay);overlay.querySelector('button')?.focus();
+// One dialog contract for learning, choices and settings. Games keep their board layout.
+let activityDialog=null;
+function closeActivityDialog(resume=true){
+  if(!activityDialog)return;
+  const {overlay,focus,keydown,onDismiss}=activityDialog;activityDialog=null;
+  overlay.remove();document.removeEventListener?.('keydown',keydown);
+  const app=document.getElementById('app');if(app)app.inert=false;
+  if(focus?.isConnected)focus.focus({preventScroll:true});
+  if(resume)onDismiss?.();
 }
+function showActivityDialog(title,html,actions=[],id='choice-overlay',onDismiss=null){
+  closeActivityDialog(false);hideGameToast();
+  const overlay=document.createElement('div');if(!overlay.setAttribute)return;
+  overlay.id=id;overlay.className='clear-overlay activity-dialog-overlay';
+  overlay.innerHTML=`<section class="activity-dialog" role="dialog" aria-modal="true" aria-labelledby="activity-dialog-title"><header><h2 id="activity-dialog-title"></h2><div class="dialog-tools"><button class="dialog-read" aria-label="설명 듣기">🔊</button><button class="dialog-close" aria-label="닫기">✕</button></div></header><div class="activity-dialog-body">${html}</div><footer class="activity-dialog-actions"></footer></section>`;
+  overlay.querySelector('h2').textContent=title;
+  const keydown=e=>{if(e.key==='Escape'){e.preventDefault();closeActivityDialog();}};
+  activityDialog={overlay,focus:document.activeElement,keydown,onDismiss};
+  overlay.querySelector('.dialog-close').onclick=()=>closeActivityDialog();
+  overlay.querySelector('.dialog-read').onclick=()=>speakGuide(title+' '+overlay.querySelector('.activity-dialog-body').textContent);
+  actions.forEach((choice,i)=>{const b=document.createElement('button');b.className='action-btn '+(i?'secondary':'green');b.textContent=choice.label;b.onclick=()=>{closeActivityDialog(false);choice.action?.();};overlay.querySelector('footer').appendChild(b);});
+  document.body.appendChild(overlay);document.getElementById('app').inert=true;
+  document.addEventListener('keydown',keydown);(overlay.querySelector('footer button')||overlay.querySelector('button')).focus({preventScroll:true});
+}
+function showChoice(message,choices,onDismiss=null){showActivityDialog('골라 주세요',`<p>${message}</p>`,choices,'choice-overlay',onDismiss);}
 
 function applyAppUpdate(){
   saveActiveSession();const waiting=window.chessWorkerRegistration?.waiting;

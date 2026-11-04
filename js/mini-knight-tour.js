@@ -120,8 +120,8 @@ function ktAnalyze(kt) {
   return result;
 }
 
-// Existing entry points go directly to the familiar tour; gentler goals remain one tap away.
-function goKnightSetup() { goKnightTour(); }
+// Menu entry resumes the saved board; new learners start with a short walk.
+function goKnightSetup() { enterActivity('knight'); }
 
 function goKnightTour(levelIdx, mode = 'tour', shared = null) {
   beginActivity('knight', { levelIdx, mode });
@@ -132,6 +132,7 @@ function goKnightTour(levelIdx, mode = 'tour', shared = null) {
     settings.levelIdx = levelIdx;
     saveKnightTourSettings(settings);
   }
+  writeData('knight_last_mode',mode);
   const size = KNIGHT_TOUR_LEVELS[levelIdx].size;
   const start = shared?.startPos || ktPickStart(size, settings.randomStart, state.kt?.startPos);
   state.kt = {

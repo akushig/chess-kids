@@ -54,13 +54,14 @@ function playCloseDialog(resume=true) {
 }
 function playShowDialog(kind,title,html,actions,onDismiss) {
   if(playDialogState?.kind===kind)return;
-  playCloseDialog(false);hideGameToast();gameToastKey='';
+  closeActivityDialog();playCloseDialog(false);hideGameToast();gameToastKey='';
   const overlay=document.createElement('div');if(!overlay.setAttribute)return;
   overlay.id='play-dialog';overlay.className='clear-overlay play-dialog-overlay';overlay.dataset.kind=kind;
-  overlay.innerHTML=`<section class="play-dialog play-dialog--${kind}" role="dialog" aria-modal="true" aria-labelledby="play-dialog-title"><header><h2 id="play-dialog-title">${title}</h2><button class="play-dialog-close" aria-label="${t('playDialogClose')}">✕</button></header><div class="play-dialog-body">${html}</div><footer></footer></section>`;
+  overlay.innerHTML=`<section class="play-dialog play-dialog--${kind}" role="dialog" aria-modal="true" aria-labelledby="play-dialog-title"><header><h2 id="play-dialog-title">${title}</h2><div class="dialog-tools">${kind==='event'?'<button class="dialog-read" aria-label="설명 듣기">🔊</button>':''}<button class="play-dialog-close" aria-label="${t('playDialogClose')}">✕</button></div></header><div class="play-dialog-body">${html}</div><footer></footer></section>`;
   const onKey=e=>{if(e.key==='Escape'){e.preventDefault();playCloseDialog();}};
   playDialogState={kind,element:overlay,previous:document.activeElement,onDismiss,onKey};
   overlay.querySelector('.play-dialog-close').onclick=()=>playCloseDialog();
+  if(kind==='event')overlay.querySelector('.dialog-read').onclick=()=>speakGuide(title+' '+overlay.querySelector('.play-dialog-body').textContent);
   for(const action of actions){const button=document.createElement('button');button.className='action-btn '+(action.secondary?'secondary':'');button.textContent=action.label;button.onclick=()=>{playCloseDialog(!action.action);action.action?.();};overlay.querySelector('footer').appendChild(button);}
   document.body.appendChild(overlay);document.getElementById('app').inert=true;
   document.addEventListener('keydown',onKey);overlay.querySelector('footer button').focus({preventScroll:true});
@@ -114,7 +115,7 @@ function renderPlaySetup() {
         <button class="back-btn" onclick="showScreen('home'); renderHome()">← ${t('btnBack')}</button>
         <h2>${t('menuPlay')}</h2>
       </div>
-      <div class="play-setup">
+      ${savedActivityCard('play')}<div class="play-setup">
         <div class="play-modes">${modes}</div>
         ${options}
         <div class="play-options">
@@ -124,7 +125,8 @@ function renderPlaySetup() {
         </div>
         <p class="play-note">${s.small?'이 짧은 판은 왕과 룩의 시작 배치가 달라 캐슬링을 하지 않아요.':'캐슬링은 왕을 고른 뒤 ‘캐슬링’ 표시 칸을 눌러요. 왕과 룩을 차례로 눌러도 돼요.'}</p>
       </div>
-      <button class="action-btn" onclick="playStart()">${t('btnStart')}</button>
+      ${!safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner'?'<button class="action-btn green" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
+      <button class="action-btn" onclick="requestNewActivity('play',playStart)">${t('btnStart')}</button>
     </div>
   `;
 }
@@ -198,7 +200,7 @@ function playSyncEvent() {
 }
 function playAcknowledgeEvent() {
   const p=state.play;
-  if(p.moveEvent)p.moveEvent.acknowledged=true;
+  if(p.moveEvent){p.moveEvent.acknowledged=true;if(p.moveEvent.special)p.notice='';}
   if(state.game.status==='check'){p.seenChecks||={};p.seenChecks[state.game.turn]=true;}
   saveActiveSession();renderPlay();playNextTurn();
   if(typeof queueMicrotask==='function')queueMicrotask(()=>{
@@ -415,7 +417,10 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
   state.play.moveEvent=special||game.status==='check'||playIsOver()?{kind:playIsOver()?'result':special||'check',special,color:mover,promotion,key:playStateKey(),acknowledged:false,...(castle?{kingFrom:[fr,fc],kingTo:[tr,tc],rookFrom:[fr,tc===6?7:0],rookTo:[fr,tc===6?5:3]}:{})}:null;
   if(wasCheck&&!special&&game.status==='playing')state.play.notice=t('playKingSafe');
   if(wasCheck&&(state.play.mode==='friend'||mover==='w'))awardStars('achievements','play-first-rescue',1);
-  if(captured&&(state.play.mode==='friend'||mover==='w'))awardStars('achievements','play-first-capture',1);
+  if(captured&&(state.play.mode==='friend'||mover==='w')){
+    const first=!progressLedger().achievements['play-first-capture'];awardStars('achievements','play-first-capture',1);
+    if(first&&!wasCheck&&!special&&game.status==='playing')state.play.notice='⭐ 첫 말 잡기를 해냈어요! 배운 움직임을 대전에서 써봤어요.';
+  }
   if(playIsOver())awardStars('achievements','play-first-finish-'+state.play.mode,1);
   saveActiveSession();
   const finishMove=() => {
@@ -596,7 +601,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && playTimerHandle) {
     p.pausedLeft = p.deadline - Date.now();
     playTimerStop();
-  } else if (!document.hidden && p.pausedLeft !== null && state.screen === 'play') {
+  } else if (!document.hidden && p.pausedLeft !== null && state.screen === 'play' && state.activeKind==='play' && !playDialogState && !activityDialog && !playIsOver()) {
     p.deadline = Date.now() + p.pausedLeft;
     p.pausedLeft = null;
     playTimerResume();
@@ -605,6 +610,7 @@ document.addEventListener('visibilitychange', () => {
 
 // --- 리워드 ---
 function goReward() {
+  leaveActivity();
   showScreen('reward');
   const adventureStars = getTotalStars();
   const puzzleStars = getTotalPuzzleStars();
@@ -658,7 +664,7 @@ function goReward() {
       <div class="reward-wrap">
         <div class="reward-big">⭐ ${allStars}</div>
         <div class="reward-label">${t('rewardTotal')}</div>
-        ${sourceCards}
+        ${learningSummaryHTML()}${sourceCards}
         <div class="roadmap-title">${t('rewardRoadmap')}</div>
         <div class="roadmap-list">${roadmap}</div>
       </div>
@@ -685,7 +691,7 @@ function playGuideHTML() {
   return `<div class="guide-card play-check-guide" role="status"><strong>⚠️ ${t('playCheck')} ${t('playCheckRestriction')}</strong>${p.notice?`<p>${p.notice}</p>`:''}${p.help?`<div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small>`:`<p>${t('playCheckExplained')}</p>`}</div>`;
 }
 function playActionsHTML() {
-  return `${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
+  return `${state.play.moveEvent?.special&&state.play.moveEvent.acknowledged?'<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>':''}${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div><div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">${playIsOver()?'여기까지':'저장하고 나가기'}</button>${playIsOver()?'<button class="action-btn green" onclick="goPuzzleLevel(5);showScreen(\'puzzle\')">왕 구하기 연습</button>':''}</div>`;
 }
 function playRestartRequest() {
   if(playIsOver()||!state.actionHistory?.length){playStart();return;}

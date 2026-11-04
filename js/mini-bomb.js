@@ -1,5 +1,5 @@
-// ===== 미니게임 4: 폭탄 해제 =====
-// 기물로 폭탄 칸에 도달해서 해제
+// ===== 미니게임 4: 목표별 이동 수 도전 =====
+// Legacy bomb IDs/state stay stable while the UI explains target move allowances.
 
 const BOMB_LEVELS = [
   { id:'bomb-rook-one-v1', piece:'wR', size:6, bombs:[{pos:[0,5],timer:5}], blocks:[], name:'룩' },
@@ -52,7 +52,7 @@ function renderBomb() {
       const bomb = bm.bombs.find(b=>b.pos[0]===r&&b.pos[1]===c&&!b.defused);
       if (bomb) {
         cls += bm.challenge && bomb.timer <= 2 ? ' bomb-urgent' : ' bomb-cell';
-        content = `<span class="bomb-icon">💣<span class="bomb-timer">${bm.challenge?bomb.timer:'·'}</span></span>`;
+        content = `<span class="bomb-icon">🎯<span class="bomb-timer">${bm.challenge?bomb.timer:'·'}</span></span>`;
       }
 
       const defused = bm.bombs.find(b=>b.pos[0]===r&&b.pos[1]===c&&b.defused);
@@ -67,32 +67,31 @@ function renderBomb() {
   let msg;
   if (bm.clear) msg=`<div class="status-msg success">${t('bombClear')}</div>`;
   else if (bm.failed) msg=`<div class="status-msg fail">${t('bombExploded')}</div>`;
-  else msg=`<div class="status-msg">${(bm.challenge?'한 번 움직이면 남은 이동 수가 줄어요. 먼저 갈 곳을 골라요.':'이동 수 제한 없이 해제해봐요.')}</div>`;
+  else msg=`<div class="status-msg">${(bm.challenge?'각 목표의 숫자가 0이 되기 전에 도착해요. 가까운 마감부터 살펴요.':'이동 수 제한 없이 목표까지 가봐요.')}</div>`;
 
   const remaining = bm.bombs.filter(b=>!b.defused);
   const minTimer = remaining.length > 0 ? Math.min(...remaining.map(b=>b.timer)) : 0;
   const info=`<div class="mission-info">
-    <div class="mission-speech">💣 ×${remaining.length}</div>
+    <div class="mission-speech">🎯 ×${remaining.length}</div>
     <div class="move-counter">${remaining.length > 0 ? bm.challenge?'남은 이동 '+minTimer+'번':'이동 수 제한 없음' : '✓'}</div>
   </div>`;
 
-  const actions=(!bm.clear&&!bm.failed)?`<div class="mission-actions">
+  const actions=(!bm.clear&&!bm.failed)?`<div class="mission-actions">${undoButton()}
     <button class="icon-btn hint-btn" onclick="bombHint()">💡 ${t('hintBtn')}</button>
-    <button class="icon-btn reset-btn" onclick="goBomb(${bm.levelIdx},${bm.challenge})">🔄 ${t('resetBtn')}</button>
+    <button class="icon-btn reset-btn" onclick="requestNewActivity('bomb',()=>goBomb(${bm.levelIdx},${bm.challenge}))">🔄 ${t('resetBtn')}</button>
   </div>`:'';
 
   const retryBtn=bm.failed?`<button class="action-btn" onclick="goBomb(${bm.levelIdx},${bm.challenge})">${t('missionRetryBtn')}</button>`:'';
-  const nextBtn=bm.clear&&bm.levelIdx<BOMB_LEVELS.length-1?`<button class="action-btn green" onclick="goBomb(${bm.levelIdx+1},${bm.challenge})">${t('btnNext')}</button>`:'';
 
   renderGameScreen('screen-mini', `
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
-        <h2>${t('bombTitle')} Lv.${bm.levelIdx+1}</h2>
+        <h2>이동 수 도전 ${bm.levelIdx+1}</h2>
       </div>
-      ${msg} ${info}<button class="play-chip" onclick="goBomb(${bm.levelIdx},${!bm.challenge})">${bm.challenge?'느긋하게 연습하기':'이동 수 도전하기'}</button>
+      ${msg} ${info}
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${undoButton()} ${actions} ${retryBtn} ${nextBtn} ${bm.clear?finishLinks('goCollector(0)','별 모으러 가기'):''}
+      ${bm.failed?undoButton():''} ${actions} ${retryBtn} <details class="game-options"><summary>놀이 설정</summary><button class="play-chip" onclick="requestNewActivity('bomb',()=>goBomb(${bm.levelIdx},${!bm.challenge}))">${bm.challenge?'느긋하게 연습하기':'이동 수 도전하기'}</button></details>${bm.clear?finishLinks(bm.levelIdx<BOMB_LEVELS.length-1?`goBomb(${bm.levelIdx+1},${bm.challenge})`:"enterActivity('collector')",bm.levelIdx<BOMB_LEVELS.length-1?'다음 이동 수 도전':'별 모으러 가기'):''}
     </div>`);
 }
 

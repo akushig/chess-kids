@@ -65,13 +65,12 @@ function renderCollector() {
     <div class="move-counter">${cl.challenge?'남은 이동 '+cl.turnsLeft+'번':'이동 수 제한 없음'}</div>
   </div>`;
 
-  const actions=(!cl.clear&&!cl.failed)?`<div class="mission-actions">
+  const actions=(!cl.clear&&!cl.failed)?`<div class="mission-actions">${undoButton()}
     <button class="icon-btn hint-btn" onclick="collectorHint()">💡 ${t('hintBtn')}</button>
-    <button class="icon-btn reset-btn" onclick="goCollector(${cl.levelIdx},${cl.challenge})">🔄 ${t('resetBtn')}</button>
+    <button class="icon-btn reset-btn" onclick="requestNewActivity('collector',()=>goCollector(${cl.levelIdx},${cl.challenge}))">🔄 ${t('resetBtn')}</button>
   </div>`:'';
 
   const retryBtn=cl.failed?`<button class="action-btn" onclick="goCollector(${cl.levelIdx},${cl.challenge})">${t('missionRetryBtn')}</button>`:'';
-  const nextBtn=cl.clear&&cl.levelIdx<COLLECTOR_LEVELS.length-1?`<button class="action-btn green" onclick="goCollector(${cl.levelIdx+1},${cl.challenge})">${t('btnNext')}</button>`:'';
 
   renderGameScreen('screen-mini', `
     <div class="screen-wrap">
@@ -79,9 +78,9 @@ function renderCollector() {
         <button class="back-btn" onclick="goMiniMenu()">← ${t('btnBack')}</button>
         <h2>별 모으기 ${cl.levelIdx+1}</h2>
       </div>
-      ${msg} ${info}<button class="play-chip" onclick="goCollector(${cl.levelIdx},${!cl.challenge})">${cl.challenge?'연습으로 바꾸기':'이동 수 도전하기'}</button>
+      ${msg} ${info}
       <div class="chess-board" style="grid-template-columns:repeat(${size},1fr)">${cells}</div>
-      ${undoButton()} ${actions} ${retryBtn} ${nextBtn} ${cl.clear?finishLinks('goKnightSetup()','나이트와 탐험하기'):''}
+      ${cl.failed?undoButton():''} ${actions} ${retryBtn} <details class="game-options"><summary>놀이 설정</summary><button class="play-chip" onclick="requestNewActivity('collector',()=>goCollector(${cl.levelIdx},${!cl.challenge}))">${cl.challenge?'연습으로 바꾸기':'이동 수 도전하기'}</button></details>${cl.clear?finishLinks(cl.levelIdx<COLLECTOR_LEVELS.length-1?`goCollector(${cl.levelIdx+1},${cl.challenge})`:"enterActivity('knight')",cl.levelIdx<COLLECTOR_LEVELS.length-1?'다음 별 모으기':'나이트와 탐험하기'):''}
     </div>`);
 }
 

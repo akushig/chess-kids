@@ -24,7 +24,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
     await cells().nth(row*8+(input==='target'?to:rook)).click();await page.waitForFunction(()=>!state.animating);same(before,await board());
     assert.equal(await page.evaluate(({row,to,color})=>state.game.board[row][to]===color+'K'&&state.game.board[row][to===6?5:3]===color+'R',{row,to,color}),true);
     assert.match(await page.locator('#play-dialog').innerText(),/캐슬링/);await acknowledgePlayEvent(page);
-    assert.match(await page.locator('#game-toast').innerText(),/캐슬링이에요/);results.push({width,color,side,input,passed:true});
+    assert.equal(await page.locator('.castle-completed').count(),2);assert.equal(await page.locator('#game-toast').count(),0,'acknowledged castle does not cover game controls');results.push({width,color,side,input,passed:true});
    }
    await setup('5r1k/8/8/8/8/8/8/R3K2R w KQ - 0 1');const before=await board();await cells().nth(60).click();await cells().nth(62).click();
    assert.match(await page.locator('#game-toast').innerText(),/지나갈 f1 칸이 공격/);assert.match(await cells().nth(61).getAttribute('aria-label'),/캐슬링을 막는 칸/);same(before,await board());

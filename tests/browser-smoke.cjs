@@ -11,7 +11,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await page.getByRole('button',{name:/모험/}).first().waitFor();
  await page.evaluate(()=>goMissionPlay('R',0));await page.locator('#screen-learn .board-cell').nth(15).click();
  await page.waitForFunction(()=>state.missionSolved);
- await page.evaluate(()=>{goMissionPlay('K',3);});await page.locator('#screen-learn .board-cell').nth(22).click();await page.waitForFunction(()=>state.missionFailed);
+ await page.evaluate(()=>{goMissionPlay('K',3);});await page.locator('#screen-learn .board-cell').nth(9).click();await page.waitForFunction(()=>state.missionFailed);
  await page.getByRole('button',{name:/되돌리기/}).click();assert.equal(await page.evaluate(()=>state.missionFailed),false);
  await page.evaluate(()=>{playStart();state.game=ChessGame.fromFEN('4r2k/8/8/8/8/8/R7/4K3 w - - 0 1');renderPlay();});
  await acknowledgePlayEvent(page);

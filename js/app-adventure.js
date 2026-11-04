@@ -1,4 +1,5 @@
-function missionSize(mission=MISSIONS[state.missionPiece]?.[state.missionIdx]) { return mission?.size || 6; }
+function currentMission(){return state.missionSpec||MISSIONS[state.missionPiece]?.[state.missionIdx];}
+function missionSize(mission=currentMission()) { return mission?.size || 6; }
 // ===== 모험 화면: 월드 선택 → 스테이지 맵 → 미션 플레이 =====
 
 // --- 월드 선택 ---
@@ -68,7 +69,7 @@ function renderStageMap() {
 
     nodes += `
       <div class="stage-row">
-        <button class="${cls}" ${locked ? 'disabled' : `onclick="goMissionPlay('${key}', ${i})"`}>
+        <button class="${cls}" ${locked ? 'disabled' : `onclick="openMissionStage('${key}', ${i})"`}>
           <span class="stage-num">${i + 1}</span>
           <span class="stage-stars">${starDisplay}</span>
         </button><span class="stage-label">${missions[i].optional?'<small>선택 도전</small>':''}${missions[i].desc.ko}</span>
@@ -87,16 +88,17 @@ function renderStageMap() {
         <button class="back-btn" onclick="renderWorldSelect()">← ${t('btnBack')}</button>
         <h2>${getPieceSVG(PIECE_ICONS[key], 24)} ${t(PIECE_NAMES[key])}${t('worldTitle')}</h2>
       </div>
-      <div class="stage-map">${nodes}</div>
+      ${savedActivityCard('mission')}<div class="stage-map">${nodes}</div>
     </div>
   `;
 }
 
 // --- 미션 플레이 ---
 function goMissionPlay(pieceKey, missionIdx) {
-  beginActivity('mission',{pieceKey,missionIdx,id:MISSIONS[pieceKey][missionIdx].id});
+  beginActivity('mission',{pieceKey,missionIdx,id:MISSIONS[pieceKey][missionIdx].id,curriculumVersion:CURRICULUM_VERSION});
   cancelActivityCallbacks();
   const mission = MISSIONS[pieceKey][missionIdx];
+  state.missionSpec=copyData(mission);
   state.missionPiece = pieceKey;
   state.missionIdx = missionIdx;
   state.missionBoard = buildMissionBoard(mission);
@@ -155,7 +157,7 @@ function getMissionValidMoves(board, row, col, mission) {
     const startRow = color === 'w' ? size - 2 : 1;
     if (inB(row + dir, col) && !board[row + dir][col] && !isBlock(row + dir, col)) {
       moves.push([row + dir, col]);
-      if (row === startRow && !board[row + 2 * dir][col] && !isBlock(row + 2 * dir, col)) {
+      if (row === startRow && row===mission.start[0] && col===mission.start[1] && !board[row + 2 * dir][col] && !isBlock(row + 2 * dir, col)) {
         moves.push([row + 2 * dir, col]);
       }
     }
@@ -189,7 +191,7 @@ function missionUndo() { undoActivity(); }
 
 function renderMissionBoard() {
   saveActiveSession();
-  const mission = MISSIONS[state.missionPiece][state.missionIdx];
+  const mission = currentMission();
   const board = state.missionBoard;
   const size = missionSize(mission);
   const [pr, pc] = state.missionPlayerPos;
@@ -209,11 +211,13 @@ function renderMissionBoard() {
         content = '<span class="block-mark">✕</span>';
       } else if (mission.goals && mission.goals.some(([gr, gc]) => gr === r && gc === c)) {
         cls += ' goal-cell';
-        if (!board[r][c]) content = '<span class="goal-mark">●</span>';
+        if (!board[r][c]) content = '<span class="goal-mark" aria-label="목표 깃발">🚩</span>';
       }
 
       const piece = board[r][c];
-      if (piece) content = getPieceSVG(piece, 36);
+      if (piece) {content = getPieceSVG(piece, 36);
+        if(mission.targets?.some(([tr,tc])=>tr===r&&tc===c))content+='<span class="target-badge" aria-label="잡을 연습 말">⚑</span>';
+      }
       if (r === pr && c === pc) cls += ' selected';
       if (validMoves.some(([mr, mc]) => mr === r && mc === c)) cls += ' move-hint';
       if (missionNeedsSafety(mission) && isSquareAttacked(board,r,c,'b',mission)) cls += ' danger-cell';
@@ -237,7 +241,7 @@ function renderMissionBoard() {
     <div class="mission-actions">
       <button class="icon-btn" onclick="missionUndo()" ${state.actionHistory?.length ? '' : 'disabled'}>↶ 되돌리기</button>
       <button class="icon-btn hint-btn" onclick="showMissionHint()">💡 ${t('hintBtn')}</button>
-      <button class="icon-btn reset-btn" onclick="goMissionPlay('${state.missionPiece}', ${state.missionIdx})">🔄 ${t('resetBtn')}</button>
+      <button class="icon-btn reset-btn" onclick="requestNewActivity('mission',()=>goMissionPlay('${state.missionPiece}', ${state.missionIdx}))">🔄 ${t('resetBtn')}</button>
     </div>
   ` : '';
 
@@ -245,7 +249,7 @@ function renderMissionBoard() {
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="renderStageMap()">← ${t('btnBack')}</button>
-        <h2>${t('missionTitle')} ${state.missionIdx + 1}</h2>
+        <h2>${t(PIECE_NAMES[state.missionPiece])} · ${state.missionIdx + 1}${mission.optional?' · 선택 도전':''}</h2>
       </div>
       ${infoBar}
       <div class="chess-board mission-board" style="grid-template-columns:repeat(${size},1fr) !important">${cells}</div>
@@ -256,7 +260,7 @@ function renderMissionBoard() {
 
 function missionClick(r, c) {
   if (state.animating || state.missionSolved || state.missionFailed) return;
-  const mission = MISSIONS[state.missionPiece][state.missionIdx];
+  const mission = currentMission();
   const board = state.missionBoard;
   const [pr, pc] = state.missionPlayerPos;
   const validMoves = getMissionValidMoves(board, pr, pc, mission);
@@ -309,7 +313,7 @@ function missionClick(r, c) {
 
 function missionClear() {
   state.missionSolved = true;
-  const mission = MISSIONS[state.missionPiece][state.missionIdx];
+  const mission = currentMission();
   const stars = calculateStars(state.missionMoveCount, mission.minMoves);
   saveMissionProgress(state.missionPiece, state.missionIdx, stars);
 
@@ -319,48 +323,20 @@ function missionClear() {
 
 function showClearPopup(stars) {
   spawnParticles();
-
-  const starHtml = Array.from({length: 3}, (_, i) =>
-    `<span class="${i < stars ? 'star-on' : 'star-off'}">★</span>`
-  ).join('');
-
-  let msg = '';
-  if (stars === 3) msg = t('missionPerfect');
-  else if (stars === 2) msg = t('missionGreat');
-  else msg = t('missionGood');
-
-  const hasNext = state.missionIdx < MISSIONS[state.missionPiece].length - 1;
-  const nextBtn = hasNext
-    ? `<button class="action-btn green" onclick="closeClearPopup(); goMissionPlay('${state.missionPiece}', ${state.missionIdx + 1})">${t('btnNext')}</button>`
-    : `<button class="action-btn green" onclick="closeClearPopup();${state.missionPiece==='N'?'goKnightSetup()':state.missionPiece==='R'?'goDefense(0)':'goPlay()'}">${state.missionPiece==='N'?'나이트와 탐험하기':state.missionPiece==='R'?'룩으로 성 지키기':'배운 말로 대전하기'}</button>`;
-
-  const overlay = document.createElement('div');
-  overlay.className = 'clear-overlay';
-  overlay.id = 'clear-overlay';
-  overlay.innerHTML = `
-    <div class="clear-popup">
-      <div class="clear-title">✓ 완료 도장!</div>
-      <div class="clear-stars">${starHtml}</div>
-      <div class="clear-msg">${msg}</div>
-      <div class="clear-btns">
-        <button class="action-btn secondary" onclick="closeClearPopup(); renderStageMap()">${t('btnBack')}</button>
-        <button class="action-btn" onclick="closeClearPopup(); goMissionPlay('${state.missionPiece}', ${state.missionIdx})">🔄</button>
-        ${nextBtn}
-        <button class="action-btn secondary" onclick="closeClearPopup();showScreen('home');renderHome()">여기까지</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
+  const piece=state.missionPiece,index=state.missionIdx,next=nextBasicMission(piece,index),transfer=missionTransfer(piece);
+  const mission=MISSIONS[piece][index],challenge=MISSIONS[piece].findIndex((m,i)=>i>index&&m.optional&&!isMissionCleared(piece,i));
+  const actions=[{label:next>=0?'다음 모험':transfer.label,action:()=>next>=0?goMissionPlay(piece,next):enterMissionTransfer(piece)},
+    {label:'여기까지 · 홈',action:()=>{leaveActivity();showScreen('home');renderHome();}}];
+  if(challenge>=0&&next<0)actions.push({label:'선택 도전 해보기',action:()=>goMissionPlay(piece,challenge)});
+  actions.push({label:'이 단계 다시 하기',action:()=>goMissionPlay(piece,index)},{label:'모험 목록',action:renderStageMap});
+  showActivityDialog('모험 완료!',`<div class="clear-stars" aria-label="별 ${stars}개">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div><p>${mission.learning?.success||'목표를 해냈어요!'}</p><p class="section-note">${state.supportLevel?'도움을 써서 끝까지 해냈어요.':'스스로 길을 찾아냈어요.'} 모은 별은 계속 간직해요.</p>`,actions,'clear-overlay');
 }
-
-function closeClearPopup() {
-  const overlay = document.getElementById('clear-overlay');
-  if (overlay) overlay.remove();
-}
+function enterMissionTransfer(piece){if(piece==='N')enterActivity('knight');else if(piece==='R')enterActivity('defense');else goPlay();}
+function closeClearPopup(){closeActivityDialog();}
 
 // BFS로 현재 상태에서 클리어까지의 최단 경로 탐색
 function findMissionSolvePath() {
-  const mission = MISSIONS[state.missionPiece][state.missionIdx];
+  const mission = currentMission();
   const origBoard = state.missionBoard;
   const [pr, pc] = state.missionPlayerPos;
   const size = missionSize(mission);
@@ -424,7 +400,7 @@ function findMissionSolvePath() {
 }
 
 function showMissionHint() {
-  const mission=MISSIONS[state.missionPiece][state.missionIdx];
+  const mission=currentMission();
   const boardEl = document.querySelector('#screen-learn .mission-board');
   if (!boardEl) return;
 

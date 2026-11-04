@@ -14,7 +14,7 @@ const output = process.env.CHESS_KNIGHT_QA_OUTPUT || '/tmp/chess-knight-qa';
       page.on('pageerror', error => errors.push(error.message));
       await page.route('https://fonts.googleapis.com/**', route => route.abort());
       await page.goto(process.env.CHESS_TEST_URL || 'http://127.0.0.1:8765', { waitUntil: 'domcontentloaded' });
-      await page.evaluate(() => { writeData('preferences', { motion: false }); applyPreferences(); goKnightSetup(); });
+      await page.evaluate(() => { writeData('preferences', { motion: false }); applyPreferences(); writeData('experience','challenge'); goKnightSetup(); });
       const suffix = viewport.width === 360 ? 'mobile' : 'tablet';
       const alert = page.getByRole('switch', { name: '갈림길 알림', exact: true });
       await alert.waitFor(); assert.equal(await alert.isChecked(), true);

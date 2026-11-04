@@ -17,6 +17,7 @@ const ASSETS = [
   "./js/skin-robot.js",
   "./js/skin-baemin.js",
   "./js/missions.js",
+  "./js/content-curriculum.js",
   "./js/app-core.js",
   "./js/app-session.js",
   "./js/app-home.js",

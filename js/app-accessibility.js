@@ -1,7 +1,7 @@
 // Enrich every rendered board consistently, including arcade and small boards.
 let keyboardBoardIndex=0,restoreKeyboardFocus=false,lastSpokenGuide='';
 function speakGuide(message){
-  if(!window.speechSynthesis)return;
+  if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){showGameToast('이 환경은 음성 읽기를 지원하지 않아요. 화면의 그림과 안내로 계속할 수 있어요.','speech-unavailable',true);return;}
   window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(message);utterance.lang='ko-KR';utterance.rate=.9;window.speechSynthesis.speak(utterance);
 }
 function enhanceExperience(){
@@ -34,9 +34,9 @@ function enhanceExperience(){
  for(const node of screen.querySelectorAll('.status-msg,.mission-speech,.guide-card')){
   node.setAttribute('aria-live','polite');node.setAttribute('role','status');
   if(document.querySelector('#play-dialog'))continue;
-  if(!prefs.voice||node.querySelector('.read-guide')||!node.textContent.trim())continue;
-  const message=node.textContent.trim(),button=document.createElement('button');button.className='read-guide';button.textContent='🔊';button.setAttribute('aria-label','안내 다시 듣기');button.onclick=()=>speakGuide(message);node.appendChild(button);
-  if(lastSpokenGuide!==state.activeKind+'|'+message){lastSpokenGuide=state.activeKind+'|'+message;speakGuide(message);}
+  if(node.querySelector('.read-guide')||!node.textContent.trim())continue;
+  const message=node.textContent.trim(),button=document.createElement('button');button.className='read-guide';button.textContent='🔊';button.setAttribute('aria-label','안내 듣기');button.onclick=()=>speakGuide(message);node.appendChild(button);
+  if(prefs.voice&&lastSpokenGuide!==state.activeKind+'|'+message){lastSpokenGuide=state.activeKind+'|'+message;speakGuide(message);}
  }
 }
 if(typeof MutationObserver!=='undefined'){
@@ -45,6 +45,6 @@ if(typeof MutationObserver!=='undefined'){
  document.addEventListener('pointerdown',()=>{restoreKeyboardFocus=false;});
  document.addEventListener('keydown',event=>{
   const dialog=document.querySelector('[aria-modal="true"]');
-  if(dialog&&event.key==='Tab'){const buttons=Array.from(dialog.querySelectorAll('button:not(:disabled)'));if(!buttons.length)return;const index=buttons.indexOf(document.activeElement),next=event.shiftKey?(index<=0?buttons.length-1:index-1):(index+1)%buttons.length;event.preventDefault();buttons[next].focus();}
+  if(dialog&&event.key==='Tab'){const buttons=Array.from(dialog.querySelectorAll('button:not(:disabled)'));if(!buttons.length)return;const index=buttons.indexOf(document.activeElement),next=event.shiftKey?(index<=0?buttons.length-1:index-1):(index+1)%buttons.length;event.preventDefault();buttons[next].focus({preventScroll:true});}
  });
 }

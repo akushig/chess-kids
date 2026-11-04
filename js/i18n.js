@@ -202,12 +202,12 @@ const I18N = {
     collectorTimeout: '턴이 다 됐어요!',
     collectorClear: '별을 모두 모았어요!',
     collectorHint: '이 별을 먼저 모아보세요!',
-    // 폭탄 해제
-    bombTitle: '폭탄 해제',
-    bombDesc: '폭탄이 터지기 전에 도달해서 해제하세요!',
-    bombExploded: '폭탄이 터졌어요!',
-    bombClear: '모든 폭탄을 해제했어요!',
-    bombHint: '이 폭탄을 먼저 해제하세요!',
+    // 이동 수 도전
+    bombTitle: '이동 수 도전',
+    bombDesc: '각 목표의 남은 이동 수를 보고 순서를 계획해요.',
+    bombExploded: '목표까지의 이동 수가 다 되었어요.',
+    bombClear: '모든 목표에 도착했어요!',
+    bombHint: '이 목표를 먼저 찾아봐요.',
     bombTimer: '남은 턴',
     // 체스 디펜스
     defenseTitle: '체스 디펜스',
@@ -222,8 +222,8 @@ const I18N = {
     knightTourUnsolvable: '여기서는 완주가 불가능해요. 다시 시작해보세요!',
     collectorHintPath: '이 순서대로 별을 모으세요!',
     collectorUnsolvable: '남은 턴으로는 별을 다 모을 수 없어요. 다시 시작해보세요!',
-    bombHintPath: '이 순서대로 폭탄을 해제하세요!',
-    bombUnsolvable: '시간 안에 모든 폭탄을 해제할 수 없어요. 다시 시작해보세요!',
+    bombHintPath: '이 순서대로 목표를 찾아요.',
+    bombUnsolvable: '남은 수 안에 모두 찾기 어려워요. 되돌려 다른 순서로 가봐요.',
   },
   en: {
     appName: 'Kids Chess',
@@ -416,11 +416,11 @@ const I18N = {
     collectorTimeout: 'Out of turns!',
     collectorClear: 'All stars collected!',
     collectorHint: 'Collect this star first!',
-    bombTitle: 'Bomb Defuse',
-    bombDesc: 'Reach the bombs before they explode!',
-    bombExploded: 'A bomb exploded!',
-    bombClear: 'All bombs defused!',
-    bombHint: 'Defuse this bomb first!',
+    bombTitle: 'Route Challenge',
+    bombDesc: 'Reach each target before its move allowance runs out.',
+    bombExploded: 'This target ran out of moves. Undo to try another route.',
+    bombClear: 'All targets reached!',
+    bombHint: 'Visit this target first.',
     bombTimer: 'Turns Left',
     defenseTitle: 'Chess Defense',
     defenseDesc: 'Stop enemies before they reach the end!',
@@ -434,8 +434,8 @@ const I18N = {
     knightTourUnsolvable: "Can't complete from here. Try restarting!",
     collectorHintPath: 'Collect stars in this order!',
     collectorUnsolvable: "Not enough turns. Try restarting!",
-    bombHintPath: 'Defuse bombs in this order!',
-    bombUnsolvable: "Can't defuse all in time. Try restarting!",
+    bombHintPath: 'Visit targets in this order.',
+    bombUnsolvable: "No route within the move allowances. Undo and try another order.",
   }
 };
 

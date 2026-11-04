@@ -6,7 +6,7 @@ test('closing during animation saves a complete logical turn, including a comple
  }
 });
 test('failed activity remains resumable for undo, and partial knight stars do not claim completion',()=>{
- const a=load();a.run("goMissionPlay('K',3);missionClick(3,4);saveActiveSession()");assert.equal(a.run('getSavedSession().complete'),false);
+ const a=load();a.run("goMissionPlay('K',3);const bad=getMissionValidMoves(state.missionBoard,...state.missionPlayerPos,currentMission()).find(([r,c])=>isSquareAttacked(state.missionBoard,r,c,'b',currentMission()));missionClick(...bad);saveActiveSession()");assert.equal(a.run('getSavedSession().complete'),false);
  const b=load(Object.fromEntries(a.storage));b.run('resumeActivity();undoActivity()');assert.equal(b.run('state.missionFailed'),false);
 });
 test('malformed saved sessions are ignored and write failures do not stop play',()=>{

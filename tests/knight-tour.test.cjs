@@ -4,10 +4,10 @@ const load = require('./harness.cjs');
 
 const branchPrefix = [[2,1],[0,0],[1,2],[2,4]];
 
-test('the familiar tour opens directly, with its alert control above the board', () => {
+test('new learners enter a short walk, with the familiar alert control above the board', () => {
   const { run, elements } = load();
   run('goKnightSetup()');
-  assert.equal(run('state.kt.mode'), 'tour');
+  assert.equal(run('state.kt.mode'), 'walk');
   const html = elements.get('screen-mini').innerHTML;
   assert.ok(html.indexOf('id="kt-branch-alert"') < html.indexOf('chess-board'));
   assert.match(html, /갈림길 알림/);

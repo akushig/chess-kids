@@ -10,7 +10,7 @@ test('every adventure is solvable, par achievable, and its solution works throug
  for(const r of results)assert.equal(r.errors.length,0,JSON.stringify(r));
 });
 test('dangerous adventure movement offers immediate undo instead of trapping the player',()=>{
- const {run,elements}=load();run("goMissionPlay('K',3);missionClick(3,4)");
+ const {run,elements}=load();run("goMissionPlay('K',3);const bad=getMissionValidMoves(state.missionBoard,...state.missionPlayerPos,currentMission()).find(([r,c])=>isSquareAttacked(state.missionBoard,r,c,'b',currentMission()));missionClick(...bad)");
  assert.equal(run('state.missionFailed'),true);
  assert.match(elements.get('screen-learn').innerHTML,/되돌려서/);assert.match(elements.get('screen-learn').innerHTML,/missionUndo/);
  run('missionUndo()');assert.equal(run('state.missionFailed'),false);assert.equal(run('state.missionMoveCount'),0);
