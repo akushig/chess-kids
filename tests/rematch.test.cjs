@@ -3,13 +3,13 @@ const test=require('node:test'),assert=require('node:assert/strict'),load=requir
 const WIN='7k/8/5KQ1/8/8/8/8/8 w - - 0 1',WIN_MOVE='[2,6,1,6]';
 const LOSS='8/8/8/8/8/6k1/6q1/7K w - - 0 1';
 const DRAW='7k/5Q2/6K1/8/8/8/8/8 b - - 0 1';
-const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
+const SMALL='3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
 const captureDialog="globalThis.dialogActions=null;globalThis.dialogBody='';playShowDialog=(kind,title,html,actions)=>{dialogBody=html;dialogActions=actions.map(a=>({label:a.label,secondary:!!a.secondary,tone:a.tone||'',acts:!!a.action}));};";
 const settings=run=>JSON.parse(run('JSON.stringify(getPlaySettings())'));
 const config=run=>JSON.parse(run('JSON.stringify(playConfigOf(state.play))'));
 
 test('a rematch after restoring a saved game uses that game settings, never the current global settings',()=>{
- const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:6,help:false,small:true});playStart();playCommitMove([6,0,5,0]);goMiniMenu()");
+ const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:6,help:false,small:true});playStart();playCommitMove([6,2,5,2]);goMiniMenu()");
  const b=load(Object.fromEntries(a.storage));
  b.run("savePlaySettings({...getPlaySettings(),mode:'friend',level:0,help:true,small:false,timer:15,face:false})");
  b.run("resumeActivity('play')");assert.equal(b.run('state.play.level'),6);assert.equal(b.run('state.actionHistory.length'),1);
@@ -47,7 +47,7 @@ test('the highest level, losses, draws and same-device games never change the le
 });
 
 test('a same-device rematch keeps the move timer, seating and helper with a fresh full timer',()=>{
- const {run}=load();run(`savePlaySettings({...getPlaySettings(),mode:'friend',level:2,timer:30,face:false,autoMove:true,small:true,help:false});playStart();playCommitMove([6,0,5,0]);state.play.pausedLeft=1200;state.game=ChessGame.fromFEN('${WIN}');state.play.mode='friend';playCommitMove(${WIN_MOVE})`);
+ const {run}=load();run(`savePlaySettings({...getPlaySettings(),mode:'friend',level:2,timer:30,face:false,autoMove:true,small:true,help:false});playStart();playCommitMove([6,2,5,2]);state.play.pausedLeft=1200;state.game=ChessGame.fromFEN('${WIN}');state.play.mode='friend';playCommitMove(${WIN_MOVE})`);
  run("savePlaySettings({...getPlaySettings(),mode:'ai',level:8,timer:0})");
  run('playRematch()');
  assert.deepEqual(config(run),{mode:'friend',level:2,levelVersion:2,timer:30,help:false,autoMove:true,small:true,face:false});
@@ -56,7 +56,7 @@ test('a same-device rematch keeps the move timer, seating and helper with a fres
 });
 
 test('restarting during a game keeps the replacement confirmation and the game settings',()=>{
- const {run}=load();run("globalThis.choice=null;showChoice=(message,choices,onDismiss)=>{choice={message,labels:choices.map(c=>c.label),choices,onDismiss};};savePlaySettings({...getPlaySettings(),mode:'ai',level:7,small:true});playStart();playCommitMove([6,0,5,0])");
+ const {run}=load();run("globalThis.choice=null;showChoice=(message,choices,onDismiss)=>{choice={message,labels:choices.map(c=>c.label),choices,onDismiss};};savePlaySettings({...getPlaySettings(),mode:'ai',level:7,small:true});playStart();playCommitMove([6,2,5,2])");
  run("savePlaySettings({...getPlaySettings(),level:1,small:false})");const before=run('JSON.stringify(state.game.board)');
  run('playRestartRequest()');assert.match(run('choice.message'),/같은 설정으로 새 판/);assert.equal(run('typeof choice.onDismiss'),'function','escape resumes the clock');
  assert.equal(run('JSON.stringify(state.game.board)'),before,'nothing replaced before confirming');assert.equal(run('state.actionHistory.length'),1);
@@ -72,11 +72,17 @@ test('a computer reply requested by the finished or replaced game never reaches 
 });
 
 test('changing settings after a restored game starts the setup from that game, keeping the other mode choices',()=>{
- const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:7,small:true,help:false});playStart();playCommitMove([6,0,5,0]);goMiniMenu()");
+ const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:7,small:true,help:false});playStart();playCommitMove([6,2,5,2]);goMiniMenu()");
  const b=load(Object.fromEntries(a.storage));b.run("savePlaySettings({...getPlaySettings(),mode:'friend',level:0,timer:60,small:false,help:true});resumeActivity('play')");
  b.run(`state.game=ChessGame.fromFEN('${WIN}');playCommitMove(${WIN_MOVE})`);assert.match(b.run('playActionsHTML()'),/playChangeSettings\(\)/);
  b.run('playChangeSettings()');const s=settings(b.run);
  assert.deepEqual([s.mode,s.level,s.small,s.help,s.timer],['ai',7,true,false,60]);assert.equal(b.run('state.screen'),'play');assert.equal(b.run('state.activeKind'),null);
  assert.match(b.elements.get('screen-play').innerHTML,/aria-label="8단계 · [^"]+" aria-pressed="true"/);
  assert.equal(b.run("activitySaved('play')"),null,'the finished game is not offered as a game to continue');
+});
+
+test('the short board starts with nothing capturable for either side, so no rook is lost on move one',()=>{
+ const {run}=load();run("savePlaySettings({...getPlaySettings(),small:true});playStart()");
+ for(const side of ['w','b']){const n=run(`(()=>{const g=ChessGame.fromFEN(PLAY_SMALL_FEN.replace(' w ',' ${side} '));return g.allMoves().filter(m=>g.board[m[2]][m[3]]).length;})()`);assert.equal(n,0,side);}
+ assert.equal(run('state.game.positionKey()'),run('ChessGame.fromFEN(PLAY_SMALL_FEN).positionKey()'));assert.equal(run("state.game.board[6][3]"),'wP','the d-file between the rooks is closed');
 });

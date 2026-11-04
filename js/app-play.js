@@ -2,6 +2,7 @@
 // 대전: 컴퓨터(난이도 10단계) 또는 친구(위·아래 마주 보기 + 한 수 제한 시간)
 
 const PLAY_TIMER_OPTIONS = [0, 15, 30, 60];
+const PLAY_SMALL_FEN = '3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
 const PLAY_LEVEL_ICONS = ['🐣', '🐤', '🐥', '🐱', '🦊', '🐻', '🦁', '🐲', '🐉', '👑'];
 const PLAY_AI_MIN_DELAY = 400;  // 컴퓨터가 너무 빨리 두면 아이가 수를 못 따라감
 const PLAY_TIMEOUT_LEVEL = AI_ASSIST_LEVEL;
@@ -198,7 +199,8 @@ function playStart(config) {
   if (config) playRememberConfig(s);
   beginActivity('play');
   playStop();
-  state.game = s.small ? ChessGame.fromFEN('3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1') : new ChessGame();
+  // 짧은 판: 폰이 룩 앞을 막아 첫 수에 서로 잡을 수 있는 말이 없다(예전 배치는 d줄에서 룩이 마주 봤다).
+  state.game = s.small ? ChessGame.fromFEN(PLAY_SMALL_FEN) : new ChessGame();
   state.play = {
     mode: s.mode,
     help:s.help, autoMove:s.autoMove,face:s.face,small:s.small,notice:'',

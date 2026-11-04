@@ -4,7 +4,7 @@ const {acknowledgePlayEvent}=require('./browser-helpers.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const output=process.env.CHESS_ENTRY_QA_OUTPUT||'/tmp/chess-entry-qa';fs.mkdirSync(output,{recursive:true});
 const WIN='7k/8/5KQ1/8/8/8/8/8 w - - 0 1',LOSS='8/8/8/8/8/6k1/6q1/7K w - - 0 1',DRAW='7k/5Q2/6K1/8/8/8/8/8 b - - 0 1';
-const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
+const SMALL='3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.CHESS_BROWSER_EXECUTABLE?{executablePath:process.env.CHESS_BROWSER_EXECUTABLE}:{})});
  const results=[],errors=[];
@@ -52,8 +52,8 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
   assert.doesNotMatch(await play.innerText(),/온라인/);await page.getByRole('button',{name:'5단계 · 보통',exact:true}).click();
   await play.locator('.play-chip').filter({hasText:'모든 말로 한 판'}).click();await play.getByRole('button',{name:'🤖 컴퓨터와 새 판 시작',exact:true}).click();
   assert.equal(await position(),await ev(f=>ChessGame.fromFEN(f).positionKey(),SMALL));
-  await cells().nth(48).click();await cells().nth(40).click();await page.waitForFunction(()=>state.game.turn==='w'&&state.actionHistory.length>=2,null,{timeout:15000});
-  // The computer may reply with a check (e.g. Rd8xd1+); its explanation must be acknowledged first.
+  await cells().nth(50).click();await cells().nth(42).click();await page.waitForFunction(()=>state.game.turn==='w'&&state.actionHistory.length>=2,null,{timeout:15000});
+  // The computer's reply may give check; its explanation must be acknowledged first.
   await acknowledgePlayEvent(page);if(await page.locator('#game-toast .toast-close').count())await page.locator('#game-toast .toast-close').click();
   const savedGame=await ev(()=>JSON.stringify([state.game.board,state.actionHistory.length,playConfigOf(state.play)]));
   await play.getByRole('button',{name:'저장하고 나가기',exact:true}).click();assert.match(await primary('체스 대전').innerText(),/▶ 이어하기.*컴퓨터 5단계.*짧은 판/s);
@@ -101,7 +101,7 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
   await play.getByRole('button',{name:'🤖 컴퓨터와 새 판 시작',exact:true}).click();assert.equal(await ev(()=>state.play.level),9);
 
   // --- A-2: a reply requested by the replaced game never lands on the new board. ---
-  await cells().nth(48).click();await cells().nth(40).click();assert.ok(await ev(()=>Object.keys(playAiPending).length>0||state.game.turn==='b'),'computer is thinking');
+  await cells().nth(50).click();await cells().nth(42).click();assert.ok(await ev(()=>Object.keys(playAiPending).length>0||state.game.turn==='b'),'computer is thinking');
   await play.getByRole('button',{name:'새 판',exact:true}).click();assert.match(await page.getByRole('dialog').innerText(),/같은 설정으로 새 판/);
   await page.getByRole('button',{name:'새 판 시작',exact:true}).click();const replaced=await position();await page.waitForTimeout(5600);
   assert.equal(await position(),replaced);assert.deepEqual(await ev(()=>[state.game.turn,state.actionHistory.length,state.play.level]),['w',0,9]);
@@ -112,7 +112,7 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
   await play.getByRole('button',{name:'👫 같은 기기에서 함께 두기 시작',exact:true}).click();if(await page.getByRole('dialog').count())await page.getByRole('button',{name:'새 판 시작',exact:true}).click();
   assert.equal(await play.locator('.screen-header h2').innerText(),'같은 기기에서 함께');assert.doesNotMatch(await play.innerText(),/온라인/);
   const friend=await config();assert.deepEqual([friend.mode,friend.timer,friend.face,friend.autoMove,friend.small],['friend',30,false,true,true]);
-  await cells().nth(48).click();await cells().nth(40).click();await play.getByRole('button',{name:'새 판',exact:true}).click();assert.equal(await ev(()=>playTimerHandle),null,'clock pauses for the confirmation');
+  await cells().nth(50).click();await cells().nth(42).click();await play.getByRole('button',{name:'새 판',exact:true}).click();assert.equal(await ev(()=>playTimerHandle),null,'clock pauses for the confirmation');
   await page.keyboard.press('Escape');assert.notEqual(await ev(()=>playTimerHandle),null,'Escape resumes the clock');assert.equal(await ev(()=>state.actionHistory.length),1);
   await ev(()=>scrollTo(0,0));const friendBoard=await boardDoc();await mateWithClicks();assert.equal(await ev(()=>playTimerHandle),null,'clock stopped at the result');
   assert.equal(await dialog().getByRole('button',{name:/다음 단계/}).count(),0);if(w===360)await page.screenshot({path:`${output}/friend-result-${w}.png`,fullPage:true,animations:'disabled'});
@@ -120,7 +120,7 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
   assert.deepEqual(await config(),friend);assert.ok(await ev(()=>state.play.deadline-Date.now())>28000,'fresh full move time');assert.notEqual(await ev(()=>playTimerHandle),null);
   assert.equal(await position(),await ev(f=>ChessGame.fromFEN(f).positionKey(),SMALL));same(friendBoard,await boardDoc(),'same-device rematch');
   // Moves and checks still behave normally on the rematched board.
-  await cells().nth(48).click();await cells().nth(40).click();assert.equal(await ev(()=>state.game.turn),'b');
+  await cells().nth(50).click();await cells().nth(42).click();assert.equal(await ev(()=>state.game.turn),'b');
   await ev(()=>{state.game=ChessGame.fromFEN('4r2k/8/8/8/8/8/R7/4K3 w - - 0 1');renderPlay();});await dialog().waitFor();assert.match(await dialog().innerText(),/체크/);await acknowledgePlayEvent(page);
   await noOverflow('same-device');results.push({viewport,homeEntries:true,menuResume:true,restoredRematch:true,nextLevel:true,topLevel:true,lossDraw:true,staleAiIgnored:true,sameDevice:true});
   await context.close();

@@ -40,7 +40,7 @@ test('first lessons start the next basic rook lesson, resume a saved lesson, and
 });
 
 test('the play entry shows the saved game, a computer game and same-device play without replacing the save early',()=>{
- const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:4,small:true});playStart();playCommitMove([6,0,5,0]);showScreen('home');renderHome()");
+ const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:4,small:true});playStart();playCommitMove([6,2,5,2]);showScreen('home');renderHome()");
  assert.match(a.elements.get('screen-home').innerHTML,/컴퓨터 5단계 · 보통 · 짧은 판/);
  const saved=a.run("JSON.stringify(readData('sessions',{}).play.snapshot)");
  a.run('goPlay()');let html=a.elements.get('screen-play').innerHTML;
