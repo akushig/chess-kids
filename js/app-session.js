@@ -176,7 +176,7 @@ function missionTransfer(piece){return piece==='N'?{action:'enterActivity(\'knig
 
 function preferredKnightMode(){
   const last=readData('knight_last_mode',null);if(['walk','explore','tour'].includes(last))return last;
-  if(activeProfile==='adult'||readData('experience','beginner')==='challenge'||safeStore.getItem('knight_tour_settings'))return 'tour';
+  if(readData('experience','beginner')==='challenge'||safeStore.getItem('knight_tour_settings'))return 'tour';
   return 'walk';
 }
 function learningSummary(){

@@ -13,10 +13,10 @@ test('each playground entry resumes its exact board and undo history through a n
   b.run('undoActivity()');assert.equal(b.run('state.actionHistory.length'),0,kind);
  }
 });
-test('a new learner gets a short knight walk; explicit legacy settings and adult preference keep full tours',()=>{
+test('a new learner gets a short knight walk; explicit legacy settings and challenge preference keep full tours',()=>{
  const a=load();a.run('goKnightSetup()');assert.equal(a.run('state.kt.mode'),'walk');assert.equal(a.run('knightGoalPath().path.length'),4);
  const b=load({knight_tour_settings:JSON.stringify({size:6,branchWarn:false})});b.run('goKnightSetup()');assert.equal(b.run('state.kt.mode'),'tour');assert.equal(b.run('state.kt.size'),6);
- const c=load();c.run("activeProfile='adult';goKnightSetup()");assert.equal(c.run('state.kt.mode'),'tour');
+ const c=load();c.run("writeData('experience','challenge');goKnightSetup()");assert.equal(c.run('state.kt.mode'),'tour');
 });
 test('basic next steps skip every optional lesson while free challenges remain in the map',()=>{
  const {run}=load();for(const piece of ['R','B','N','P','Q','K']){

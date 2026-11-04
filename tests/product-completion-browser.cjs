@@ -26,7 +26,7 @@ const output='/tmp/chess-product-qa';fs.mkdirSync(output,{recursive:true});
   await page.getByRole('button',{name:/나이트 탐험/}).click();assert.equal(await page.evaluate(()=>JSON.stringify([state.kt.pos,state.kt.board,state.actionHistory])),saved);
   await page.getByRole('button',{name:'다시 하기',exact:true}).click();await page.getByRole('button',{name:'같은 판 다시 하기',exact:true}).click();assert.equal(await page.evaluate(()=>state.kt.moveCount),0);
   await page.getByRole('button',{name:'투어',exact:true}).click();await page.getByRole('button',{name:'힌트 보기',exact:true}).click();assert.equal(await page.locator('.kt-route-number').count(),24);
-  await page.evaluate(()=>{goMiniMenu();showScreen('home');renderHome();});await page.getByRole('button',{name:/가족 · 소리/}).click();await page.getByRole('dialog').waitFor();assert.ok(await page.locator('.learning-summary').textContent());
+  await page.evaluate(()=>{goMiniMenu();showScreen('home');renderHome();});await page.getByRole('button',{name:/프로필 · 설정/}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'놀이 기록 보기',exact:true}).click();assert.ok(await page.locator('.learning-summary').textContent());
   await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>!!document.activeElement.closest('[aria-modal="true"]')),true);await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'🎨 내 꾸미기',exact:true}).click();assert.equal(await page.getByRole('dialog').count(),1);await page.keyboard.press('Escape');
   await page.evaluate(()=>goPuzzleLevel(2));assert.equal(await page.locator('.target-badge').count(),1);

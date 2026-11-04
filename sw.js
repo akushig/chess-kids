@@ -21,6 +21,7 @@ const ASSETS = [
   "./js/app-core.js",
   "./js/app-session.js",
   "./js/app-home.js",
+  "./js/app-profiles.js",
   "./js/app-adventure.js",
   "./js/app-puzzle.js",
   "./js/app-play.js",

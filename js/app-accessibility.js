@@ -45,6 +45,6 @@ if(typeof MutationObserver!=='undefined'){
  document.addEventListener('pointerdown',()=>{restoreKeyboardFocus=false;});
  document.addEventListener('keydown',event=>{
   const dialog=document.querySelector('[aria-modal="true"]');
-  if(dialog&&event.key==='Tab'){const buttons=Array.from(dialog.querySelectorAll('button:not(:disabled)'));if(!buttons.length)return;const index=buttons.indexOf(document.activeElement),next=event.shiftKey?(index<=0?buttons.length-1:index-1):(index+1)%buttons.length;event.preventDefault();buttons[next].focus({preventScroll:true});}
+  if(dialog&&event.key==='Tab'){const buttons=Array.from(dialog.querySelectorAll('button:not(:disabled),input:not(:disabled):not([type=hidden]),textarea:not(:disabled),select:not(:disabled),a[href],summary,[tabindex="0"]')).filter(el=>el.getClientRects().length);if(!buttons.length)return;const index=buttons.indexOf(document.activeElement),next=event.shiftKey?(index<=0?buttons.length-1:index-1):(index+1)%buttons.length;event.preventDefault();buttons[next].focus({preventScroll:true});}
  });
 }

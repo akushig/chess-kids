@@ -25,7 +25,7 @@ function getPlaySettings() {
   try { s = JSON.parse(safeStore.getItem('play_settings')) || {}; } catch { s = {}; }
   return {
     mode: s.mode === 'friend' ? 'friend' : 'ai',
-    level: aiLevelIndex(s.level,s.levelVersion??1,activeProfile==='adult'?AI_ASSIST_LEVEL:0),
+    level: aiLevelIndex(s.level,s.levelVersion??1,0),
     levelVersion: AI_DIFFICULTY_VERSION,
     timer: PLAY_TIMER_OPTIONS.includes(s.timer) ? s.timer : 0,
     help:s.help !== false, autoMove:!!s.autoMove, small:!!s.small, face:s.face !== false,

@@ -33,7 +33,7 @@ test('legacy difficulty settings migrate per profile; current levels and default
  }
  const {run}=load({'chess.adult.play_settings':JSON.stringify({level:4})});assert.equal(run("activeProfile='adult';getPlaySettings().level"),7);
  assert.equal(run("activeProfile='child';getPlaySettings().level"),0);assert.equal(run("activeProfile='sibling';getPlaySettings().level"),0);
- assert.equal(run("activeProfile='adult';safeStore.removeItem('play_settings');getPlaySettings().level"),4);
+ assert.equal(run("activeProfile='adult';safeStore.removeItem('play_settings');getPlaySettings().level"),0);
  for(let level=0;level<10;level++){run(`savePlaySettings({...getPlaySettings(),level:${level}})`);assert.equal(run('getPlaySettings().level'),level);}
 });
 test('an old ongoing game and its undo history keep their equivalent difficulty through reload and undo',()=>{

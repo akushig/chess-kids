@@ -303,11 +303,14 @@ function knightTourHint(style) {
   renderKnightTour();
 }
 
-function offerKnightFamilyChallenge() {
-  const kt = state.kt, spec = { levelIdx: kt.levelIdx, startPos: [...kt.startPos] };
-  const target = activeProfile === 'adult' ? 'child' : 'adult';
-  showChoice('지금 판을 저장하고, 같은 시작점에서 가족이 도전해요.', [
-    { label: target === 'adult' ? '어른이 완주 도전' : '아이가 산책 도전', action: () => { switchProfile(target); goKnightTour(spec.levelIdx, target === 'adult' ? 'tour' : 'walk', spec); } },
-    { label: '지금 판 계속하기', action: () => {} },
+function offerKnightFamilyChallenge(){
+  const kt=state.kt,spec={levelIdx:kt.levelIdx,mode:kt.mode,startPos:[...kt.startPos]};
+  const launch=id=>{switchProfile(id);requestNewActivity('knight',()=>goKnightTour(spec.levelIdx,spec.mode,spec));};
+  const others=allProfiles().filter(p=>p.id!==activeProfile);
+  showChoice('같은 시작점과 목표로 도전할 프로필을 골라요.',[
+    ...others.map(p=>({label:p.icon+' '+p.name,action:()=>launch(p.id)})),
+    {label:'새 프로필 추가',action:()=>openProfileEditor(null,p=>launch(p.id))},
+    {label:'현재 프로필에서 번갈아 하기',action:()=>{if(!state.kt.family)ktToggleFamily();}},
+    {label:'지금 판 계속하기',action:()=>{}},
   ]);
 }

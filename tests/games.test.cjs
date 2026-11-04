@@ -22,10 +22,10 @@ test('new collector entry stages need only one and two jumps with an optional mo
  assert.equal(run("goCollector(0);state.cl.challenge"),false);assert.equal(run("goCollector(0,true);state.cl.challenge"),true);
 });
 test('profile changes isolate saved sessions and stars',()=>{
- const {run}=load();run("goKnightTour(0,'walk');saveMiniGameStars('knight-walk',0,3);saveActiveSession();switchProfile('adult')");assert.equal(run('getAllStars()'),0);assert.equal(run("readData('last_session',null)"),null);
+ const {run}=load();run("goKnightTour(0,'walk');saveMiniGameStars('knight-walk',0,3);saveActiveSession();switchProfile(createProfile('두번째').id)");assert.equal(run('getAllStars()'),0);assert.equal(run("readData('last_session',null)"),null);
  run("switchProfile('child')");assert.equal(run('getAllStars()'),3);assert.equal(run("readData('last_session',null).kind"),'knight');
 });
-test('shared knight boards keep the exact start and size across child and adult goals',()=>{
+test('shared knight boards keep the exact start and size across two explicitly selected goals',()=>{
  const {run}=load();run("goKnightTour(2,'tour');const shared={startPos:[...state.kt.startPos]};goKnightTour(2,'walk',shared)");assert.equal(run('state.kt.size'),7);assert.equal(run('state.kt.startPos[0]'),6);assert.ok(run('!!knightGoalPath().path'));
 });
 test('waiting alone cannot finish a safety challenge',()=>{

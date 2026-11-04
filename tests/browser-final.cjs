@@ -9,12 +9,12 @@ const output=process.env.CHESS_QA_OUTPUT||'/tmp/chess-kids-ui';
   for(const viewport of [{width:360,height:780},{width:768,height:1024},{width:1280,height:900}]){
    const context=await browser.newContext({viewport,serviceWorkers:'block'}),page=await context.newPage();page.on('pageerror',e=>summary.errors.push(e.message));
    await page.route('https://fonts.googleapis.com/**',r=>r.abort());await page.goto(process.env.CHESS_TEST_URL||'http://127.0.0.1:8765',{waitUntil:'domcontentloaded'});
-   await page.evaluate(()=>{writeData('preferences',{motion:false});applyPreferences();});
+   await page.evaluate(()=>{writeData('preferences',{motion:false});applyPreferences();window.testSecondProfile=createProfile('두번째','🐱').id;});
    for(const title of ['모험','놀이터','대전'])assert.equal(await page.getByRole('button',{name:new RegExp('^'+(title==='모험'?'🗺':title==='놀이터'?'🎲':'♟')+' '+title)}).count(),1);
    summary.build=await page.evaluate(()=>APP_VERSION);
    if(viewport.width===360)await page.screenshot({path:output+'/home-mobile.png',fullPage:true,animations:'disabled'});
-   await page.getByRole('button',{name:/가족 · 소리/}).click();await page.locator('#family-overlay .profile-list').getByRole('button',{name:/어른의 도전/}).click();assert.equal(await page.evaluate(()=>activeProfile),'adult');
-   await page.getByRole('button',{name:/가족 · 소리/}).click();await page.locator('#family-overlay .profile-list').getByRole('button',{name:/내 모험/}).click();assert.equal(await page.evaluate(()=>activeProfile),'child');
+   await page.getByRole('button',{name:/프로필 · 설정/}).click();await page.locator('#family-overlay .profile-button').filter({hasText:'두번째'}).click();assert.equal(await page.evaluate(()=>activeProfile===window.testSecondProfile),true);
+   await page.getByRole('button',{name:/프로필 · 설정/}).click();await page.locator('#family-overlay .profile-button').filter({hasText:'플레이어 1'}).click();assert.equal(await page.evaluate(()=>activeProfile),'child');
    await page.evaluate(()=>goMissionPlay('R',0));const selected=page.locator('#screen-learn [aria-selected="true"]');await selected.waitFor();await selected.focus();
    await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');await page.keyboard.press('Enter');await page.waitForFunction(()=>state.missionSolved);
    assert.ok(await page.evaluate(()=>getMissionStars('R',0))>0,'keyboard can finish a lesson');
@@ -29,7 +29,7 @@ const output=process.env.CHESS_QA_OUTPUT||'/tmp/chess-kids-ui';
    for(const fn of ['goKnightTour(0,"walk")','goCollector(0)','goBomb(0)','goDefense(0)','goSurvival(0)','goPuzzleLevel(4)']){
     await page.evaluate(fn);await page.locator('.screen.active [role="gridcell"]').first().waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,fn+' overflow '+viewport.width);
    }
-   await page.evaluate(()=>goKnightTour(2,'tour'));await page.locator('.kt-settings > summary').click();await page.getByRole('button',{name:/같은 판을 가족에게/}).click();await page.getByRole('button',{name:'어른이 완주 도전',exact:true}).click();assert.equal(await page.evaluate(()=>activeProfile),'adult');assert.equal(await page.locator('.screen.active .board-cell').count(),49);
+   await page.evaluate(()=>goKnightTour(2,'tour'));await page.locator('.kt-settings > summary').click();await page.getByRole('button',{name:/같은 판을 가족에게/}).click();await page.getByRole('button',{name:'🐱 두번째',exact:true}).click();assert.equal(await page.evaluate(()=>activeProfile===window.testSecondProfile),true);assert.equal(await page.locator('.screen.active .board-cell').count(),49);
    summary.viewports.push({...viewport,passed:true});await context.close();
   }
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();page.on('pageerror',e=>summary.errors.push(e.message));await page.route('https://fonts.googleapis.com/**',r=>r.abort());

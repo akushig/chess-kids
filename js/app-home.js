@@ -9,7 +9,7 @@ function renderHome() {
   const recommendation=recommendedActivity(),recommend=recommendation.action;
   const nextSkin=readData('pending_skin',null);
   document.getElementById('screen-home').innerHTML=`<div class="home-wrap">
-    ${window.chessUpdateReady?'<button class="new-skin-card" onclick="applyAppUpdate()">새 버전이 있어요 · 저장하고 업데이트</button>':''}<div class="home-topbar"><button class="profile-button" onclick="openFamilySettings()">${profile.icon} ${profile.name}</button><button class="profile-button" onclick="openSkinSelector()">🎨 내 꾸미기</button></div>
+    ${window.chessUpdateReady?'<button class="new-skin-card" onclick="applyAppUpdate()">새 버전이 있어요 · 저장하고 업데이트</button>':''}<div class="home-topbar"><button class="profile-button" onclick="openFamilySettings()">${profile.icon} ${profileText(profile.name)}</button><button class="profile-button" onclick="openSkinSelector()">🎨 내 꾸미기</button></div>
     <div class="app-title">${t('appName')}</div><div class="home-greeting">움직이고, 발견하고, 함께 두어요.</div>
     ${!experience&&!resume?`<section class="experience-picker" aria-label="어디서 시작할까요"><h2>어디서 시작할까요?</h2><button class="action-btn green" onclick="chooseExperience('beginner',true)">🚩 처음 해요 · 룩과 시작</button><button class="action-btn secondary" onclick="chooseExperience('familiar',true)">♟ 조금 알아요 · 놀이 고르기</button><button class="text-button" onclick="chooseExperience('challenge',true)">🏆 도전하고 싶어요</button></section>`:''}
     <button class="resume-card" onclick="${resume?'resumeActivity()':recommend}"><span class="resume-icon">${resume?'▶':'🚩'}</span><span><strong>${resume?'이어서 놀기':recommendation.title}</strong><small>${resume?titles[saved.kind]+' · 하던 판이 기다리고 있어요.':recommendation.description}</small></span><span>›</span></button>
@@ -20,7 +20,7 @@ function renderHome() {
     ].map(([action,icon,title,desc,color])=>`<button class="menu-btn ${color}" onclick="${action}"><span class="menu-icon">${icon}</span><span class="menu-label">${title}<span class="menu-sub">${desc}</span></span><span class="menu-arrow">›</span></button>`).join('')}</div>
     ${nextSkin?`<button class="new-skin-card" onclick="safeStore.removeItem('pending_skin');openSkinDetail('${nextSkin}')">🎁 새로운 꾸미기를 얻었어요! 지금 입혀보기</button>`:''}
     <button class="star-bar" onclick="goReward()" aria-label="내 별과 완료 기록">⭐ ${getAllStars()} <small>내가 모은 별</small></button>
-    <button class="text-button" onclick="openFamilySettings()">👪 가족 · 소리 · 도움 설정</button><div class="app-version">v${APP_VERSION}</div></div>`;
+    <button class="text-button" onclick="openFamilySettings()">👤 프로필 · 설정</button><div class="app-version">v${APP_VERSION}</div></div>`;
 }
 function chooseExperience(value,start=false){
   if(!['beginner','familiar','challenge'].includes(value))return;
@@ -28,21 +28,6 @@ function chooseExperience(value,start=false){
   if(!start)return renderHome();
   if(value==='beginner')enterActivity('mission');else if(value==='challenge')goPlay();else goMiniMenu();
 }
-function profileInfo(id=activeProfile){return ({child:{icon:'🧒',name:'내 모험'},sibling:{icon:'🐱',name:'다른 가족'},adult:{icon:'🧑',name:'어른의 도전'}})[id]||{icon:'🧒',name:'내 모험'};}
-function switchProfile(id){
-  if(!['child','sibling','adult'].includes(id))return;
-  leaveActivity();activeProfile=id;try{localStorage.setItem('chess_active_profile',id);}catch{}
-  if(id==='adult'&&!readData('experience',null))writeData('experience','challenge');
-  currentSkin=safeStore.getItem('skin')||(id==='adult'?'classic':'cute');applyPreferences();state.game=null;state.play=null;
-  closeActivityDialog();showScreen('home');renderHome();
-}
-function openFamilySettings(){
-  const prefs=readData('preferences',{}),p=progressLedger(),done=Object.keys(p.completions||{}).length;
-  showActivityDialog('함께 쓰는 체스',`<p>각자 하던 판과 별을 따로 간직해요.</p><div class="profile-list">${['child','sibling','adult'].map(id=>`<button class="profile-button ${id===activeProfile?'active':''}" onclick="switchProfile('${id}')">${profileInfo(id).icon} ${profileInfo(id).name} ${id===activeProfile?'✓':''}</button>`).join('')}</div>${learningSummaryHTML()}<div class="experience-options"><p>추천 난이도 (활동을 잠그지 않아요)</p>${[['beginner','처음 해요'],['familiar','조금 알아요'],['challenge','도전하고 싶어요']].map(([v,label])=>`<button class="play-chip" aria-pressed="${readData('experience','beginner')===v}" onclick="writeData('experience','${v}');openFamilySettings()">${label}</button>`).join('')}</div><p class="section-note">${done}개 활동 완료 · 예전에 모은 별과 꾸미기도 보관해요.</p><div class="play-options"><button class="play-chip" onclick="setPreference('voice',${!prefs.voice})">🔊 자동 안내 읽기 ${prefs.voice?'켜짐':'꺼짐'}</button><button class="play-chip" onclick="setPreference('motion',${prefs.motion===false})">움직임 ${prefs.motion===false?'적게':'보통'}</button><button class="play-chip" onclick="setPreference('badges',${prefs.badges===false})">말 이름 ${prefs.badges===false?'숨김':'보임'}</button></div><p class="section-note">도움은 대전 설정에서 조절할 수 있어요. 부모가 먼저 시범을 보여주거나 나이트를 번갈아 해보세요.</p>`,[{label:'설정 마치기',action:()=>{}}],'family-overlay');
-}
-function setPreference(key,value){const p=readData('preferences',{});p[key]=value;writeData('preferences',p);applyPreferences();openFamilySettings();}
-function applyPreferences(){document.documentElement?.classList.toggle('reduced-motion',readData('preferences',{}).motion===false);}
-
 // ===== 스킨 컬렉션 모달 =====
 function openSkinSelector() {
   const allStars = getAllStars();
