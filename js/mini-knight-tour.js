@@ -120,6 +120,13 @@ function ktAnalyze(kt) {
   return result;
 }
 
+// Back returns to where the knight was opened: home (primary entry) or the playground.
+function ktBackButton() {
+  return state.miniOrigin === 'home'
+    ? '<button class="back-btn" onclick="showScreen(\'home\');renderHome()">← 홈</button>'
+    : '<button class="back-btn" onclick="goMiniMenu()">← 놀이터</button>';
+}
+
 // Menu entry resumes the saved board; new learners start with a short walk.
 function goKnightSetup() { enterActivity('knight'); }
 
@@ -221,7 +228,7 @@ function renderKnightTour() {
   const active = !kt.clear && !kt.stuck;
   renderGameScreen('screen-mini', `
     <div class="screen-wrap kt-screen">
-      <div class="screen-header kt-header"><button class="back-btn" onclick="goMiniMenu()">← 놀이터</button><h2>나이트 투어</h2><span class="kt-subtitle">${subtitle}</span></div>
+      <div class="screen-header kt-header">${ktBackButton()}<h2>나이트 투어</h2><span class="kt-subtitle">${subtitle}</span></div>
       <div class="kt-mode-nav" role="group" aria-label="탐험 목표">${[['walk', '산책'], ['explore', '탐험'], ['tour', '투어']].map(([mode, label]) => `<button aria-pressed="${kt.mode === mode}" onclick="ktSelectMode('${mode}')">${label}</button>`).join('')}</div>
       <div class="kt-toolbar">
         ${kt.mode === 'tour' ? `<div class="kt-size-picker" role="group" aria-label="보드 크기">${KNIGHT_TOUR_LEVELS.map((level, i) => `<button aria-label="${level.label} 판" aria-pressed="${i === kt.levelIdx}" onclick="ktSelectSize(${i})">${level.label}</button>`).join('')}</div>` : '<span class="kt-board-size">' + kt.size + '×' + kt.size + ' 판</span>'}

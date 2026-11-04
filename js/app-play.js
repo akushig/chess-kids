@@ -115,7 +115,7 @@ function renderPlaySetup() {
         <button class="back-btn" onclick="showScreen('home'); renderHome()">← ${t('btnBack')}</button>
         <h2>${t('menuPlay')}</h2>
       </div>
-      ${savedActivityCard('play')}<div class="play-setup">
+      <p class="play-entry-note">${t('playEntryNote')}</p>${savedActivityCard('play')}<div class="play-setup">
         <div class="play-modes">${modes}</div>
         ${options}
         <div class="play-options">
@@ -126,7 +126,7 @@ function renderPlaySetup() {
         <p class="play-note">${s.small?'이 짧은 판은 왕과 룩의 시작 배치가 달라 캐슬링을 하지 않아요.':'캐슬링은 왕을 고른 뒤 ‘캐슬링’ 표시 칸을 눌러요. 왕과 룩을 차례로 눌러도 돼요.'}</p>
       </div>
       ${!safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner'?'<button class="action-btn green" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
-      <button class="action-btn" onclick="requestNewActivity('play',playStart)">${t('btnStart')}</button>
+      <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
     </div>
   `;
 }
@@ -161,6 +161,10 @@ function playRememberConfig(c) {
   savePlaySettings(c.mode === 'ai'
     ? {...s, mode: 'ai', level: c.level, help: c.help, small: c.small}
     : {...s, mode: 'friend', timer: c.timer, face: c.face, autoMove: c.autoMove, help: c.help, small: c.small});
+}
+function playSavedDetail(play) {
+  const c = playConfigOf(play);
+  return (c.mode === 'ai' ? '🤖 컴퓨터 ' + playLevelLabel(c.level) : '👫 ' + t('playModeFriend') + (c.timer ? ' · ⏱ ' + playTimerLabel(c.timer) : '')) + (c.small ? ' · 짧은 판' : '');
 }
 function playConfigSummary(c) {
   const parts = c.mode === 'ai' ? [PLAY_LEVEL_ICONS[c.level] + ' ' + playLevelLabel(c.level)] : [t('playModeFriend'), '⏱ ' + playTimerLabel(c.timer), t(c.face ? 'playFaceOn' : 'playFaceOff')];

@@ -1,32 +1,36 @@
-// Home emphasizes a real saved game and three purposes: learn, play, compete.
+// Home: the global continue card, then three activities people come for, then every other game.
 function renderHome() {
   if(state.activeKind)leaveActivity();
+  state.miniOrigin='home';
   const saved=getSavedSession(),profile=profileInfo();
-  const titles={mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'나이트 탐험',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
   const resume=saved&&!saved.complete&&SESSION_KEYS[saved.kind];
-  const experience=readData('experience',null);
-  const nextR=MISSIONS.R.findIndex((m,i)=>!isMissionCleared('R',i));
-  const recommendation=recommendedActivity(),recommend=recommendation.action;
+  // Generic suggestions repeat the entries below; only a next step after a finished activity is shown.
+  const recommendation=recommendedActivity(),showCard=resume||!recommendation.fallback;
   const nextSkin=readData('pending_skin',null);
+  const entry=(action,icon,title,desc,color,saved)=>`<button class="menu-btn ${color}" onclick="${action}"><span class="menu-icon" aria-hidden="true">${icon}</span><span class="menu-label">${title}<span class="menu-sub">${saved?'<b class="menu-saved">▶ 이어하기</b> ':''}${desc}</span></span><span class="menu-arrow" aria-hidden="true">›</span></button>`;
+  const play=homeEntryDetail('play'),knight=homeEntryDetail('knight'),learn=homeEntryDetail('mission');
   document.getElementById('screen-home').innerHTML=`<div class="home-wrap">
     ${window.chessUpdateReady?'<button class="new-skin-card" onclick="applyAppUpdate()">새 버전이 있어요 · 저장하고 업데이트</button>':''}<div class="home-topbar"><button class="profile-button" onclick="openFamilySettings()">${profile.icon} ${profileText(profile.name)}</button><button class="profile-button" onclick="openSkinSelector()">🎨 내 꾸미기</button></div>
     <div class="app-title">${t('appName')}</div><div class="home-greeting">움직이고, 발견하고, 함께 두어요.</div>
-    ${!experience&&!resume?`<section class="experience-picker" aria-label="어디서 시작할까요"><h2>어디서 시작할까요?</h2><button class="action-btn green" onclick="chooseExperience('beginner',true)">🚩 처음 해요 · 룩과 시작</button><button class="action-btn secondary" onclick="chooseExperience('familiar',true)">♟ 조금 알아요 · 놀이 고르기</button><button class="text-button" onclick="chooseExperience('challenge',true)">🏆 도전하고 싶어요</button></section>`:''}
-    <button class="resume-card" onclick="${resume?'resumeActivity()':recommend}"><span class="resume-icon">${resume?'▶':'🚩'}</span><span><strong>${resume?'이어서 놀기':recommendation.title}</strong><small>${resume?titles[saved.kind]+' · 하던 판이 기다리고 있어요.':recommendation.description}</small></span><span>›</span></button>
-    ${ongoingActivities().length?'<button class="text-button" onclick="openSavedActivities()">📚 하던 놀이 모두 보기</button>':''}<div class="menu-grid">${[
-      ['goAdventure()','🗺','모험','말의 움직임부터 왕 구하기까지','menu-adventure'],
-      ['goMiniMenu()','🎲','놀이터','나이트 탐험 · 성 지키기 · 한 수 발견','menu-mini'],
-      ['goPlay()','♟','대전','도움을 받으며, 컴퓨터와, 가족과','menu-play'],
-    ].map(([action,icon,title,desc,color])=>`<button class="menu-btn ${color}" onclick="${action}"><span class="menu-icon">${icon}</span><span class="menu-label">${title}<span class="menu-sub">${desc}</span></span><span class="menu-arrow">›</span></button>`).join('')}</div>
+    ${showCard?`<button class="resume-card" onclick="${resume?'resumeActivity()':recommendation.action}"><span class="resume-icon">${resume?'▶':'🚩'}</span><span><strong>${resume?'이어서 놀기':recommendation.title}</strong><small>${resume?ACTIVITY_NAMES[saved.kind]+' · 하던 판이 기다리고 있어요.':recommendation.description}</small></span><span>›</span></button>`:''}
+    ${ongoingActivities().length?'<button class="text-button" onclick="openSavedActivities()">📚 하던 놀이 모두 보기</button>':''}
+    <section class="home-primary" aria-labelledby="home-primary-title"><h2 id="home-primary-title" class="home-section-title">무엇을 할까요?</h2><div class="menu-grid">
+      ${entry('goPlay()',getPieceSVG('wK',42),'체스 대전',play.desc,'menu-play',play.saved)}
+      ${entry("enterActivity('knight')",getPieceSVG('wN',42),'기사의 여행 · <span class="nowrap">나이트 투어</span>',knight.desc,'menu-knight',knight.saved)}
+      ${entry("enterActivity('mission')",'🚩','체스 처음 배우기',learn.desc,'menu-adventure',learn.saved)}
+    </div></section>
+    <nav class="home-secondary" aria-label="다른 놀이"><button class="home-more" onclick="goMiniMenu()"><span aria-hidden="true">🎲</span><span><strong>놀이터 · 전체 놀이</strong><small>한 수 발견 · 별 모으기 · 성 지키기 · 왕 지키기</small></span></button><button class="home-more" onclick="goAdventure()"><span aria-hidden="true">🗺</span><span><strong>모험 지도</strong><small>여섯 가지 말을 골라 배워요</small></span></button></nav>
     ${nextSkin?`<button class="new-skin-card" onclick="safeStore.removeItem('pending_skin');openSkinDetail('${nextSkin}')">🎁 새로운 꾸미기를 얻었어요! 지금 입혀보기</button>`:''}
     <button class="star-bar" onclick="goReward()" aria-label="내 별과 완료 기록">⭐ ${getAllStars()} <small>내가 모은 별</small></button>
     <button class="text-button" onclick="openFamilySettings()">👤 프로필 · 설정</button><div class="app-version">v${APP_VERSION}</div></div>`;
 }
-function chooseExperience(value,start=false){
-  if(!['beginner','familiar','challenge'].includes(value))return;
-  writeData('experience',value);
-  if(!start)return renderHome();
-  if(value==='beginner')enterActivity('mission');else if(value==='challenge')goPlay();else goMiniMenu();
+// Each primary entry says what one tap will do: continue its own saved board or begin.
+function homeEntryDetail(kind){
+  const saved=activitySaved(kind),open=saved&&!saved.complete,v=open?saved.snapshot.values:null;
+  if(kind==='play')return {saved:open,desc:open?playSavedDetail(v.play):'컴퓨터와 10단계 · 같은 기기에서 함께 두기'};
+  if(kind==='knight')return {saved:open,desc:open?`${KNIGHT_MODE_NAMES[v.kt.mode]} · ${v.kt.size}×${v.kt.size} · ${v.kt.moveCount}번 점프`:'모든 칸을 한 번씩 · 짧은 산책부터 전체 투어까지'};
+  const next=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));
+  return {saved:open,desc:open?`${t(PIECE_NAMES[v.missionPiece])} ${v.missionIdx+1}단계 · 모험`:next>=0?'룩부터 말 움직임을 한 걸음씩':'배우고 싶은 말을 모험 지도에서 골라요'};
 }
 // ===== 스킨 컬렉션 모달 =====
 function openSkinSelector() {

@@ -1810,3 +1810,19 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .play-dialog .play-rematch-summary{background:#f1f6f3;margin-top:4px}
 .play-rematch-summary strong{margin-right:4px}
 .play-rescue-practice{display:block;margin:4px auto 0;min-height:44px}
+/* 홈 주 진입 3개 + 보조 진입. 모든 놀이는 그대로 무료로 남는다. */
+.home-primary{width:100%;margin-top:4px}
+.home-section-title{font-size:1rem;margin:0 0 2px 4px;color:#30495a;text-align:left}
+.menu-knight{background:linear-gradient(135deg,#d3e2ff,#9fb9f0);box-shadow:0 6px 0 #6d89c7,0 8px 20px rgba(109,137,199,.3)}
+.menu-btn .menu-saved{font-weight:900;color:#1d4d3c;margin-right:2px}
+.home-primary .menu-btn .menu-sub{font-size:.8rem;line-height:1.45;word-break:keep-all}
+.home-secondary{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.home-more{display:flex;align-items:center;gap:10px;min-height:64px;padding:10px 12px;border:1px solid #cdddea;border-radius:16px;background:#ffffffd9;color:#243343;font:inherit;text-align:left;cursor:pointer}
+.home-more>span:first-child{font-size:1.5rem;flex:none}
+.home-more strong{display:block;font-size:.92rem;line-height:1.3;word-break:keep-all}
+.home-more small{display:block;font-size:.74rem;line-height:1.4;margin-top:2px;color:#3e5463;word-break:keep-all}
+@media(max-width:380px){.home-secondary{grid-template-columns:1fr}}
+.play-entry-note{margin:0 0 10px;font-size:.85rem;line-height:1.5;color:#2f4656;word-break:keep-all}
+.saved-activity-note{margin:0;font-size:.8rem;line-height:1.45;color:#2f4656;text-align:center;word-break:keep-all}
+.play-start{white-space:normal;word-break:keep-all}
+.nowrap{white-space:nowrap}
