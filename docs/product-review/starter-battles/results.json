@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "entry": true,
+      "realMoves": true,
+      "pieceGuide": true,
+      "adventureRoundTrip": true,
+      "rematch": true,
+      "adventureLink": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "entry": true,
+      "realMoves": true,
+      "pieceGuide": true,
+      "adventureRoundTrip": true,
+      "rematch": true,
+      "adventureLink": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "entry": true,
+      "realMoves": true,
+      "pieceGuide": true,
+      "adventureRoundTrip": true,
+      "rematch": true,
+      "adventureLink": true
+    }
+  ],
+  "errors": []
+}
