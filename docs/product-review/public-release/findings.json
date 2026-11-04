@@ -1,0 +1,316 @@
+{
+  "knightEntry": {
+    "mode": "tour",
+    "goal": 25,
+    "size": 5
+  },
+  "beforeMenu": {
+    "moves": 1,
+    "saved": 1
+  },
+  "afterMenuReentry": {
+    "moves": 0,
+    "saved": 0
+  },
+  "firstRook": {
+    "prompt": "룩을 반짝이는 깃발로 보내요.",
+    "goalSymbol": "●",
+    "size": 4
+  },
+  "collectorFinish": {
+    "clear": true,
+    "next": [
+      {
+        "text": "다음",
+        "y": 648,
+        "bottom": 696
+      },
+      {
+        "text": "나이트와 탐험하기",
+        "y": 716,
+        "bottom": 778
+      },
+      {
+        "text": "여기까지",
+        "y": 716,
+        "bottom": 778
+      }
+    ]
+  },
+  "defenseFinish": {
+    "clear": true,
+    "next": [
+      {
+        "text": "다음 성 지키기",
+        "y": 671.5,
+        "bottom": 733.5
+      },
+      {
+        "text": "여기까지",
+        "y": 671.5,
+        "bottom": 733.5
+      }
+    ]
+  },
+  "content": {
+    "adventure": {
+      "P": [
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        }
+      ],
+      "R": [
+        {
+          "size": 4,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 4,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 4,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 4,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 4,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 4,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 5,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 5,
+          "optional": true,
+          "par": 3
+        }
+      ],
+      "N": [
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 4
+        },
+        {
+          "size": 6,
+          "optional": true,
+          "par": 5
+        },
+        {
+          "size": 6,
+          "optional": true,
+          "par": 4
+        }
+      ],
+      "B": [
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": true,
+          "par": 5
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 4
+        }
+      ],
+      "Q": [
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 1
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 4
+        }
+      ],
+      "K": [
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 2
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        },
+        {
+          "size": 6,
+          "optional": true,
+          "par": 4
+        },
+        {
+          "size": 6,
+          "optional": false,
+          "par": 3
+        }
+      ]
+    },
+    "puzzles": 15,
+    "collector": 5,
+    "bomb": 5,
+    "defense": 4,
+    "survival": 4
+  }
+}
