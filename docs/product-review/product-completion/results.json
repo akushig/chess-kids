@@ -1,0 +1,26 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "passed": true
+    }
+  ],
+  "errors": []
+}
