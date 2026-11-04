@@ -92,6 +92,11 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
    assert.equal(await dialog().getByRole('button',{name:/다음 단계/}).count(),0,String(text));await dialog().getByRole('button',{name:'같은 상대와 다시 두기',exact:true}).click();
    assert.equal(await ev(()=>state.play.level),9,String(text));assert.equal(await ev(()=>state.game.status),'playing');
   }
+  // Changing settings after a game starts from that game's settings.
+  await ev(()=>savePlaySettings({...getPlaySettings(),level:2}));await ev(f=>{state.game=ChessGame.fromFEN(f);renderPlay();},LOSS);await dialog().waitFor();
+  await dialog().getByRole('button',{name:'설정 바꾸기',exact:true}).click();assert.equal(await play.locator('.play-level[aria-pressed="true"] .play-level-number').innerText(),'10');
+  assert.equal(await play.getByRole('button',{name:/▶ 하던 판 이어하기/}).count(),0,'a finished game is not offered to continue');
+  await play.getByRole('button',{name:'🤖 컴퓨터와 새 판 시작',exact:true}).click();assert.equal(await ev(()=>state.play.level),9);
 
   // --- A-2: a reply requested by the replaced game never lands on the new board. ---
   await cells().nth(48).click();await cells().nth(40).click();assert.ok(await ev(()=>Object.keys(playAiPending).length>0||state.game.turn==='b'),'computer is thinking');

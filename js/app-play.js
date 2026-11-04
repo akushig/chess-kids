@@ -177,6 +177,11 @@ function playNextLevelIndex() {
   const level = playConfigOf(p).level;
   return level < AI_LEVELS.length - 1 ? level + 1 : null;
 }
+// 끝난 판에서 설정을 바꿀 때는 그 판의 설정에서 출발한다(복원한 판도 같음).
+function playChangeSettings() {
+  if (state.play) playRememberConfig(playConfigOf(state.play));
+  goPlay();
+}
 function playRematch() {
   if (!playIsOver()) return playRestartRequest();
   playStart(state.play);
@@ -276,7 +281,7 @@ function playPresentEvent(force=false) {
     const next=playNextLevelIndex();
     actions.push({label:t('playRematch'),action:playRematch});
     if(next!==null)actions.push({label:t('playNextLevel').replace('{n}',next+1),tone:'green',action:playNextLevel});
-    actions.push({label:t('playChangeSettings'),secondary:true,action:goPlay});
+    actions.push({label:t('playChangeSettings'),secondary:true,action:playChangeSettings});
     const top=p.mode==='ai'&&g.status==='checkmate'&&g.turn==='b'&&next===null;
     body+=`${top?`<p class="play-event-explanation">${t('playTopLevelWin')}</p>`:''}<p class="play-dialog-note play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(p))}</p>`;
   }
@@ -750,7 +755,7 @@ function playActionsHTML() {
 // 끝난 판 아래: 같은 상대 재대결 · (이긴 경우) 다음 단계 · 설정 바꾸기 · 마치기. 확인 창 없이 바로 시작한다.
 function playFinishActionsHTML() {
   const next=playNextLevelIndex();
-  return `<div class="finish-actions play-finish-actions"><button class="action-btn" onclick="playRematch()">${t('playRematch')}</button>${next!==null?`<button class="action-btn green" onclick="playNextLevel()">${t('playNextLevel').replace('{n}',next+1)}</button>`:''}<button class="action-btn secondary" onclick="goPlay()">${t('playChangeSettings')}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div><p class="play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(state.play))}</p><button class="text-button play-rescue-practice" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 연습</button>`;
+  return `<div class="finish-actions play-finish-actions"><button class="action-btn" onclick="playRematch()">${t('playRematch')}</button>${next!==null?`<button class="action-btn green" onclick="playNextLevel()">${t('playNextLevel').replace('{n}',next+1)}</button>`:''}<button class="action-btn secondary" onclick="playChangeSettings()">${t('playChangeSettings')}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div><p class="play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(state.play))}</p><button class="text-button play-rescue-practice" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 연습</button>`;
 }
 // 대국 중 새 판은 교체를 확인하고, 확인하면 이 판과 같은 설정으로 시작한다.
 function playRestartRequest() {

@@ -70,3 +70,13 @@ test('a computer reply requested by the finished or replaced game never reaches 
  for(const cb of timers.splice(0))cb();for(const cb of timers.splice(0))cb();
  assert.equal(run('JSON.stringify(state.game.board)'),fresh);assert.equal(run('state.game.turn'),'w');assert.equal(run('state.actionHistory.length'),0);
 });
+
+test('changing settings after a restored game starts the setup from that game, keeping the other mode choices',()=>{
+ const a=load();a.run("savePlaySettings({...getPlaySettings(),mode:'ai',level:7,small:true,help:false});playStart();playCommitMove([6,0,5,0]);goMiniMenu()");
+ const b=load(Object.fromEntries(a.storage));b.run("savePlaySettings({...getPlaySettings(),mode:'friend',level:0,timer:60,small:false,help:true});resumeActivity('play')");
+ b.run(`state.game=ChessGame.fromFEN('${WIN}');playCommitMove(${WIN_MOVE})`);assert.match(b.run('playActionsHTML()'),/playChangeSettings\(\)/);
+ b.run('playChangeSettings()');const s=settings(b.run);
+ assert.deepEqual([s.mode,s.level,s.small,s.help,s.timer],['ai',7,true,false,60]);assert.equal(b.run('state.screen'),'play');assert.equal(b.run('state.activeKind'),null);
+ assert.match(b.elements.get('screen-play').innerHTML,/aria-label="8단계 · [^"]+" aria-pressed="true"/);
+ assert.equal(b.run("activitySaved('play')"),null,'the finished game is not offered as a game to continue');
+});
