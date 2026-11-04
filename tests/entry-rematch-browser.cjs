@@ -32,7 +32,7 @@ const SMALL='3rk3/ppp5/8/8/8/8/PPP5/3RK3 w - - 0 1';
   await noOverflow('home');await page.screenshot({path:`${output}/home-first-${w}.png`,fullPage:true,animations:'disabled'});
 
   await primary('기사의 여행').click();assert.equal(await ev(()=>state.activeKind),'knight');assert.equal(await ev(()=>state.kt.mode),'walk');
-  assert.equal(await page.locator('.kt-mode-nav button').count(),3,'goal choice is on the knight screen');assert.equal(await ev(()=>Object.keys(progressLedger().missions).length),0,'no lesson required');
+  assert.equal(await page.locator('.kt-mode-nav button').count(),4,'goal choice (walk, explore, tour, rule puzzles) is on the knight screen');assert.equal(await ev(()=>Object.keys(progressLedger().missions).length),0,'no lesson required');
   await page.locator('#screen-mini .board-cell.move-hint').first().click();await page.waitForFunction(()=>!state.animating);
   const knight=await ev(()=>JSON.stringify([state.kt,state.actionHistory]));
   await page.getByRole('button',{name:'← 홈',exact:true}).click();assert.match(await primary('기사의 여행').innerText(),/▶ 이어하기/);

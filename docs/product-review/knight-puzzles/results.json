@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "listAndKeyboard": true,
+      "missingSquare": true,
+      "hintRule": true,
+      "reloadResume": true,
+      "earlyMark": true,
+      "fileMove": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "listAndKeyboard": true,
+      "missingSquare": true,
+      "hintRule": true,
+      "reloadResume": true,
+      "earlyMark": true,
+      "fileMove": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "listAndKeyboard": true,
+      "missingSquare": true,
+      "hintRule": true,
+      "reloadResume": true,
+      "earlyMark": true,
+      "fileMove": true
+    }
+  ],
+  "errors": []
+}
