@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "python3 -m http.server 8765 --bind 127.0.0.1",
     "test": "node --test tests/*.test.cjs",
-    "test:browser": "node tests/browser-smoke.cjs && node tests/browser-final.cjs && node tests/knight-browser.cjs && node tests/layout-browser.cjs && node tests/castling-browser.cjs && node tests/ai-difficulty-browser.cjs && node tests/play-feedback-browser.cjs && node tests/product-completion-browser.cjs && node tests/profiles-browser.cjs",
+    "test:browser": "node tests/browser-smoke.cjs && node tests/browser-final.cjs && node tests/knight-browser.cjs && node tests/layout-browser.cjs && node tests/castling-browser.cjs && node tests/ai-difficulty-browser.cjs && node tests/play-feedback-browser.cjs && node tests/product-completion-browser.cjs && node tests/profiles-browser.cjs && node tests/entry-rematch-browser.cjs",
     "export:content": "node scripts/export-content.cjs",
     "test:knight": "node --test tests/knight-tour.test.cjs"
   },

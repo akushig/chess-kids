@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "homeEntries": true,
+      "menuResume": true,
+      "restoredRematch": true,
+      "nextLevel": true,
+      "topLevel": true,
+      "lossDraw": true,
+      "staleAiIgnored": true,
+      "sameDevice": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "homeEntries": true,
+      "menuResume": true,
+      "restoredRematch": true,
+      "nextLevel": true,
+      "topLevel": true,
+      "lossDraw": true,
+      "staleAiIgnored": true,
+      "sameDevice": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "homeEntries": true,
+      "menuResume": true,
+      "restoredRematch": true,
+      "nextLevel": true,
+      "topLevel": true,
+      "lossDraw": true,
+      "staleAiIgnored": true,
+      "sameDevice": true
+    }
+  ],
+  "errors": []
+}
