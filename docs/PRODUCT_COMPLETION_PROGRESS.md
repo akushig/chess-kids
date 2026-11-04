@@ -29,7 +29,7 @@
 - 신규 제품 동선은 360×780/768×1024/1280×900 통과. 과제 시작→완료→기본 경로 종료 후 관련 놀이→나이트 짧은 산책→메뉴 복귀→새 판 취소→동일 판 재시도→전체 경로→가족/꾸미기 팝업→퍼즐 목표/다음 장면. 메뉴 카드 너비 통일·제목/버튼 대비 보강 후에도 통과했다. 자동 음성 꺼짐에서 수동 듣기, 음성 미지원 안내, 가족 대전 되돌리기 창을 Escape로 취소할 때 시계 재개도 확인했다.
 - Chromium 경로: `/Users/akushi/Library/Caches/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-mac-arm64/chrome-headless-shell`.
 - 명령: `CHESS_BROWSER_EXECUTABLE=<위 경로> npm run test:browser` (로컬 서버 `127.0.0.1:8765`). 화면 증거는 `/tmp/chess-product-qa`, 기존 검사는 각각 `/tmp/chess-*-qa`.
-- 작업 전 main HEAD는 `3896ef4`. 설계 커밋 `896ace4`, 구현 커밋 `1ebeec4`. 이 작업은 로컬 main에 커밋했으며 원격 푸시/웹 배포는 아직 실행하지 않았다. 후속 배포 시 현재 작업 트리와 GitHub Pages 상태를 확인한다.
+- 작업 전 main HEAD는 `3896ef4`. 설계 커밋 `896ace4`, 구현 커밋 `1ebeec4`. 2026-11-04 사용자 배포 요청에 따라 `08aca5b`까지 origin/main에 푸시했다. [GitHub Pages 빌드·배포](https://github.com/akushig/chess-kids/actions/runs/41818112899)가 성공했고, [공개 사이트](https://akushig.github.io/chess-kids/)에서 `2026.11.04.1` 제공을 확인했다. 공개 주소를 대상으로 신규 이용 흐름을 360×780/768×1024/1280×900에서 재검사하여 모두 통과했다.
 
 ## 화면 증거
 
