@@ -1,5 +1,7 @@
 # 제품 완성도 작업 진행 기록
 
+후속 변경: 고정된 역할 프로필은 [동적 프로필·기기 이동 설계](PROFILE_DESIGN.md)로 대체했다. 새 빌드 `2026.11.04.2`의 프로필 관리/백업 검증은 해당 문서를 따른다. 아래는 이전 완성도 작업의 기록이다.
+
 2026-11-04 · 빌드 `2026.11.04.1`. [설계](PRODUCT_COMPLETION_DESIGN.md), [콘텐츠 명세](PRODUCT_CONTENT_CATALOG.md), [별도 출시 준비](DEFERRED_RELEASE_READINESS.md).
 
 ## 구현 상태

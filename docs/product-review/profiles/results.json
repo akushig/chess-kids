@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "crud": true,
+      "fileDownload": true,
+      "newDeviceImport": true,
+      "resumeUndo": true,
+      "defaultsEqual": true,
+      "invalidFile": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "crud": true,
+      "fileDownload": true,
+      "newDeviceImport": true,
+      "resumeUndo": true,
+      "defaultsEqual": true,
+      "invalidFile": true
+    }
+  ],
+  "errors": []
+}
