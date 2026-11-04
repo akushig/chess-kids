@@ -151,3 +151,40 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 5. 홈에서 들어간 나이트의 뒤로 가기는 홈으로, 놀이터에서 들어간 경우 놀이터로 돌아간다.
 
 검증 계획: 단위 검사(재대결 설정 보존·다음 단계 조건·저장판 복원 후 재대결·홈 진입·종류별 저장 조회) + 신규 브라우저 검사 `tests/entry-rematch-browser.cjs`(360×780/768×1024/1280×900: 주 진입 한 번, 나이트/대전/모험 재진입 동일성, 새로고침 후 복원 재대결, AI 승/패/무, 10단계 끝, 함께 두기·짧은 판·제한 시간, 이전 판 AI 콜백 무시, 보드 위치·초점·가로 넘침) + 기존 `npm run test:browser` 전체.
+
+### 구현 결과 · 빌드 `2026.11.04.3`
+
+상태 구분: **구현 완료 · 자동 검증(단위+실제 브라우저) 완료 · 실제 사용자 관찰 없음 · 푸시/배포 안 함**(이번 지시 범위가 단계별 커밋까지였다. 로컬 `main`이 `origin/main`보다 앞서 있다).
+
+커밋: `c949bd3` 계획 → `82e4974` A-2 재대결 → `010a957` A-1 홈 진입 → `b55578e` 브라우저 검사 → `cf2e37f` 설정 바꾸기 보정 → 이 기록.
+
+| 파일 | 변경 |
+|---|---|
+| `js/app-play.js` | `playConfigOf`/`playRememberConfig`/`playStart(config)`/`playRematch`/`playNextLevel`/`playNextLevelIndex`/`playChangeSettings`/`playFinishActionsHTML`/`playSavedDetail`. 결과 팝업·종료 후 버튼, 대국 중 새 판의 현재 설정 사용과 Escape 시 시계 재개, 대전 입구 문구와 시작 버튼 |
+| `js/app-home.js` | 주 진입 3개+보조 2개, 진입별 이어하기 표시(`homeEntryDetail`). 첫 방문 중복 선택 묶음·일반 추천 카드 제거, `chooseExperience` 삭제 |
+| `js/app-session.js` | 일반 추천에 `fallback` 표시, 룩 기본을 마치면 모험 지도로, 대전 저장 카드의 상대·판 표시와 입구에서의 교체 안내, 이름 `기사의 여행` |
+| `js/mini-knight-tour.js`, `js/mini-menu.js` | 들어온 곳(홈/놀이터)으로 돌아가는 뒤로 가기, 놀이터 이름 `기사의 여행 · 나이트 투어` |
+| `js/i18n.js`, `css/style.css`, `js/version.js` | 재대결·입구 문구(ko/en), 홈·종료 버튼 스타일, 빌드 `2026.11.04.3` |
+| `tests/rematch.test.cjs`, `tests/home-entry.test.cjs`, `tests/entry-rematch-browser.cjs` | 신규 검사. `package.json`의 `test:browser`에 브라우저 검사 추가 |
+| `tests/play-feedback-browser.cjs`, `tests/browser-final.cjs`, `tests/product-completion-browser.cjs` | 새 계약에 맞춘 이름만 변경: 결과 팝업 `새 판 시작`→`같은 상대와 다시 두기`, 홈 버튼 이름, 첫 방문 `처음 해요`→`체스 처음 배우기`, `나이트 탐험`→`나이트 투어` |
+
+명세에 없어서 정한 동작:
+- 재대결·다음 단계·설정 바꾸기는 그 판의 설정을 설정 화면에도 반영한다. AI 판은 mode/level/help/small만, 함께 두기 판은 mode/timer/face/autoMove/help/small만 쓴다. 그래서 AI 판을 다시 해도 함께 두기의 한 수 시간 선택이 남는다.
+- 결과 팝업의 첫 초점은 `확인했어요 · 마지막 판 보기`(시작 동작 아님). 이 버튼은 보조 스타일로 바꿨다. 종료 후 보드 아래의 `왕 구하기 연습`은 지우지 않고 텍스트 버튼으로 낮췄다.
+- 대국 중 `새 판`은 전역 설정이 아니라 현재 판의 설정으로 시작한다. 전에는 이 확인 창을 Escape로 닫으면 함께 두기 시계가 멈춘 채 남았는데, 이제 재개된다.
+- 홈의 일반 추천 카드는 보이지 않지만 완료 직후의 다음 활동 추천(같은 기술의 새 장면 등)과 하던 판 카드는 그대로 둔다. 시작 추천 값(`experience`)은 프로필 설정에서 계속 바꿀 수 있고, 나이트 기본 모드·짧은 판 추천에 기존처럼 쓰인다.
+
+검증 (2026-11-04, 최종 커밋 `cf2e37f` 코드 기준):
+- `npm test`: **91/91 통과**(기존 78 + 재대결 7 + 홈 진입 6).
+- `CHESS_BROWSER_EXECUTABLE=/Users/akushi/Library/Caches/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-mac-arm64/chrome-headless-shell npm run test:browser`: **10개 묶음 모두 통과**(종료 코드 0). 로컬 서버 `127.0.0.1:8765`. 기존 스모크·360/768/1280+오프라인·나이트·보드 고정 156상황·캐슬링 24조합·10단계 AI·대전 안내·제품 동선·프로필과 신규 `entry-rematch-browser`.
+- 신규 브라우저 검사가 360×780/768×1024/1280×900에서 실제 탭으로 확인한 것: 첫 방문 홈에 주 진입 3개가 있고 첫 진입이 첫 화면 안에서 시작함(360px 화면 증거에서는 3개 모두 첫 화면 안), 가로 넘침 없음 / 나이트 한 번에 진입(학습 기록 0)·점프·홈 복귀·재진입 시 판·이동 수·undo 동일 / 입문 진입 / 놀이터 6종·모험 지도 6말 접근 / 대전 입구의 하던 판·컴퓨터와·같은 기기에서 함께, 모드를 바꾸고 시작했다가 취소해도 저장판 보존 / **새로고침 → 전역 설정 변경 → 이어하기 → 실제 입력으로 메이트 → 재대결**에서 그 판 설정(5단계·짧은 판) 유지, 초기 배치·선택 없음·undo 없음, 결과·재대결 때 보드 좌표 불변, 결과 팝업 초점과 Tab 가둠 / 다음 단계는 누를 때만 6단계, 나머지 설정 동일 / 10단계 승리 시 다음 단계 없음 / 패배·무승부 단계 불변 / 끝난 판에서 설정 바꾸기는 그 판 단계로 열림 / 컴퓨터가 생각하는 중 새 판으로 바꾸면 5.6초 뒤에도 이전 판의 응수가 새 판에 안 옴 / 같은 기기·짧은 판·30초·나란히·도우미 두기 재대결 유지와 새 30초, 확인 창 Escape로 시계 재개, 결과 동안 시계 정지, 재대결 뒤 이동·체크 안내 정상.
+- 화면 증거: [첫 방문 홈](product-review/entry-rematch/home-first-360.png), [대전 입구](product-review/entry-rematch/play-entry-360.png), [AI 승리 결과](product-review/entry-rematch/result-win-360.png), [같은 기기 결과](product-review/entry-rematch/friend-result-360.png), [결과 JSON](product-review/entry-rematch/results.json). 원본은 검사 중 `/tmp/chess-entry-qa`에 생성.
+- 미추적 `icons/skins/`는 수정·스테이징하지 않았다.
+
+검증하지 못한 것과 남은 관찰:
+- 실제 아이·어른 사용자 관찰은 하지 않았다. 홈에서 설명 없이 원하는 활동에 들어가는지, 이긴 뒤 같은 상대·다음 단계 중 무엇을 스스로 고르는지, 진 뒤 재대결하는지, 미디어로 온 퍼즐 사용자가 나이트에 바로 가는지는 [전략 문서 §8](PRODUCT_STRATEGY_AND_PAID_CONTENT.md) 0·1단계의 관찰 과제로 남는다. 자동 검사 통과를 재미나 재방문의 근거로 보지 않는다.
+- 첫 방문 나이트는 기존대로 `산책`(3점프)으로 시작한다. 방송 등으로 전체 투어를 기대하고 온 사용자가 위의 `투어` 탭을 바로 찾는지 관찰이 필요하다.
+- Android/iOS 실기기, 공개 사이트 배포 후 검사는 하지 않았다. 영어 문구는 추가했지만 홈 화면 자체가 한국어 고정이라 영어 화면 검수는 하지 않았다.
+- 결과 팝업 버튼이 최대 4개다. 360px에서 넘치지 않음은 확인했지만 아이가 읽고 고르기에 많은지는 관찰 과제다.
+
+다음 작업: 사용자가 범위에 넣으면 §3의 B(나이트 신규 규칙 10판 시험판). C와 결제·온라인은 계속 범위 밖이다. 푸시하면 GitHub Pages에 배포되므로 사용자 지시가 있을 때만 하고, 배포 후 공개 주소로 `CHESS_TEST_URL=https://akushig.github.io/chess-kids/ node tests/entry-rematch-browser.cjs` 재검사를 권장한다.
