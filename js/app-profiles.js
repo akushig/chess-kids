@@ -88,7 +88,7 @@ function backupSnapshotValid(kind,v){
  }
  if(kind==='puzzle')return gameValid(v.puzzleGame);
  if(kind==='play'){
-  const p=v.play;return gameValid(v.game)&&p&&['ai','friend'].includes(p.mode)&&Number.isInteger(p.level)&&p.level>=0&&p.level<10&&[0,15,30,60].includes(p.timer)&&[null,undefined,'castle','promotion'].includes(p.moveEvent?.special)&&(!p.moveEvent?.special||p.moveEvent.special==='promotion'||[p.moveEvent.kingFrom,p.moveEvent.kingTo,p.moveEvent.rookFrom,p.moveEvent.rookTo].every(coord));
+  const p=v.play;return gameValid(v.game)&&p&&['ai','friend'].includes(p.mode)&&(p.preset==null||Object.hasOwn(PLAY_PRESETS,p.preset)&&p.mode==='ai')&&Number.isInteger(p.level)&&p.level>=0&&p.level<10&&[0,15,30,60].includes(p.timer)&&[null,undefined,'castle','promotion'].includes(p.moveEvent?.special)&&(!p.moveEvent?.special||p.moveEvent.special==='promotion'||[p.moveEvent.kingFrom,p.moveEvent.kingTo,p.moveEvent.rookFrom,p.moveEvent.rookTo].every(coord));
  }
  const key={knight:'kt',collector:'cl',bomb:'bm',defense:'df',survival:'sv'}[kind],g=v[key];if(!g||!Number.isInteger(g.size)||g.size<3||g.size>8||!coord(g.pos||g.kingPos))return false;
  if(kind==='knight')return (g.mode==='puzzle'?ktPuzzleStateValid(g):['walk','explore','tour'].includes(g.mode))&&board(g.board,g.size,true)&&Number.isInteger(g.moveCount)&&Number.isInteger(g.visited)&&Number.isInteger(g.visitGoal)&&(!g.goal||coord(g.goal))&&(!g.hint||['next','path'].includes(g.hint.style)&&coords(g.hint.path));

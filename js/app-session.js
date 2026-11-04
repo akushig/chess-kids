@@ -100,6 +100,7 @@ function getSavedSession(saved=readData('last_session',null)){
     if(!PUZZLES[index]||!validBoard(v.puzzleGame?.board,8))return null;v.puzzleIndex=index;v.puzzleLevel=PUZZLES[index].level;for(const snap of saved.history||[])if(snap.values){snap.values.puzzleIndex=index;snap.values.puzzleLevel=v.puzzleLevel;}
   }else if(saved.kind==='play'){
     if(!validBoard(v.game?.board,8)||!['w','b'].includes(v.game.turn)||!v.play)return null;
+    if(v.play.preset!=null&&!(Object.hasOwn(PLAY_PRESETS,v.play.preset)&&v.play.mode==='ai'))return null;
     v.play=playUpgradeDifficulty(v.play);
     for(const snap of saved.history||[])if(snap.values?.play)snap.values.play=playUpgradeDifficulty(snap.values.play);
     if(saved.rulesVersion!==2){
@@ -144,7 +145,7 @@ function recommendedActivity(){
  if(saved?.complete&&saved.kind==='mission'){
   const {missionPiece:piece,missionIdx:index}=saved.snapshot.values,nextIndex=nextBasicMission(piece,index),next=MISSIONS[piece][nextIndex];
   if(next&&!next.optional)return {action:`goMissionPlay('${piece}',${nextIndex})`,title:'다음 모험으로',description:next.desc.ko};
-  return {action:piece==='N'?'goKnightSetup()':piece==='R'?"enterActivity('defense')":'goPlay()',title:'배운 말로 놀기',description:'방금 배운 움직임을 다른 놀이에서 써봐요.'};
+  return {action:piece==='N'?'goKnightSetup()':piece==='R'?"enterActivity('defense')":PLAY_PRESETS[piece]?`playStarterBattle('${piece}')`:'goPlay()',title:'배운 말로 놀기',description:'방금 배운 움직임을 다른 놀이에서 써봐요.'};
  }
  const next=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));
  return next>=0?{action:`goMissionPlay('R',${next})`,title:'룩과 모험하기',description:'한 걸음씩 해봐요. 막히면 돌아와도 괜찮아요.',fallback:true}:{action:'goKnightSetup()',title:'나이트와 놀기',description:'좋아하는 목표를 골라서 뛰어봐요.',fallback:true};
@@ -183,7 +184,8 @@ function openMissionStage(piece,index){
   requestNewActivity('mission',()=>goMissionPlay(piece,index));
 }
 function nextBasicMission(piece,index){return MISSIONS[piece].findIndex((m,i)=>i>index&&!m.optional);}
-function missionTransfer(piece){return piece==='N'?{action:'enterActivity(\'knight\')',label:'나이트와 탐험하기'}:piece==='R'?{action:'enterActivity(\'defense\')',label:'룩으로 성 지키기'}:{action:'goPlay()',label:'배운 말로 대전하기'};}
+// 비숍·퀸은 기본 모험을 마치면 첫 대전으로 이어진다. 룩·나이트는 기존 연결을 먼저 두고 첫 대전을 함께 준다.
+function missionTransfer(piece){if(piece==='B'||piece==='Q')return {action:`playStarterBattle('${piece}')`,label:playPresetTitle(piece)};return piece==='N'?{action:'enterActivity(\'knight\')',label:'나이트와 탐험하기'}:piece==='R'?{action:'enterActivity(\'defense\')',label:'룩으로 성 지키기'}:{action:'goPlay()',label:'배운 말로 대전하기'};}
 
 function preferredKnightMode(){
   const last=readData('knight_last_mode',null);if(['walk','explore','tour'].includes(last))return last;
@@ -200,7 +202,7 @@ function learningSummary(){
   }
   const mini=Object.keys(p.completions||{}).filter(id=>p.mini[id]);
   if(mini.length)rows.push({label:'경로 찾기와 안전 연습',count:mini.length,independent:mini.filter(id=>p.completions[id].independent).length,assisted:mini.filter(id=>p.completions[id].assisted).length,joint:mini.filter(id=>p.completions[id].joint).length});
-  for(const [id,label]of [['play-first-capture','대전에서 첫 잡기'],['play-first-rescue','대전에서 왕 구하기'],['play-first-finish-ai','컴퓨터와 한 판 완료'],['play-first-finish-friend','가족과 한 판 완료']])if(p.achievements[id])rows.push({label,count:1,independent:p.completions?.[id]?.independent?1:0,assisted:p.completions?.[id]?.assisted?1:0,joint:p.completions?.[id]?.joint?1:0});
+  for(const [id,label]of [['play-first-capture','대전에서 첫 잡기'],['play-first-rescue','대전에서 왕 구하기'],['play-first-finish-ai','컴퓨터와 한 판 완료'],['play-first-finish-friend','가족과 한 판 완료'],...Object.entries(PLAY_PRESETS).map(([key,p])=>[p.id,playPresetTitle(key)+' 완료'])])if(p.achievements[id])rows.push({label,count:1,independent:p.completions?.[id]?.independent?1:0,assisted:p.completions?.[id]?.assisted?1:0,joint:p.completions?.[id]?.joint?1:0});
   return rows;
 }
 function learningSummaryHTML(){

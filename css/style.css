@@ -1843,3 +1843,19 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .kp-text{display:grid;gap:2px;min-width:0}.kp-text strong{font-size:.98rem;word-break:keep-all}.kp-text small{font-size:.78rem;color:#3e5463;word-break:keep-all}
 .kp-status{font-size:.78rem;color:#1f6b52}
 .kp-group .section-note{margin-top:0}
+/* 배운 말로 첫 대전: 대전 입구 목록과 말 움직임 그림 */
+.play-starters{margin-top:18px;padding:14px;border-radius:18px;background:rgba(255,255,255,.72);text-align:left}
+.play-starters h3{margin:0 0 6px;font-size:1rem;color:#243b4b}
+.play-starters .play-note{background:transparent;padding:0;margin:0 0 10px}
+.play-starter-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.play-starter{display:flex;align-items:center;gap:8px;min-height:60px;padding:8px 10px;border:1px solid #cfdccf;border-radius:14px;background:#fff;color:#243343;font:inherit;text-align:left;cursor:pointer}
+.play-starter svg{flex:none}
+.play-starter strong{display:block;font-size:.92rem;word-break:keep-all}
+.play-starter small{display:block;font-size:.74rem;color:#3e5463;word-break:keep-all}
+@media(max-width:340px){.play-starter-list{grid-template-columns:1fr}}
+.play-guide-chip{display:inline-flex;align-items:center;gap:4px}
+.piece-guide-board{display:grid;grid-template-columns:repeat(5,1fr);width:min(220px,70vw);aspect-ratio:1;margin:4px auto 12px;border:3px solid #7a6a4f;border-radius:10px;overflow:hidden}
+.piece-guide-board span{display:flex;align-items:center;justify-content:center}
+.piece-guide-board .light{background:#f2dfb8}.piece-guide-board .dark{background:#c29b62}
+.pg-dot{width:30%;height:30%;border-radius:50%;background:#2f7d6b;box-shadow:0 0 0 2px #ffffffb0}
+.pg-capture{font-style:normal;font-weight:900;font-size:1.2rem;color:#b23a32}

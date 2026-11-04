@@ -3,6 +3,19 @@
 
 const PLAY_TIMER_OPTIONS = [0, 15, 30, 60];
 const PLAY_SMALL_FEN = '3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
+// 배운 말로 첫 대전 (docs/STARTER_BATTLES.md): 왕·폰에 한 종류의 말만 더한 대칭 배치. 시작할 때 서로 잡을 말이 없다.
+const PLAY_PRESETS = {
+  R: { id: 'starter-rook-v1', fen: 'r3k2r/pp4pp/8/8/8/8/PP4PP/R3K2R w - - 0 1', desc: '룩 두 개 · 폰 4개', note: '룩 두 개가 폰 뒤에서 기다려요. 폰을 밀어 줄을 열면 룩이 멀리 갈 수 있어요.' },
+  B: { id: 'starter-bishop-v1', fen: '2b1kb2/1p1pp1p1/8/8/8/8/1P1PP1P1/2B1KB2 w - - 0 1', desc: '비숍 두 개 · 폰 4개', note: '비숍 앞 대각선이 폰으로 막혀 있어요. 폰을 한 칸 밀어 대각선을 열어봐요.' },
+  N: { id: 'starter-knight-v1', fen: '1n2k1n1/2pppp2/8/8/8/8/2PPPP2/1N2K1N1 w - - 0 1', desc: '나이트 두 개 · 폰 4개', note: '나이트는 폰을 뛰어넘을 수 있어요. 첫 수부터 바로 나가봐요.' },
+  Q: { id: 'starter-queen-v1', fen: '3qk3/2pppp2/8/8/8/8/2PPPP2/3QK3 w - - 0 1', desc: '퀸 하나 · 폰 4개', note: '퀸은 가로·세로·대각선으로 멀리 가요. 하나뿐인 퀸을 잃지 않게 지켜요.' },
+};
+function playPresetTitle(key) { return t(PIECE_NAMES[key]) + ' 첫 대전'; }
+// 모험·대전 입구 어디서 불러도 하던 대전은 확인한 뒤에만 바뀐다.
+function playStarterBattle(key) {
+  if (!PLAY_PRESETS[key]) return goPlay();
+  requestNewActivity('play', () => playStart({...getPlaySettings(), mode: 'ai', small: false, preset: key}));
+}
 const PLAY_LEVEL_ICONS = ['🐣', '🐤', '🐥', '🐱', '🦊', '🐻', '🦁', '🐲', '🐉', '👑'];
 const PLAY_AI_MIN_DELAY = 400;  // 컴퓨터가 너무 빨리 두면 아이가 수를 못 따라감
 const PLAY_TIMEOUT_LEVEL = AI_ASSIST_LEVEL;
@@ -128,6 +141,7 @@ function renderPlaySetup() {
       </div>
       ${!safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner'?'<button class="action-btn green" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
       <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
+      <section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter" onclick="playStarterBattle('${key}')">${getPieceSVG('w'+key,36)}<span><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span></button>`).join('')}</div></section>
     </div>
   `;
 }
@@ -153,23 +167,26 @@ function playConfigOf(play) {
     level: aiLevelIndex(play?.level, play?.levelVersion ?? 1, 0),
     levelVersion: AI_DIFFICULTY_VERSION,
     timer: friend && PLAY_TIMER_OPTIONS.includes(play.timer) ? play.timer : 0,
-    help: play?.help !== false, autoMove: !!play?.autoMove, small: !!play?.small, face: play?.face !== false,
+    help: play?.help !== false, autoMove: !!play?.autoMove, small: !friend && PLAY_PRESETS[play?.preset] ? false : !!play?.small, face: play?.face !== false,
+    preset: !friend && PLAY_PRESETS[play?.preset] ? play.preset : null,
   };
 }
 // 마지막으로 둔 설정을 설정 화면에도 반영한다. 다른 모드의 선택(예: 함께 두기 시간)은 지우지 않는다.
 function playRememberConfig(c) {
   const s = getPlaySettings();
+  // 첫 대전은 단계와 도움만 기록한다. 설정 화면의 모드·짧은 판 선택은 그대로 둔다.
+  if (c.preset) return savePlaySettings({...s, level: c.level, help: c.help});
   savePlaySettings(c.mode === 'ai'
     ? {...s, mode: 'ai', level: c.level, help: c.help, small: c.small}
     : {...s, mode: 'friend', timer: c.timer, face: c.face, autoMove: c.autoMove, help: c.help, small: c.small});
 }
 function playSavedDetail(play) {
   const c = playConfigOf(play);
-  return (c.mode === 'ai' ? '🤖 컴퓨터 ' + playLevelLabel(c.level) : '👫 ' + t('playModeFriend') + (c.timer ? ' · ⏱ ' + playTimerLabel(c.timer) : '')) + (c.small ? ' · 짧은 판' : '');
+  return (c.mode === 'ai' ? '🤖 컴퓨터 ' + playLevelLabel(c.level) : '👫 ' + t('playModeFriend') + (c.timer ? ' · ⏱ ' + playTimerLabel(c.timer) : '')) + (c.preset ? ' · ' + playPresetTitle(c.preset) : c.small ? ' · 짧은 판' : '');
 }
 function playConfigSummary(c) {
   const parts = c.mode === 'ai' ? [PLAY_LEVEL_ICONS[c.level] + ' ' + playLevelLabel(c.level)] : [t('playModeFriend'), '⏱ ' + playTimerLabel(c.timer), t(c.face ? 'playFaceOn' : 'playFaceOff')];
-  return [...parts, t(c.small ? 'playSmallBoard' : 'playFullBoard'), t(c.help ? 'playHelpOn' : 'playHelpOff')].join(' · ');
+  return [...parts, c.preset ? playPresetTitle(c.preset) : t(c.small ? 'playSmallBoard' : 'playFullBoard'), t(c.help ? 'playHelpOn' : 'playHelpOff')].join(' · ');
 }
 // 다음 단계는 컴퓨터에게 사람이 이겼고 더 높은 단계가 있을 때만, 누를 때만 적용한다.
 function playNextLevelIndex() {
@@ -200,10 +217,11 @@ function playStart(config) {
   beginActivity('play');
   playStop();
   // 짧은 판: 폰이 룩 앞을 막아 첫 수에 서로 잡을 수 있는 말이 없다(예전 배치는 d줄에서 룩이 마주 봤다).
-  state.game = s.small ? ChessGame.fromFEN(PLAY_SMALL_FEN) : new ChessGame();
+  const preset = PLAY_PRESETS[s.preset] && s.mode === 'ai' ? s.preset : null;
+  state.game = preset ? ChessGame.fromFEN(PLAY_PRESETS[preset].fen) : s.small ? ChessGame.fromFEN(PLAY_SMALL_FEN) : new ChessGame();
   state.play = {
     mode: s.mode,
-    help:s.help, autoMove:s.autoMove,face:s.face,small:s.small,notice:'',
+    help:s.help, autoMove:s.autoMove,face:s.face,small:preset?false:s.small,preset,notice:preset?PLAY_PRESETS[preset].note:'',
     level: s.level, levelVersion:AI_DIFFICULTY_VERSION,
     timer: s.mode === 'friend' ? s.timer : 0,
     deadline: 0,
@@ -348,7 +366,7 @@ function renderPlayAi() {
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goPlay()">← ${t('btnBack')}</button>
-        <h2>${t('playTitle')}</h2>
+        <h2>${state.play.preset ? playPresetTitle(state.play.preset) : t('playTitle')}</h2>
         <span class="play-badge">${PLAY_LEVEL_ICONS[level]} ${playLevelLabel(level)}</span>
       </div>
       ${statusMsg}
@@ -483,6 +501,7 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
     if(first&&!wasCheck&&!special&&game.status==='playing')state.play.notice='⭐ 첫 말 잡기를 해냈어요! 배운 움직임을 대전에서 써봤어요.';
   }
   if(playIsOver())awardStars('achievements','play-first-finish-'+state.play.mode,1);
+  if(playIsOver()&&state.play.preset)awardStars('achievements',PLAY_PRESETS[state.play.preset].id,1);
   saveActiveSession();
   const finishMove=() => {
     if (token !== playToken) return;
@@ -752,7 +771,7 @@ function playGuideHTML() {
   return `<div class="guide-card play-check-guide" role="status"><strong>⚠️ ${t('playCheck')} ${t('playCheckRestriction')}</strong>${p.notice?`<p>${p.notice}</p>`:''}${p.help?`<div class="guide-methods">${Object.keys(labels).filter(k=>rescues.some(r=>r.method===k)).map(k=>`<button class="play-chip" onclick="playShowRescue('${k}')">${labels[k]}</button>`).join('')}</div><small>방패 테두리가 있는 말로 왕을 지킬 수 있어요.</small>`:`<p>${t('playCheckExplained')}</p>`}</div>`;
 }
 function playActionsHTML() {
-  return `${state.play.moveEvent?.special&&state.play.moveEvent.acknowledged?'<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>':''}${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div>${playIsOver()?playFinishActionsHTML():`<div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">저장하고 나가기</button></div>`}`;
+  return `${state.play.moveEvent?.special&&state.play.moveEvent.acknowledged?'<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>':''}${playIsOver()?'<button class="play-chip" onclick="playPresentEvent(true)">🏁 '+t('playReviewResult')+'</button>':''}${!playIsOver()&&state.game.selected&&state.game.board[state.game.selected[0]][state.game.selected[1]]?.[1]==='K'?'<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>':''}${playGuideChipHTML()}${state.game.status==='check'?'<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>':''}<div class="mission-actions">${undoButton()}${!playIsOver()?'<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button><button class="icon-btn" onclick="playDemo()">▶ 시범 보기</button>':''}</div>${playIsOver()?playFinishActionsHTML():`<div class="finish-actions"><button class="action-btn secondary" onclick="playRestartRequest()">새 판</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">저장하고 나가기</button></div>`}`;
 }
 // 끝난 판 아래: 같은 상대 재대결 · (이긴 경우) 다음 단계 · 설정 바꾸기 · 마치기. 확인 창 없이 바로 시작한다.
 function playFinishActionsHTML() {
@@ -778,6 +797,7 @@ function explainPlayMove(g,fr,fc,tr,tc) {
   return ({P:'폰은 앞으로 가고, 대각선으로 잡아요.',N:'나이트는 두 칸, 옆으로 한 칸 뛰어요.',B:'비숍은 대각선으로 가요.',R:'룩은 가로와 세로로 가요.',Q:'퀸은 가로·세로·대각선으로 가요.',K:'왕은 안전한 곳으로 한 칸씩 가요.'})[type];
 }
 function playCastlingReason(info) {
+  if(state.play?.preset)return '첫 대전에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서 할 수 있어요.';
   if(state.play?.small)return '이 짧은 판에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서는 할 수 있어요.';
   const square=info.square?'abcdefgh'[info.square[1]]+(8-info.square[0]):'';
   return ({
@@ -789,6 +809,33 @@ function playCastlingReason(info) {
     'through-attacked':`왕이 지나갈 ${square} 칸이 공격받고 있어요. 왕은 위험한 칸을 지나 캐슬링할 수 없어요.`,
     'destination-attacked':`왕이 도착할 ${square} 칸이 공격받고 있어요. 안전한 칸으로만 캐슬링할 수 있어요.`,
   })[info.reason]||'왕을 고른 뒤 ‘캐슬링’ 표시 칸이나 함께 움직일 룩을 눌러요. 왕과 룩이 함께 움직여요.';
+}
+// 대전 중 모르는 말이 있으면 그 말의 움직임만 다시 본다. 판 아래 버튼이라 보드 위치는 그대로다.
+const PLAY_PIECE_RULES = {P:'폰은 앞으로 한 칸 가요. 처음 움직일 때는 두 칸까지 갈 수 있고, 잡을 때는 대각선 앞으로 가요.',N:'나이트는 두 칸 간 뒤 옆으로 한 칸, ㄴ 모양으로 뛰어요. 다른 말을 뛰어넘을 수 있어요.',B:'비숍은 대각선으로 원하는 만큼 가요. 다른 말을 뛰어넘을 수는 없어요.',R:'룩은 가로와 세로로 원하는 만큼 가요. 다른 말을 뛰어넘을 수는 없어요.',Q:'퀸은 가로·세로·대각선으로 원하는 만큼 가요. 다른 말을 뛰어넘을 수는 없어요.',K:'왕은 모든 방향으로 한 칸씩 가요. 공격받는 칸으로는 갈 수 없어요.'};
+function playGuideChipHTML() {
+  const g=state.game,sel=g.selected,piece=sel&&g.board[sel[0]][sel[1]];
+  if(playIsOver()||!piece||piece[0]!==g.turn||(state.play.mode==='ai'&&g.turn!=='w'))return '';
+  return `<button class="play-chip play-guide-chip" onclick="playPieceGuide('${piece[1]}')">${getPieceSVG('w'+piece[1],22)} ${t(PIECE_NAMES[piece[1]])} 움직임 보기</button>`;
+}
+// 5×5 그림: 가운데 말에서 갈 수 있는 칸(점)과 폰이 잡는 칸(×)
+function playPieceGuideBoard(type) {
+  const c=2,moves=new Set(),captures=new Set(),add=(r,col,set=moves)=>{if(r>=0&&r<5&&col>=0&&col<5)set.add(r+','+col);};
+  const lines={R:[[1,0],[-1,0],[0,1],[0,-1]],B:[[1,1],[1,-1],[-1,1],[-1,-1]]};lines.Q=[...lines.R,...lines.B];
+  if(lines[type])for(const [dr,dc] of lines[type])for(let k=1;k<5;k++)add(c+dr*k,c+dc*k);
+  if(type==='N')for(const [dr,dc] of [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]])add(c+dr,c+dc);
+  if(type==='K')for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)if(dr||dc)add(c+dr,c+dc);
+  if(type==='P'){add(c-1,c);add(c-2,c);add(c-1,c-1,captures);add(c-1,c+1,captures);}
+  let cells='';
+  for(let r=0;r<5;r++)for(let col=0;col<5;col++){const key=r+','+col;cells+=`<span class="${(r+col)%2?'dark':'light'}">${r===c&&col===c?getPieceSVG('w'+type,30):moves.has(key)?'<i class="pg-dot"></i>':captures.has(key)?'<i class="pg-capture">×</i>':''}</span>`;}
+  return `<div class="piece-guide-board" role="img" aria-label="${t(PIECE_NAMES[type])} · 갈 수 있는 칸 ${moves.size}개${captures.size?' · 잡는 칸 '+captures.size+'개':''}">${cells}</div>`;
+}
+function playPieceGuide(type) {
+  if(!PLAY_PIECE_RULES[type])return;
+  playTimerPauseForHelp();noteHelp(1);
+  showActivityDialog(t(PIECE_NAMES[type])+' 움직임',`${playPieceGuideBoard(type)}<p>${PLAY_PIECE_RULES[type]}</p><p class="section-note">점은 갈 수 있는 칸${type==='P'?', ×는 상대 말이 있을 때 잡는 칸':''}이에요. 실제 판에서는 다른 말이 길을 막을 수 있어요.</p>`,[
+    {label:'계속 두기',action:()=>playTimerStart()},
+    {label:'모험에서 연습하기',action:()=>{leaveActivity();showScreen('learn');goStageMap(type);}},
+  ],'choice-overlay',()=>playTimerStart());
 }
 function playCastlingHelp() {
   if(playIsOver())return;

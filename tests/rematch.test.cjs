@@ -15,7 +15,7 @@ test('a rematch after restoring a saved game uses that game settings, never the 
  b.run("resumeActivity('play')");assert.equal(b.run('state.play.level'),6);assert.equal(b.run('state.actionHistory.length'),1);
  b.run(`state.game=ChessGame.fromFEN('${WIN}');playCommitMove(${WIN_MOVE})`);assert.equal(b.run('state.game.status'),'checkmate');
  b.run('playRematch()');
- assert.deepEqual(config(b.run),{mode:'ai',level:6,levelVersion:2,timer:0,help:false,autoMove:false,small:true,face:true});
+ assert.deepEqual(config(b.run),{mode:'ai',level:6,levelVersion:2,timer:0,help:false,autoMove:false,small:true,face:true,preset:null});
  assert.equal(b.run('state.game.positionKey()'),b.run(`ChessGame.fromFEN('${SMALL}').positionKey()`),'normal starting position of the short game');assert.equal(b.run('state.game.lastMove==null'),true);
  assert.equal(b.run('state.game.turn'),'w');assert.equal(b.run('state.game.selected'),null);assert.equal(b.run('state.actionHistory.length'),0);assert.equal(b.run('state.play.moveEvent'),undefined);
  // The friend-mode choices made in the setup screen survive an AI rematch.
@@ -29,7 +29,7 @@ test('the next level is offered only after beating the computer and only applies
  assert.deepEqual(actions.map(a=>a.label),['확인했어요 · 마지막 판 보기','같은 상대와 다시 두기','다음 단계 도전 · 5단계','설정 바꾸기']);
  assert.equal(actions[0].acts,false,'the focused first action only closes the result');assert.match(run('dialogBody'),/다시 두면/);assert.match(run('dialogBody'),/4단계/);
  assert.match(run('playActionsHTML()'),/playNextLevel\(\)/);assert.match(run('playActionsHTML()'),/playRematch\(\)/);assert.doesNotMatch(run('playActionsHTML()'),/playRestartRequest/);
- run('playNextLevel()');assert.deepEqual(config(run),{mode:'ai',level:4,levelVersion:2,timer:0,help:false,autoMove:false,small:true,face:true});
+ run('playNextLevel()');assert.deepEqual(config(run),{mode:'ai',level:4,levelVersion:2,timer:0,help:false,autoMove:false,small:true,face:true,preset:null});
  assert.equal(settings(run).level,4);assert.equal(run('state.actionHistory.length'),0);assert.equal(run('state.game.status'),'playing');
  assert.equal(run('playNextLevelIndex()'),null,'a fresh game offers nothing');
 });
@@ -50,7 +50,7 @@ test('a same-device rematch keeps the move timer, seating and helper with a fres
  const {run}=load();run(`savePlaySettings({...getPlaySettings(),mode:'friend',level:2,timer:30,face:false,autoMove:true,small:true,help:false});playStart();playCommitMove([6,2,5,2]);state.play.pausedLeft=1200;state.game=ChessGame.fromFEN('${WIN}');state.play.mode='friend';playCommitMove(${WIN_MOVE})`);
  run("savePlaySettings({...getPlaySettings(),mode:'ai',level:8,timer:0})");
  run('playRematch()');
- assert.deepEqual(config(run),{mode:'friend',level:2,levelVersion:2,timer:30,help:false,autoMove:true,small:true,face:false});
+ assert.deepEqual(config(run),{mode:'friend',level:2,levelVersion:2,timer:30,help:false,autoMove:true,small:true,face:false,preset:null});
  assert.equal(run('state.play.pausedLeft===null&&state.play.deadline-Date.now()>29000'),true,'the new game starts with the full move time');assert.equal(run('state.play.timeoutSide'),null);
  const s=settings(run);assert.equal(s.mode,'friend');assert.equal(s.timer,30);assert.equal(s.level,8,'the AI level choice is kept');
 });

@@ -327,11 +327,12 @@ function showClearPopup(stars) {
   const mission=MISSIONS[piece][index],challenge=MISSIONS[piece].findIndex((m,i)=>i>index&&m.optional&&!isMissionCleared(piece,i));
   const actions=[{label:next>=0?'다음 모험':transfer.label,action:()=>next>=0?goMissionPlay(piece,next):enterMissionTransfer(piece)},
     {label:'여기까지 · 홈',action:()=>{leaveActivity();showScreen('home');renderHome();}}];
+  if(next<0&&PLAY_PRESETS[piece]&&!transfer.action.includes('playStarterBattle'))actions.splice(1,0,{label:playPresetTitle(piece),action:()=>playStarterBattle(piece)});
   if(challenge>=0&&next<0)actions.push({label:'선택 도전 해보기',action:()=>goMissionPlay(piece,challenge)});
   actions.push({label:'이 단계 다시 하기',action:()=>goMissionPlay(piece,index)},{label:'모험 목록',action:renderStageMap});
   showActivityDialog('모험 완료!',`<div class="clear-stars" aria-label="별 ${stars}개">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div><p>${mission.learning?.success||'목표를 해냈어요!'}</p><p class="section-note">${state.supportLevel?'도움을 써서 끝까지 해냈어요.':'스스로 길을 찾아냈어요.'} 모은 별은 계속 간직해요.</p>`,actions,'clear-overlay');
 }
-function enterMissionTransfer(piece){if(piece==='N')enterActivity('knight');else if(piece==='R')enterActivity('defense');else goPlay();}
+function enterMissionTransfer(piece){if(piece==='N')enterActivity('knight');else if(piece==='R')enterActivity('defense');else if(PLAY_PRESETS[piece])playStarterBattle(piece);else goPlay();}
 function closeClearPopup(){closeActivityDialog();}
 
 // BFS로 현재 상태에서 클리어까지의 최단 경로 탐색
