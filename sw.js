@@ -36,6 +36,7 @@ const ASSETS = [
   "./js/mini-defense.js",
   "./js/play-content.js",
   "./js/mini-solo.js",
+  "./js/mini-challenge.js",
   "./js/app-accessibility.js",
   "./manifest.json",
   "./icons/icon-192.png",

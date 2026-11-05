@@ -2,7 +2,7 @@
 const SESSION_KEYS = {
   mission:['missionSpec','missionPiece','missionIdx','missionBoard','missionPlayerPos','missionSolved','missionFailed','missionMoveCount','missionNotice'],
   puzzle:['puzzleLevel','puzzleIndex','puzzleGame','puzzleSolved','puzzleMoveCount','puzzleNotice'],
-  solo:['solo'], play:['game','play'], knight:['kt'], collector:['cl'], bomb:['bm'], defense:['df'], survival:['sv'],
+  challenge:['ch'],solo:['solo'], play:['game','play'], knight:['kt'], collector:['cl'], bomb:['bm'], defense:['df'], survival:['sv'],
 };
 function copyData(value) { return JSON.parse(JSON.stringify(value)); }
 function beginActivity(kind,params={}) {
@@ -27,19 +27,19 @@ function restoreSnapshot(snap) {
   if(state.puzzleGame)state.puzzleGame=Object.assign(new ChessGame(),state.puzzleGame);
 }
 function activityComplete() {
-  return ({solo:()=>state.solo.clear,mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
+  return ({challenge:()=>state.ch.clear,solo:()=>state.solo.clear,mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
   // Rule-puzzle sessions are version 2 so an app that does not know the rules never opens them as plain tours.
-  const saved={version:state.activeKind==='solo'||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
+  const saved={version:['solo','challenge'].includes(state.activeKind)||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
   // Save remaining time, never a deadline that elapses while the app is closed.
   if(saved.kind==='play'&&saved.snapshot.values.play?.timer) saved.snapshot.values.play.pausedLeft=Math.max(0,state.play.pausedLeft??state.play.deadline-Date.now());
   const sessions=readData('sessions',{});if(saved.complete)delete sessions[saved.kind];else sessions[saved.kind]=saved;
   writeData('sessions',sessions);writeData('last_session',saved);
 }
 function renderActivity() {
-  ({solo:renderSolo,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
+  ({challenge:renderChallenge,solo:renderSolo,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
 }
 function undoActivity() {
   if(state.animating || !state.actionHistory?.length)return;
@@ -85,9 +85,11 @@ function finishLinks(action='goMiniMenu()',label='다른 놀이 보기',extra=''
 function getSavedSession(saved=readData('last_session',null)){
   if(!saved||!SESSION_KEYS[saved.kind]||!saved.snapshot?.values)return null;
   const rulePuzzle=saved.kind==='knight'&&saved.snapshot.values.kt?.mode==='puzzle';
-  if(saved.version!==(saved.kind==='solo'||saved.kind==='play'&&saved.snapshot.values.play?.content?3:rulePuzzle?2:1))return null;
+  if(saved.version!==(['solo','challenge'].includes(saved.kind)||saved.kind==='play'&&saved.snapshot.values.play?.content?3:rulePuzzle?2:1))return null;
   const v=saved.snapshot.values,validBoard=(b,size)=>Array.isArray(b)&&b.length===size&&b.every(row=>Array.isArray(row)&&row.length===size);
-  if(saved.kind==='solo'){
+  if(saved.kind==='challenge'){
+    if(!challengeStateValid(v.ch)||!(saved.history||[]).every(s=>challengeStateValid(s.values?.ch)))return null;
+  }else if(saved.kind==='solo'){
     if(!soloValid(v.solo)||!(saved.history||[]).every(s=>soloValid(s.values?.solo)))return null;
   }else if(saved.kind==='mission'){
     const index=saved.params?.id?MISSIONS[v.missionPiece]?.findIndex(m=>m.id===saved.params.id):v.missionIdx;
@@ -124,7 +126,7 @@ function getSavedSession(saved=readData('last_session',null)){
   return saved;
 }
 
-const ACTIVITY_NAMES={solo:'마지막 한 말',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
+const ACTIVITY_NAMES={challenge:'내가 만든 도전장',solo:'마지막 한 말',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
 const KNIGHT_MODE_NAMES={walk:'산책',explore:'10칸 탐험',tour:'전체 투어',puzzle:'규칙 문제'};
 function ongoingActivities(){return Object.entries(readData('sessions',{})).filter(([kind,s])=>!!getSavedSession(s)&&!s.complete).sort((a,b)=>b[1].updatedAt-a[1].updatedAt);}
 function openSavedActivities(){
@@ -162,7 +164,7 @@ function enterActivity(kind){
   return startDefaultActivity(kind);
 }
 function startDefaultActivity(kind){
-  ({solo:goSoloMenu,knight:()=>goKnightTour(undefined,preferredKnightMode()),collector:()=>goCollector(0),bomb:()=>goBomb(0),defense:()=>goDefense(0),survival:()=>goSurvival(0),puzzle:goPuzzleLevelSelect,mission:()=>{const i=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));if(i<0)return goAdventure();goMissionPlay('R',i);},play:goPlay}[kind])?.();
+  ({challenge:goChallenges,solo:goSoloMenu,knight:()=>goKnightTour(undefined,preferredKnightMode()),collector:()=>goCollector(0),bomb:()=>goBomb(0),defense:()=>goDefense(0),survival:()=>goSurvival(0),puzzle:goPuzzleLevelSelect,mission:()=>{const i=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));if(i<0)return goAdventure();goMissionPlay('R',i);},play:goPlay}[kind])?.();
 }
 function requestNewActivity(kind,start=()=>startDefaultActivity(kind)){
   saveActiveSession();const saved=activitySaved(kind);
@@ -242,6 +244,7 @@ function practiceBoardHTML(kind,next=false){
 
 function pickNewActivity(kind){
   // Opening a selector is safe; confirm once when a replacement board is chosen.
+  if(kind==='challenge')return goChallenges();
   if(kind==='solo')return goSoloMenu();
   if(kind==='play')return goPlay();
   if(kind==='puzzle')return goPuzzleLevelSelect();

@@ -66,6 +66,7 @@ function profileBackupVersion(data){
  const records=[];
  try{records.push(...Object.values(JSON.parse(data.sessions||'{}')||{}));}catch{}
  try{records.push(JSON.parse(data.last_session||'null'));}catch{}
+ if(data.knight_challenges||data.challenge_draft)return 3;
  return records.some(s=>s?.version===3)?3:records.some(s=>s?.version===2)?2:1;
 }
 function profilePlainObject(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
@@ -86,6 +87,7 @@ function backupSnapshotValid(kind,v){
   if(v.missionSpec){const spec=v.missionSpec,trusted=[...MISSIONS[v.missionPiece],...LEGACY_MISSIONS[v.missionPiece]].find(m=>m.id===spec.id&&m.version===spec.version&&(m.size||6)===(spec.size||6));if(!trusted)return false;v.missionSpec=copyData(trusted);}
   return board(v.missionBoard,v.missionSpec?.size||6);
  }
+ if(kind==='challenge')return challengeStateValid(v.ch);
  if(kind==='solo')return soloValid(v.solo);
  if(kind==='puzzle')return gameValid(v.puzzleGame);
  if(kind==='play'){
@@ -122,6 +124,8 @@ function parseProfileBackup(text){
   else{
    let parsed;try{parsed=JSON.parse(value);}catch{throw Error('프로필 기록을 읽지 못했어요.');}checkBackupJSON(parsed);
    if(key==='sessions'&&(!profilePlainObject(parsed)||!Object.values(parsed).every(validateBackupSession))||key==='last_session'&&!validateBackupSession(parsed))throw Error('진행 중인 판을 읽지 못했어요. 원래 기기에서 다시 내보내 주세요.');
+   if(key==='knight_challenges'&&(!Array.isArray(parsed)||parsed.length>100||!parsed.every(challengeSpecValid)||new Set(parsed.map(p=>p.id)).size!==parsed.length)||key==='challenge_draft'&&(!Array.isArray(parsed)||parsed.length>0&&!challengePathValid(parsed)))throw Error('도전장 경로를 읽지 못했어요.');
+   if(['solo_done','scene_done'].includes(key)&&(!Array.isArray(parsed)||!parsed.every(id=>typeof id==='string')))throw Error('완료 기록을 읽지 못했어요.');
    if(key==='progress_v3'&&(!profilePlainObject(parsed)||parsed.version!==3||!['missions','puzzles','mini'].every(k=>profilePlainObject(parsed[k])&&Object.values(parsed[k]).every(n=>Number.isInteger(n)&&n>=0&&n<=3))))throw Error('놀이 기록이 올바르지 않아요.');
    if(['preferences','play_settings','knight_tour_settings','mission_progress_v2','puzzle_stars','minigame_stars'].includes(key)&&!profilePlainObject(parsed))throw Error('설정이나 기록 형식이 올바르지 않아요.');
    if(key==='play_settings'&&(![undefined,'ai','friend'].includes(parsed.mode)||parsed.level!==undefined&&(!Number.isInteger(parsed.level)||parsed.level<0||parsed.level>9)||parsed.timer!==undefined&&![0,15,30,60].includes(parsed.timer)))throw Error('대전 설정이 올바르지 않아요.');
