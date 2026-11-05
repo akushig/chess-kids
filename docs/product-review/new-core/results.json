@@ -1,0 +1,44 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "solo": true,
+      "expedition": true,
+      "team": true,
+      "scenes": true,
+      "authoredChallenge": true,
+      "backup": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "solo": true,
+      "expedition": true,
+      "team": true,
+      "scenes": true,
+      "authoredChallenge": true,
+      "backup": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "solo": true,
+      "expedition": true,
+      "team": true,
+      "scenes": true,
+      "authoredChallenge": true,
+      "backup": true,
+      "fixedBoard": true
+    }
+  ],
+  "errors": []
+}

@@ -59,8 +59,8 @@ function downloadProfile(id=activeProfile){
   link.href=url;link.download='chess-profile-'+backup.profile.name.replace(/[^\p{L}\p{N}_-]/gu,'_')+'-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
  }catch(e){profileMessage('내보내지 못했어요',e.message);}
 }
-// Files that contain a rule-puzzle session are version 2: older apps refuse them with "update the app"
-// instead of misreading the board. Every other file stays version 1 so it still opens in older apps.
+// New activities/authored knight data require version 3, built-in knight rule sessions version 2.
+// Older apps refuse unsupported files rather than opening them under the wrong rules.
 const PROFILE_BACKUP_VERSIONS=[1,2,3];
 function profileBackupVersion(data){
  const records=[];

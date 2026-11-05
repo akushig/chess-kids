@@ -31,7 +31,7 @@ function activityComplete() {
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
-  // Rule-puzzle sessions are version 2 so an app that does not know the rules never opens them as plain tours.
+  // Version 3 protects new content from older apps; built-in knight rule puzzles remain version 2.
   const saved={version:['solo','challenge'].includes(state.activeKind)||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
   // Save remaining time, never a deadline that elapses while the app is closed.
   if(saved.kind==='play'&&saved.snapshot.values.play?.timer) saved.snapshot.values.play.pausedLeft=Math.max(0,state.play.pausedLeft??state.play.deadline-Date.now());
@@ -47,7 +47,7 @@ function undoActivity() {
   if(state.activeKind==='play') {
     playStop();let snap;
     do { snap=state.actionHistory.pop(); } while(state.play.mode==='ai'&&snap.values.game.turn!=='w'&&state.actionHistory.length);
-    restoreSnapshot(snap);state.game.selected=null;state.game.validMoves=[];state.play.notice='다른 수를 둘 수 있어요.';
+    restoreSnapshot(snap);state.game.selected=null;state.game.validMoves=[];state.play.notice='다른 수를 둘 수 있어요.';state.play.teamPlan=false;state.play.teamProposal=null;
   } else {
     restoreSnapshot(state.actionHistory.pop());
     if(state.activeKind==='puzzle'){state.puzzleRun++;state.puzzleWaiting=false;state.puzzleSelected=null;state.puzzleValidMoves=[];}
