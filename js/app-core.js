@@ -396,7 +396,7 @@ function showActivityDialog(title,html,actions=[],id='choice-overlay',onDismiss=
   activityDialog={overlay,focus:document.activeElement,keydown,onDismiss};
   overlay.querySelector('.dialog-close').onclick=()=>closeActivityDialog();
   overlay.querySelector('.dialog-read').onclick=()=>speakGuide(title+' '+overlay.querySelector('.activity-dialog-body').textContent);
-  actions.forEach((choice,i)=>{const b=document.createElement('button');b.className='action-btn '+(i?'secondary':'green');b.textContent=choice.label;b.onclick=()=>{closeActivityDialog(false);choice.action?.();};overlay.querySelector('footer').appendChild(b);});
+  actions.forEach((choice,i)=>{const b=document.createElement('button');b.className='action-btn '+(i?'secondary':'green')+(/다음/.test(choice.label)?' progress-action':'');b.textContent=choice.label;b.onclick=()=>{closeActivityDialog(false);choice.action?.();};overlay.querySelector('footer').appendChild(b);});
   document.body.appendChild(overlay);document.getElementById('app').inert=true;
   document.addEventListener('keydown',keydown);(overlay.querySelector('footer button')||overlay.querySelector('button')).focus({preventScroll:true});
 }

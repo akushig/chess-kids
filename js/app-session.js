@@ -32,11 +32,12 @@ function activityComplete() {
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
   // Version 3 protects new content from older apps; built-in knight rule puzzles remain version 2.
-  const saved={version:['solo','challenge'].includes(state.activeKind)||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
+  const saved={version:state.activeKind==='challenge'&&state.ch?.spec.version===2?4:['solo','challenge'].includes(state.activeKind)||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
   // Save remaining time, never a deadline that elapses while the app is closed.
   if(saved.kind==='play'&&saved.snapshot.values.play?.timer) saved.snapshot.values.play.pausedLeft=Math.max(0,state.play.pausedLeft??state.play.deadline-Date.now());
   const sessions=readData('sessions',{});if(saved.complete)delete sessions[saved.kind];else sessions[saved.kind]=saved;
   writeData('sessions',sessions);writeData('last_session',saved);
+  if(saved.kind==='play'){const archive=readData('play_content_saves',{});archive[state.play.content?.type||'standard']=saved;writeData('play_content_saves',archive);}
 }
 function renderActivity() {
   ({challenge:renderChallenge,solo:renderSolo,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
@@ -85,7 +86,7 @@ function finishLinks(action='goMiniMenu()',label='다른 놀이 보기',extra=''
 function getSavedSession(saved=readData('last_session',null)){
   if(!saved||!SESSION_KEYS[saved.kind]||!saved.snapshot?.values)return null;
   const rulePuzzle=saved.kind==='knight'&&saved.snapshot.values.kt?.mode==='puzzle';
-  if(saved.version!==(['solo','challenge'].includes(saved.kind)||saved.kind==='play'&&saved.snapshot.values.play?.content?3:rulePuzzle?2:1))return null;
+  if(saved.version!==(saved.kind==='challenge'&&saved.snapshot.values.ch?.spec.version===2?4:['solo','challenge'].includes(saved.kind)||saved.kind==='play'&&saved.snapshot.values.play?.content?3:rulePuzzle?2:1))return null;
   const v=saved.snapshot.values,validBoard=(b,size)=>Array.isArray(b)&&b.length===size&&b.every(row=>Array.isArray(row)&&row.length===size);
   if(saved.kind==='challenge'){
     if(!challengeStateValid(v.ch)||!(saved.history||[]).every(s=>challengeStateValid(s.values?.ch)))return null;
@@ -126,7 +127,7 @@ function getSavedSession(saved=readData('last_session',null)){
   return saved;
 }
 
-const ACTIVITY_NAMES={challenge:'내가 만든 도전장',solo:'마지막 한 말',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
+const ACTIVITY_NAMES={challenge:'내가 만든 도전장',solo:'잡아서 하나 남기기',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
 const KNIGHT_MODE_NAMES={walk:'산책',explore:'10칸 탐험',tour:'전체 투어',puzzle:'규칙 문제'};
 function ongoingActivities(){return Object.entries(readData('sessions',{})).filter(([kind,s])=>!!getSavedSession(s)&&!s.complete).sort((a,b)=>b[1].updatedAt-a[1].updatedAt);}
 function openSavedActivities(){
