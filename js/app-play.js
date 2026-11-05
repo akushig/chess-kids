@@ -222,7 +222,7 @@ function playStart(config) {
   state.game = s.content ? playContentGame(s.content) : preset ? ChessGame.fromFEN(PLAY_PRESETS[preset].fen) : s.small ? ChessGame.fromFEN(PLAY_SMALL_FEN) : new ChessGame();
   state.play = {
     mode: s.mode,
-    ...(s.content?{content:copyData(s.content)}:{}),
+    ...(s.content?{content:playContentInitial(s.content)}:{}),
     help:s.help, autoMove:s.autoMove,face:s.face,small:preset?false:s.small,preset,notice:s.content?playContentIntro(s.content):preset?PLAY_PRESETS[preset].note:'',
     level: s.level, levelVersion:AI_DIFFICULTY_VERSION,
     timer: s.mode === 'friend' ? s.timer : 0,
@@ -252,6 +252,7 @@ function playIsOver() {
 function playStateKey() {const g=state.game;return g.positionKey()+'|'+g.status+'|'+g.drawReason;}
 function playStatusCopy() {
   const g=state.game,p=state.play,side=t(g.turn==='w'?'playWhite':'playBlack');
+  const team=teamStatus();if(team)return team;
   if(g.status==='checkmate'){
     const winner=t(g.turn==='w'?'playBlack':'playWhite');
     return {tone:g.turn==='b'||p.mode==='friend'?'success':'fail',icon:g.turn==='b'||p.mode==='friend'?'🏆':'🏁',title:p.mode==='friend'?t('playSideWins').replace('{side}',winner):t(g.turn==='b'?'playVictory':'playComputerWins'),detail:t('playMateExplained')};
@@ -348,6 +349,7 @@ function playBoardHTML(faceToFace) {
         if(attackers.some(([ar,ac])=>ar===r&&ac===c))cls+=' attacking-piece';
         if(game.board[r][c]?.[0]===game.turn&&game.legalMoves(r,c).length)cls+=' rescue-piece';
       }
+      const proposal=state.play.teamProposal;if(proposal&&((r===proposal[0]&&c===proposal[1])||(r===proposal[2]&&c===proposal[3])))cls+=' team-proposal';
       if (piece) cls += ' pc-' + piece[0];
       const castleTarget=selectedKing&&r===selected[0]&&Math.abs(c-selected[1])===2&&game.validMoves.some(([mr,mc])=>mr===r&&mc===c);
       if(castleTarget)cls+=' castle-target';
@@ -453,7 +455,7 @@ function playClick(r, c) {
     const rookTap=king&&fr===home&&fc===4&&r===home&&(c===0||c===7)&&game.board[r][c]===game.turn+'R';
     if(king&&r===fr&&(Math.abs(c-fc)===2||rookTap)){
       const side=c<fc?'queen':'king',info=game.castlingStatus(game.turn,side);
-      if(!p.small&&info.allowed){p.timeoutSide=null;playCommitMove([fr,fc,info.row,info.to]);}
+      if(!p.small&&info.allowed){if(teamRecordProposal(fr,fc,info.row,info.to))return;p.timeoutSide=null;playCommitMove([fr,fc,info.row,info.to]);}
       else {
         // A blocked king→rook gesture must still let the player select that rook.
         if(rookTap)game.select(r,c);
@@ -462,6 +464,7 @@ function playClick(r, c) {
       return;
     }
     if (game.validMoves.some(([mr, mc]) => mr === r && mc === c)) {
+      if(teamRecordProposal(fr,fc,r,c))return;
       p.timeoutSide = null;
       if(game.board[fr][fc][1]==='P'&&(r===0||r===7))playChoosePromotion([fr,fc,r,c]);
       else playCommitMove([fr, fc, r, c]);
@@ -492,6 +495,7 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
   playTimerStop();
   state.play.pausedLeft=state.play.timer?state.play.timer*1000:null;
   game.move(fr, fc, tr, tc,promotion);
+  playContentAfterMove(mover,piece,tr);
   const castle=piece[1]==='K'&&Math.abs(tc-fc)===2;
   if(castle)state.play.notice='왕과 룩이 함께 움직였어요. 캐슬링이에요.';
   if(piece[1]==='P'&&(tr===0||tr===7))state.play.notice='폰이 새로운 말로 변했어요!';
@@ -802,7 +806,7 @@ function explainPlayMove(g,fr,fc,tr,tc) {
   return ({P:'폰은 앞으로 가고, 대각선으로 잡아요.',N:'나이트는 두 칸, 옆으로 한 칸 뛰어요.',B:'비숍은 대각선으로 가요.',R:'룩은 가로와 세로로 가요.',Q:'퀸은 가로·세로·대각선으로 가요.',K:'왕은 안전한 곳으로 한 칸씩 가요.'})[type];
 }
 function playCastlingReason(info) {
-  if(state.play?.content)return '이 콘텐츠의 배치에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서는 할 수 있어요.';
+  if(state.play?.content&&!(state.play.content.type==='team'&&state.play.content.board==='full'))return '이 콘텐츠의 배치에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서는 할 수 있어요.';
   if(state.play?.preset)return '첫 대전에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서 할 수 있어요.';
   if(state.play?.small)return '이 짧은 판에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서는 할 수 있어요.';
   const square=info.square?'abcdefgh'[info.square[1]]+(8-info.square[0]):'';
