@@ -141,7 +141,7 @@ function renderPlaySetup() {
       </div>
       ${!safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner'?'<button class="action-btn green" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
       <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
-      <section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter" onclick="playStarterBattle('${key}')">${getPieceSVG('w'+key,36)}<span><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span></button>`).join('')}</div></section>
+      ${playContentMenuHTML()}<section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter" onclick="playStarterBattle('${key}')">${getPieceSVG('w'+key,36)}<span><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span></button>`).join('')}</div></section>
     </div>
   `;
 }
@@ -169,29 +169,30 @@ function playConfigOf(play) {
     timer: friend && PLAY_TIMER_OPTIONS.includes(play.timer) ? play.timer : 0,
     help: play?.help !== false, autoMove: !!play?.autoMove, small: !friend && PLAY_PRESETS[play?.preset] ? false : !!play?.small, face: play?.face !== false,
     preset: !friend && PLAY_PRESETS[play?.preset] ? play.preset : null,
+    ...(!friend && playContentValid(play?.content)?{content:playContentConfig(play.content)}:{}),
   };
 }
 // 마지막으로 둔 설정을 설정 화면에도 반영한다. 다른 모드의 선택(예: 함께 두기 시간)은 지우지 않는다.
 function playRememberConfig(c) {
   const s = getPlaySettings();
   // 첫 대전은 단계와 도움만 기록한다. 설정 화면의 모드·짧은 판 선택은 그대로 둔다.
-  if (c.preset) return savePlaySettings({...s, level: c.level, help: c.help});
+  if (c.preset || c.content) return savePlaySettings({...s, level: c.level, help: c.help});
   savePlaySettings(c.mode === 'ai'
     ? {...s, mode: 'ai', level: c.level, help: c.help, small: c.small}
     : {...s, mode: 'friend', timer: c.timer, face: c.face, autoMove: c.autoMove, help: c.help, small: c.small});
 }
 function playSavedDetail(play) {
   const c = playConfigOf(play);
-  return (c.mode === 'ai' ? '🤖 컴퓨터 ' + playLevelLabel(c.level) : '👫 ' + t('playModeFriend') + (c.timer ? ' · ⏱ ' + playTimerLabel(c.timer) : '')) + (c.preset ? ' · ' + playPresetTitle(c.preset) : c.small ? ' · 짧은 판' : '');
+  return (c.content?playContentTitle(c.content)+' · ':'')+(c.mode === 'ai' ? '🤖 컴퓨터 ' + playLevelLabel(c.level) : '👫 ' + t('playModeFriend') + (c.timer ? ' · ⏱ ' + playTimerLabel(c.timer) : '')) + (c.preset ? ' · ' + playPresetTitle(c.preset) : c.small ? ' · 짧은 판' : '');
 }
 function playConfigSummary(c) {
   const parts = c.mode === 'ai' ? [PLAY_LEVEL_ICONS[c.level] + ' ' + playLevelLabel(c.level)] : [t('playModeFriend'), '⏱ ' + playTimerLabel(c.timer), t(c.face ? 'playFaceOn' : 'playFaceOff')];
-  return [...parts, c.preset ? playPresetTitle(c.preset) : t(c.small ? 'playSmallBoard' : 'playFullBoard'), t(c.help ? 'playHelpOn' : 'playHelpOff')].join(' · ');
+  return [...parts, c.content?playContentTitle(c.content):c.preset ? playPresetTitle(c.preset) : t(c.small ? 'playSmallBoard' : 'playFullBoard'), t(c.help ? 'playHelpOn' : 'playHelpOff')].join(' · ');
 }
 // 다음 단계는 컴퓨터에게 사람이 이겼고 더 높은 단계가 있을 때만, 누를 때만 적용한다.
 function playNextLevelIndex() {
   const g = state.game, p = state.play;
-  if (!p || p.mode !== 'ai' || g?.status !== 'checkmate' || g.turn !== 'b') return null;
+  if (!p || p.content || p.mode !== 'ai' || g?.status !== 'checkmate' || g.turn !== 'b') return null;
   const level = playConfigOf(p).level;
   return level < AI_LEVELS.length - 1 ? level + 1 : null;
 }
@@ -218,10 +219,11 @@ function playStart(config) {
   playStop();
   // 짧은 판: 폰이 룩 앞을 막아 첫 수에 서로 잡을 수 있는 말이 없다(예전 배치는 d줄에서 룩이 마주 봤다).
   const preset = PLAY_PRESETS[s.preset] && s.mode === 'ai' ? s.preset : null;
-  state.game = preset ? ChessGame.fromFEN(PLAY_PRESETS[preset].fen) : s.small ? ChessGame.fromFEN(PLAY_SMALL_FEN) : new ChessGame();
+  state.game = s.content ? playContentGame(s.content) : preset ? ChessGame.fromFEN(PLAY_PRESETS[preset].fen) : s.small ? ChessGame.fromFEN(PLAY_SMALL_FEN) : new ChessGame();
   state.play = {
     mode: s.mode,
-    help:s.help, autoMove:s.autoMove,face:s.face,small:preset?false:s.small,preset,notice:preset?PLAY_PRESETS[preset].note:'',
+    ...(s.content?{content:copyData(s.content)}:{}),
+    help:s.help, autoMove:s.autoMove,face:s.face,small:preset?false:s.small,preset,notice:s.content?playContentIntro(s.content):preset?PLAY_PRESETS[preset].note:'',
     level: s.level, levelVersion:AI_DIFFICULTY_VERSION,
     timer: s.mode === 'friend' ? s.timer : 0,
     deadline: 0,
@@ -299,10 +301,12 @@ function playPresentEvent(force=false) {
   if(playIsOver()){
     // 첫 초점은 '마지막 판 보기'. 재대결·다음 단계는 사용자가 고를 때만 시작한다.
     const next=playNextLevelIndex();
-    actions.push({label:t('playRematch'),action:playRematch});
+    const contentActions=playContentResultActions();
+    if(contentActions)actions.push(...contentActions);
+    else actions.push({label:t('playRematch'),action:playRematch});
     if(next!==null)actions.push({label:t('playNextLevel').replace('{n}',next+1),tone:'green',action:playNextLevel});
-    actions.push({label:t('playChangeSettings'),secondary:true,action:playChangeSettings});
-    const top=p.mode==='ai'&&g.status==='checkmate'&&g.turn==='b'&&next===null;
+    if(!contentActions)actions.push({label:t('playChangeSettings'),secondary:true,action:playChangeSettings});
+    const top=!p.content&&p.mode==='ai'&&g.status==='checkmate'&&g.turn==='b'&&next===null;
     body+=`${top?`<p class="play-event-explanation">${t('playTopLevelWin')}</p>`:''}<p class="play-dialog-note play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(p))}</p>`;
   }
   playTimerPauseForHelp();
@@ -366,14 +370,14 @@ function renderPlayAi() {
     <div class="screen-wrap">
       <div class="screen-header">
         <button class="back-btn" onclick="goPlay()">← ${t('btnBack')}</button>
-        <h2>${state.play.preset ? playPresetTitle(state.play.preset) : t('playTitle')}</h2>
+        <h2>${state.play.content ? playContentTitle(state.play.content) : state.play.preset ? playPresetTitle(state.play.preset) : t('playTitle')}</h2>
         <span class="play-badge">${PLAY_LEVEL_ICONS[level]} ${playLevelLabel(level)}</span>
       </div>
       ${statusMsg}
       <div class="captured-pieces" id="captured-top">${game.captured.b.map(p => getPieceSVG(p, 24)).join('')}</div>
       ${playBoardHTML(false)}
       <div class="captured-pieces" id="captured-bottom">${game.captured.w.map(p => getPieceSVG(p, 24)).join('')}</div>
-      ${playActionsHTML()}
+      ${playContentPanel()}${playActionsHTML()}
     </div>
   `);
 }
@@ -430,7 +434,7 @@ function renderPlayFriend() {
       ${panel('b')}
       ${playBoardHTML(p.face !== false)}
       ${panel('w')}
-      ${playActionsHTML()}
+      ${playContentPanel()}${playActionsHTML()}
     </div>
   `);
   if (playTimerHandle) playTimerPaint();
@@ -775,6 +779,7 @@ function playActionsHTML() {
 }
 // 끝난 판 아래: 같은 상대 재대결 · (이긴 경우) 다음 단계 · 설정 바꾸기 · 마치기. 확인 창 없이 바로 시작한다.
 function playFinishActionsHTML() {
+  if(state.play.content?.type==='expedition')return `<div class="finish-actions">${expeditionWon()&&state.play.content.stage<2?'<button class="action-btn green" onclick="expeditionChoices()">'+(state.play.content.stage===0?'동료 고르기':'다음 길 고르기')+'</button>':''}<button class="action-btn" onclick="playRematch()">같은 전투 재도전</button><button class="action-btn secondary" onclick="goExpedition()">원정 입구</button></div>`;
   const next=playNextLevelIndex();
   return `<div class="finish-actions play-finish-actions"><button class="action-btn" onclick="playRematch()">${t('playRematch')}</button>${next!==null?`<button class="action-btn green" onclick="playNextLevel()">${t('playNextLevel').replace('{n}',next+1)}</button>`:''}<button class="action-btn secondary" onclick="playChangeSettings()">${t('playChangeSettings')}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div><p class="play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(state.play))}</p><button class="text-button play-rescue-practice" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 연습</button>`;
 }
@@ -797,6 +802,7 @@ function explainPlayMove(g,fr,fc,tr,tc) {
   return ({P:'폰은 앞으로 가고, 대각선으로 잡아요.',N:'나이트는 두 칸, 옆으로 한 칸 뛰어요.',B:'비숍은 대각선으로 가요.',R:'룩은 가로와 세로로 가요.',Q:'퀸은 가로·세로·대각선으로 가요.',K:'왕은 안전한 곳으로 한 칸씩 가요.'})[type];
 }
 function playCastlingReason(info) {
+  if(state.play?.content)return '이 콘텐츠의 배치에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서는 할 수 있어요.';
   if(state.play?.preset)return '첫 대전에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서 할 수 있어요.';
   if(state.play?.small)return '이 짧은 판에서는 캐슬링을 하지 않아요. 모든 말로 한 판에서는 할 수 있어요.';
   const square=info.square?'abcdefgh'[info.square[1]]+(8-info.square[0]):'';

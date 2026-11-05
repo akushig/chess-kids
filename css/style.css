@@ -1868,3 +1868,5 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .content-form {display:grid;gap:12px;margin:16px 0;}
 .content-form label {display:grid;gap:6px;}
 .content-form input,.content-form select {font:inherit;min-height:44px;padding:8px;border:1px solid #6e918c;border-radius:8px;max-width:100%;box-sizing:border-box;}
+.content-context {padding:10px 12px;background:#eaf5f1;border-radius:12px;display:grid;gap:4px;margin:8px 0;font-size:.9rem;color:#254f48;}
+.content-context p {margin:4px 0;}

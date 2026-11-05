@@ -27,12 +27,12 @@ function restoreSnapshot(snap) {
   if(state.puzzleGame)state.puzzleGame=Object.assign(new ChessGame(),state.puzzleGame);
 }
 function activityComplete() {
-  return ({solo:()=>state.solo.clear,mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
+  return ({solo:()=>state.solo.clear,mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
   // Rule-puzzle sessions are version 2 so an app that does not know the rules never opens them as plain tours.
-  const saved={version:state.activeKind==='solo'?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
+  const saved={version:state.activeKind==='solo'||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
   // Save remaining time, never a deadline that elapses while the app is closed.
   if(saved.kind==='play'&&saved.snapshot.values.play?.timer) saved.snapshot.values.play.pausedLeft=Math.max(0,state.play.pausedLeft??state.play.deadline-Date.now());
   const sessions=readData('sessions',{});if(saved.complete)delete sessions[saved.kind];else sessions[saved.kind]=saved;
@@ -85,7 +85,7 @@ function finishLinks(action='goMiniMenu()',label='다른 놀이 보기',extra=''
 function getSavedSession(saved=readData('last_session',null)){
   if(!saved||!SESSION_KEYS[saved.kind]||!saved.snapshot?.values)return null;
   const rulePuzzle=saved.kind==='knight'&&saved.snapshot.values.kt?.mode==='puzzle';
-  if(saved.version!==(saved.kind==='solo'?3:rulePuzzle?2:1))return null;
+  if(saved.version!==(saved.kind==='solo'||saved.kind==='play'&&saved.snapshot.values.play?.content?3:rulePuzzle?2:1))return null;
   const v=saved.snapshot.values,validBoard=(b,size)=>Array.isArray(b)&&b.length===size&&b.every(row=>Array.isArray(row)&&row.length===size);
   if(saved.kind==='solo'){
     if(!soloValid(v.solo)||!(saved.history||[]).every(s=>soloValid(s.values?.solo)))return null;
@@ -102,6 +102,7 @@ function getSavedSession(saved=readData('last_session',null)){
     if(!PUZZLES[index]||!validBoard(v.puzzleGame?.board,8))return null;v.puzzleIndex=index;v.puzzleLevel=PUZZLES[index].level;for(const snap of saved.history||[])if(snap.values){snap.values.puzzleIndex=index;snap.values.puzzleLevel=v.puzzleLevel;}
   }else if(saved.kind==='play'){
     if(!validBoard(v.game?.board,8)||!['w','b'].includes(v.game.turn)||!v.play)return null;
+    if(v.play.content!=null&&(!playContentValid(v.play.content)||v.play.mode!=='ai'||!(saved.history||[]).every(s=>playContentValid(s.values?.play?.content))))return null;
     if(v.play.preset!=null&&!(Object.hasOwn(PLAY_PRESETS,v.play.preset)&&v.play.mode==='ai'))return null;
     v.play=playUpgradeDifficulty(v.play);
     for(const snap of saved.history||[])if(snap.values?.play)snap.values.play=playUpgradeDifficulty(snap.values.play);
