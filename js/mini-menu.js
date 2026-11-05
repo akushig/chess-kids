@@ -2,6 +2,7 @@ function goMiniMenu(){leaveActivity();showScreen('mini');renderMiniMenu();}
 function renderMiniMenu(){
   state.miniOrigin='mini';
   const groups=[
+    ['새로운 도전', [['solo','♜','마지막 한 말','잡는 순서를 찾아 한 말만 남겨요 · 12판','mini-purple']]],
     ['탐험과 발견',[
       ['knight','♞','기사의 여행 · 나이트 투어','산책 3점프 → 10칸 → 전체 투어 · 규칙 문제 10판','mini-green'],
       ['puzzle','💡','한 수 발견','말 잡기 · 왕 구하기 · 메이트','mini-purple']]],

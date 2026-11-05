@@ -101,7 +101,7 @@ test('profile files are version 2 only with a rule board, still read version 1, 
  const c=load();c.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(v1)})).id);enterActivity('knight')`);assert.equal(c.run('state.kt.mode'),'tour');assert.equal(c.run('state.kt.moveCount'),1);
  const file=JSON.parse(v2),sessions=JSON.parse(file.data.sessions);sessions.knight.snapshot.values.kt.board[2][2]=true;file.data.sessions=JSON.stringify(sessions);
  assert.throws(()=>c.run(`parseProfileBackup(${JSON.stringify(JSON.stringify(file))})`),/진행 중인 판/);
- const future={...JSON.parse(v2),version:3};assert.throws(()=>c.run(`parseProfileBackup(${JSON.stringify(JSON.stringify(future))})`),/이 버전의 파일은/);
+ const future={...JSON.parse(v2),version:4};assert.throws(()=>c.run(`parseProfileBackup(${JSON.stringify(JSON.stringify(future))})`),/이 버전의 파일은/);
  // Even a finished rule board in the last session marks the file as version 2.
  const d=load();d.run("goKnightPuzzle('knight-shape-hole-5-v1');for(const [r,c] of KNIGHT_PUZZLES[0].solution.slice(1))knightTourClick(r,c);leaveActivity()");assert.equal(JSON.parse(d.run('JSON.stringify(createProfileBackup())')).version,2);
 });

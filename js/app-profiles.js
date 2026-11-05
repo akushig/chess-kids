@@ -61,12 +61,12 @@ function downloadProfile(id=activeProfile){
 }
 // Files that contain a rule-puzzle session are version 2: older apps refuse them with "update the app"
 // instead of misreading the board. Every other file stays version 1 so it still opens in older apps.
-const PROFILE_BACKUP_VERSIONS=[1,2];
+const PROFILE_BACKUP_VERSIONS=[1,2,3];
 function profileBackupVersion(data){
  const records=[];
  try{records.push(...Object.values(JSON.parse(data.sessions||'{}')||{}));}catch{}
  try{records.push(JSON.parse(data.last_session||'null'));}catch{}
- return records.some(s=>s?.version===2)?2:1;
+ return records.some(s=>s?.version===3)?3:records.some(s=>s?.version===2)?2:1;
 }
 function profilePlainObject(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 function checkBackupJSON(v,depth=0,counter={n:0}){
@@ -86,6 +86,7 @@ function backupSnapshotValid(kind,v){
   if(v.missionSpec){const spec=v.missionSpec,trusted=[...MISSIONS[v.missionPiece],...LEGACY_MISSIONS[v.missionPiece]].find(m=>m.id===spec.id&&m.version===spec.version&&(m.size||6)===(spec.size||6));if(!trusted)return false;v.missionSpec=copyData(trusted);}
   return board(v.missionBoard,v.missionSpec?.size||6);
  }
+ if(kind==='solo')return soloValid(v.solo);
  if(kind==='puzzle')return gameValid(v.puzzleGame);
  if(kind==='play'){
   const p=v.play;return gameValid(v.game)&&p&&['ai','friend'].includes(p.mode)&&(p.preset==null||Object.hasOwn(PLAY_PRESETS,p.preset)&&p.mode==='ai')&&Number.isInteger(p.level)&&p.level>=0&&p.level<10&&[0,15,30,60].includes(p.timer)&&[null,undefined,'castle','promotion'].includes(p.moveEvent?.special)&&(!p.moveEvent?.special||p.moveEvent.special==='promotion'||[p.moveEvent.kingFrom,p.moveEvent.kingTo,p.moveEvent.rookFrom,p.moveEvent.rookTo].every(coord));
@@ -99,7 +100,7 @@ function backupSnapshotValid(kind,v){
  return piece(g.piece)&&Number.isInteger(g.waveIdx)&&Number.isInteger(g.breached)&&Number.isInteger(g.maxBreach)&&Array.isArray(g.enemies)&&g.enemies.every(e=>coord(e.pos)&&piece(e.p))&&Array.isArray(g.waves)&&g.waves.every(w=>Array.isArray(w)&&w.every(e=>coord(e.pos)&&piece(e.p)));
 }
 function validateBackupSession(saved){
- if(!saved||![1,2].includes(saved.version)||!SESSION_KEYS[saved.kind]||!profilePlainObject(saved.snapshot)||!Array.isArray(saved.history)||saved.history.length>120)return false;
+ if(!saved||![1,2,3].includes(saved.version)||!SESSION_KEYS[saved.kind]||!profilePlainObject(saved.snapshot)||!Array.isArray(saved.history)||saved.history.length>120)return false;
  try{
   const restrict=snap=>{if(profilePlainObject(snap?.values))snap.values=Object.fromEntries(Object.entries(snap.values).filter(([key])=>SESSION_KEYS[saved.kind].includes(key)));};
   restrict(saved.snapshot);saved.history.forEach(restrict);
