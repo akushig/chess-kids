@@ -1,13 +1,18 @@
-// 체스 수업 v2: 판마다 목표 한 줄 → 내가 한 수 → 결과와 한 문장 설명 → 다시/다음 (docs/lessons/LESSON_REDESIGN_V2.md)
+// 체스 수업: 판마다 목표 한 줄 → 내가 한 수 → 결과와 한 문장 설명 → 다시/다음 (docs/lessons/LESSON_REDESIGN_V2.md)
 // 화면은 고정된 목표·설명 영역 + 같은 크기의 판 + 버튼 두 개(왼쪽 보조, 오른쪽 진행).
 const LESSON_REPLY_DELAY = 500;  // 내 수 뒤 상대가 잡기까지의 여유
 const LESSON_TAP_GUARD = 450;    // 단계가 바뀐 직후 같은 자리의 진행 버튼이 연타로 눌리지 않게
 let lessonToken = 0, lessonPending = null, lessonOrigin = 'home', lessonPracticeLevel = null, lessonChangedAt = 0;
 
 function lessonContext() { const l = state.lesson, lesson = lessonById(l?.lessonId); return { l, lesson, level: lesson?.levels[l?.levelIndex] }; }
+// 성공한 판은 판 ID로 수업 기록에 남는다(순서와 상관없이). 새 상태의 성공 표시는 그 기록과 하던 판의 표시를 합친다.
+function lessonSolvedFlags(lesson, extra) {
+  const ids = new Set(lessonProgressAll()[lesson.id]?.solved || []);
+  return lesson.levels.map((level, i) => ids.has(level.id) || !!extra?.[i]);
+}
 function lessonFreshState(lesson, levelIndex = 0, keep = {}) {
   return { lessonId: lesson.id, contentVersion: LESSON_CONTENT_VERSION, levelIndex, phase: 'choose', game: lessonLevelGame(lesson.levels[levelIndex]),
-    move: null, reply: null, result: null, hintLevel: 0, helpUsed: !!keep.helpUsed, solved: keep.solved ? keep.solved.slice() : lesson.levels.map(() => false),
+    move: null, reply: null, result: null, hintLevel: 0, helpUsed: !!keep.helpUsed, solved: lessonSolvedFlags(lesson, keep.solved),
     attempts: keep.attempts || 0, selected: null, inspect: null, notice: null };
 }
 // 저장할 때: 상대가 잡기 전(응수 중)이면 그 판의 처음으로 남긴다. 선택·살펴보기·안내 문구는 저장하지 않는다.
@@ -45,7 +50,7 @@ function lessonProgressAll() {
   return Object.fromEntries(Object.entries(p).filter(([id, value]) => lessonProgressValid({ [id]: value })));
 }
 function lessonProgressUpdate(id, change) {
-  const all = lessonProgressAll(), prev = all[id] || { version: 1, completed: false, assisted: false, independent: false, lastSceneId: null };
+  const all = lessonProgressAll(), prev = all[id] || { version: 1, completed: false, assisted: false, independent: false, lastSceneId: null, solved: [] };
   all[id] = { ...prev, ...change(prev), version: 1 }; writeData('lesson_progress_v1', all);
 }
 function lessonSessionsAll() { const all = readData('lesson_sessions_v1', {}); return all && typeof all === 'object' && !Array.isArray(all) ? all : {}; }
@@ -75,8 +80,8 @@ function renderLessonList() {
   const fromPlay = lessonOrigin === 'play';
   document.getElementById('screen-lesson').innerHTML = `<div class="screen-wrap lesson-list"><div class="screen-header"><button class="back-btn" onclick="${fromPlay ? 'goPlay()' : "showScreen('home');renderHome()"}">← ${fromPlay ? '체스 대전' : '홈'}</button><h2>체스 수업</h2></div>
     <section class="lesson-course"><h3>내 말 지키기 · 세 수업 · ${LESSONS.reduce((n, l) => n + l.levels.length, 0)}판</h3><p>나는 <b>흰색</b>이에요. 판마다 목표를 보고 <b>직접 한 수</b>를 두면, 무슨 일이 일어났는지 바로 알려줘요. 수업마다 ${LESSON_TIER_NAMES.join(' → ')} 순서로 조금씩 어려워져요.</p></section>
-    <div class="lesson-cards">${LESSONS.map(lesson => { const status = lessonStatus(lesson); return `<div class="lesson-card-item"><button class="lesson-card" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.number}. ${lesson.title}</strong><small>${lesson.skill}</small></span><span class="lesson-status lesson-status-${status.key}">${status.label}</span></button>${status.key === 'resume' ? `<div class="lesson-card-actions"><button class="action-btn secondary" aria-label="${lesson.number}번 처음부터 다시" onclick="restartLesson('${lesson.id}')">↺ 처음부터 다시</button><button class="action-btn green" aria-label="${lesson.number}번 이어하기" onclick="openLesson('${lesson.id}')">▶ 이어하기</button></div>` : ''}</div>`; }).join('')}</div>
-    <p class="section-note">순서는 추천이에요. 어느 수업부터 시작해도 돼요. 수업마다 하던 판을 따로 기억해요.</p></div>`;
+    <div class="lesson-cards">${LESSONS.map(lesson => { const status = lessonStatus(lesson); return `<div class="lesson-card-item"><button class="lesson-card" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.number}. ${lesson.title}</strong><small>${lesson.skill}</small></span><span class="lesson-status lesson-status-${status.key}">${status.label}</span></button><div class="lesson-card-actions"><button class="action-btn secondary" aria-label="${lesson.number}번 판 고르기" onclick="lessonPicker('${lesson.id}')">☰ 판 고르기 · ${lessonSolvedFlags(lesson).filter(Boolean).length}/${lesson.levels.length}</button>${status.key === 'resume' ? `<button class="action-btn secondary" aria-label="${lesson.number}번 처음부터 다시" onclick="restartLesson('${lesson.id}')">↺ 처음부터</button><button class="action-btn green" aria-label="${lesson.number}번 이어하기" onclick="openLesson('${lesson.id}')">▶ 이어하기</button>` : `<button class="action-btn green" aria-label="${lesson.number}번 시작하기" onclick="openLesson('${lesson.id}')">▶ 시작하기</button>`}</div></div>`; }).join('')}</div>
+    <p class="section-note">순서는 추천이에요. 어느 수업, 어느 판부터 시작해도 돼요. 잘하는 사람은 판 고르기에서 어려운 판으로 바로 가요.</p></div>`;
 }
 function openLesson(id) {
   if (!lessonById(id)) return goLessons();
@@ -126,20 +131,45 @@ function lessonRetry() {
   Object.assign(l, { phase: 'choose', game: lessonLevelGame(level), move: null, reply: null, result: null, selected: null, inspect: null, notice: null });
   lessonChangedAt = Date.now(); renderLesson();
 }
+// 성공 뒤: 다음 판으로. 마지막 판이면 모두 성공했을 때 수업 마치기, 아니면 아직 안 푼 첫 판으로.
 function lessonNextLevel() {
   const { l, lesson } = lessonContext(); if (l?.phase !== 'result' || l.result !== 'success') return;
-  if (l.levelIndex === lesson.levels.length - 1) return lessonFinish();
+  if (l.levelIndex < lesson.levels.length - 1) return lessonGoLevel(l.levelIndex + 1);
+  if (l.solved.every(Boolean)) return lessonFinish();
+  lessonGoLevel(l.solved.findIndex(x => !x));
+}
+function lessonGoLevel(index) {
+  const { l, lesson } = lessonContext(); if (!lesson?.levels[index]) return;
   cancelActivityCallbacks(); lessonToken++;
-  const next = l.levelIndex + 1;
-  state.lesson = lessonFreshState(lesson, next, { helpUsed: l.helpUsed, solved: l.solved, attempts: l.attempts });
-  lessonProgressUpdate(lesson.id, () => ({ lastSceneId: lesson.levels[next].id }));
+  state.lesson = lessonFreshState(lesson, index, { helpUsed: l.helpUsed, solved: l.solved, attempts: l.attempts });
+  lessonProgressUpdate(lesson.id, () => ({ lastSceneId: lesson.levels[index].id }));
   lessonChangedAt = Date.now(); renderLesson();
+}
+// 판 고르기: 잠금 없이 아무 판이나 바로 시작한다. ✓는 성공한 판, 테두리는 지금(하던) 판.
+function lessonPicker(id) {
+  const lesson = lessonById(id || state.lesson?.lessonId); if (!lesson) return;
+  const active = state.activeKind === 'lesson' && state.lesson?.lessonId === lesson.id ? state.lesson : null;
+  const solved = active ? active.solved : lessonSolvedFlags(lesson), current = active ? active.levelIndex : lessonSavedSession(lesson.id)?.snapshot.values.lesson.levelIndex ?? -1;
+  const rows = LESSON_TIER_NAMES.map((name, t) => `<div class="lesson-pick-row"><span class="lesson-pick-tier">${name}</span>${lesson.levels.map((level, i) => [level, i]).filter(([level]) => level.tier === t + 1).map(([, i]) => `<button class="lesson-pick${solved[i] ? ' done' : ''}${i === current ? ' current' : ''}" aria-label="판 ${i + 1} · ${name}${solved[i] ? ' · 성공' : ''}${i === current ? ' · 지금 판' : ''}" onclick="lessonPickLevel('${lesson.id}',${i})">${i + 1}${solved[i] ? ' ✓' : ''}</button>`).join('')}</div>`).join('');
+  showActivityDialog(`${lesson.number}. ${lesson.title} · 판 고르기`, `<p class="lesson-pick-note">어느 판부터 해도 돼요. 아래로 갈수록 어려워요. ✓는 성공한 판이에요. <b>성공 ${solved.filter(Boolean).length}/${lesson.levels.length}</b></p><div class="lesson-pick-grid">${rows}</div>`,
+    [{ label: '닫기', action: lessonResumePending }, { label: '↺ 1판부터 다시', action: () => restartLesson(lesson.id) }], 'lesson-picker-overlay', lessonResumePending);
+}
+function lessonPickLevel(id, index) {
+  const lesson = lessonById(id); if (!lesson?.levels[index]) return;
+  closeActivityDialog(false);
+  if (state.activeKind === 'lesson' && state.lesson?.lessonId === id) return lessonGoLevel(index);
+  // 목록에서 고르면 하던 판 위치만 바뀐다. 성공 기록·힌트 사용 여부는 이어간다.
+  const saved = lessonSavedSession(id)?.snapshot.values.lesson;
+  beginActivity('lesson', { id }); lessonToken++;
+  state.lesson = lessonFreshState(lesson, index, { helpUsed: !!saved?.helpUsed, solved: saved?.solved, attempts: saved?.attempts || 0 });
+  lessonProgressUpdate(id, () => ({ lastSceneId: lesson.levels[index].id }));
+  lessonChangedAt = Date.now(); showScreen('lesson'); renderLesson();
 }
 function lessonFinish() {
   const { l, lesson } = lessonContext();
   if (l.phase !== 'result' || l.result !== 'success' || !l.solved.every(Boolean)) return;
   l.phase = 'complete';
-  // 완료는 모든 판을 성공하고 마칠 때만. 수업 중 힌트를 썼는지로 도움/혼자를 나눈다.
+  // 수업 마치기 화면은 모든 판을 성공한 뒤 마지막 판에서. 수업 중 힌트를 썼는지로 도움/혼자를 나눈다.
   const helped = l.helpUsed;
   lessonProgressUpdate(lesson.id, p => ({ completed: true, assisted: p.assisted || helped, independent: p.independent || !helped, lastSceneId: lesson.levels.at(-1).id }));
   lessonChangedAt = Date.now(); spawnParticles(); renderLesson();
@@ -191,9 +221,16 @@ function lessonAttempt(move) {
   });
 }
 function lessonShowResult(result) {
-  const l = state.lesson;
+  const { l, lesson, level } = lessonContext();
   l.phase = 'result'; l.result = result; l.attempts++;
-  if (result === 'success') l.solved[l.levelIndex] = true;
+  if (result === 'success') {
+    l.solved[l.levelIndex] = true;
+    // 판별 성공 기록. 어떤 순서로든 모든 판을 성공하면 그때 수업 완료로 기록한다.
+    lessonProgressUpdate(lesson.id, p => {
+      const solved = [...new Set([...(p.solved || []), level.id])], all = lesson.levels.every(lv => solved.includes(lv.id));
+      return { solved, ...(all && !p.completed ? { completed: true, assisted: p.assisted || l.helpUsed, independent: p.independent || !l.helpUsed } : {}) };
+    });
+  }
   renderLesson();
 }
 
@@ -234,7 +271,8 @@ function lessonKey(label) { return `<span class="lesson-key">${label.replace(/[�
 function lessonPrimaryLabel(l, lesson) {
   if (l.phase === 'complete') return LESSONS[LESSONS.indexOf(lesson) + 1] ? '다음 수업 ▶' : '대전에 써보기 ▶';
   if (l.phase === 'result' && l.result !== 'success') return '↶ 다시 해보기';
-  return l.levelIndex === lesson.levels.length - 1 ? '수업 마치기 ▶' : '다음 판 ▶';
+  if (l.levelIndex < lesson.levels.length - 1) return '다음 판 ▶';
+  return l.solved.every(Boolean) ? '수업 마치기 ▶' : '남은 판 하기 ▶';
 }
 // 힌트 1단계·첫 판: 상대가 노리는 내 말(없으면 상대가 지키는 칸)을 빨간 화살표로. 2단계: 예시 정답을 초록 화살표로.
 function lessonThreatMarks(start) {
@@ -336,6 +374,6 @@ function renderLesson() {
   const { l, lesson, level } = lessonContext(); if (!l || !lesson) return goLessons();
   const view = lessonView(), feedback = lessonFeedback(view), headline = lessonHeadline(l, lesson, level);
   view.boardTone = headline.tone;
-  renderGameScreen('screen-lesson', `<div class="screen-wrap lesson-screen"><div class="screen-header lesson-header"><button class="back-btn" onclick="goLessons()">← 목록</button><h2>${lesson.number}. ${lesson.title}</h2><button class="lesson-restart-btn" onclick="restartLesson('${lesson.id}')">↺ 처음부터</button></div>${lessonStatusHTML(l, lesson)}<div class="status-msg lesson-message"><p class="lesson-goal${headline.tone ? ' lesson-goal-' + headline.tone : ''}">${headline.html}</p><p class="lesson-feedback ${feedback.tone}">${feedback.html}</p></div>${lessonBoardHTML(view)}${lessonButtons(l, lesson)}</div>`);
+  renderGameScreen('screen-lesson', `<div class="screen-wrap lesson-screen"><div class="screen-header lesson-header"><button class="back-btn" onclick="goLessons()">← 목록</button><h2>${lesson.number}. ${lesson.title}</h2><button class="lesson-pick-btn" onclick="lessonPicker()">☰ 판 고르기</button></div>${lessonStatusHTML(l, lesson)}<div class="status-msg lesson-message"><p class="lesson-goal${headline.tone ? ' lesson-goal-' + headline.tone : ''}">${headline.html}</p><p class="lesson-feedback ${feedback.tone}">${feedback.html}</p></div>${lessonBoardHTML(view)}${lessonButtons(l, lesson)}</div>`);
   saveActiveSession();
 }

@@ -1904,13 +1904,13 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .lesson-status{flex:none;max-width:92px;padding:4px 8px;border-radius:999px;font-size:.74rem;line-height:1.3;text-align:center;word-break:keep-all;background:#eef2f4;color:#3b4c55}
 .lesson-status-resume{background:#fff2c4;color:#6a4c00}.lesson-status-done{background:#d6f1e3;color:#1d5a40}
 /* 진행 중 수업: 처음부터 다시(왼쪽)와 이어하기(오른쪽)를 눈에 보이는 버튼으로 */
-.lesson-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-top:6px}
+.lesson-card-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;width:100%;margin-top:6px}
 .lesson-card-actions .action-btn{min-height:44px;padding:8px;font-size:.88rem;margin:0}
 .game-screen.lesson-screen{gap:6px;padding:10px 16px}
 .lesson-screen>.lesson-header{height:44px;flex-wrap:nowrap;max-width:560px}
 .lesson-screen>.lesson-header .back-btn,.lesson-list .back-btn{flex:none;min-height:44px}
 .lesson-screen>.lesson-header h2{flex:1;min-width:0;font-size:.9rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
-.lesson-restart-btn{flex:none;min-height:44px;padding:6px 10px;border:1px solid #c9d6dc;border-radius:14px;background:#ffffffe6;color:#243343;font:inherit;font-size:.8rem;font-weight:800;cursor:pointer}
+.lesson-restart-btn,.lesson-pick-btn{flex:none;min-height:44px;padding:6px 10px;border:1px solid #c9d6dc;border-radius:14px;background:#ffffffe6;color:#243343;font:inherit;font-size:.8rem;font-weight:800;cursor:pointer}
 .lesson-statusbar{display:flex;align-items:center;gap:6px;height:28px;width:100%;max-width:560px;flex:none}
 .lesson-steps{display:flex;align-items:center;gap:4px;flex:1;min-width:0;height:26px;margin:0;padding:0;list-style:none;font-size:.74rem}
 .lesson-side{flex:none;display:flex;align-items:center;gap:3px;height:26px;padding:0 8px 0 4px;border-radius:999px;background:#2563b8;color:#fff;font-size:.74rem;font-weight:900;white-space:nowrap}.lesson-side svg{width:18px;height:18px}
@@ -1975,3 +1975,12 @@ html.reduced-motion .lesson-goal-ok,html.reduced-motion .lesson-goal-no{animatio
 .chess-board.lesson-board-no{border-color:#c83c46;box-shadow:0 0 0 3px #c83c4655,0 8px 24px rgba(0,0,0,.2)}
 .lesson-bar{flex:1;min-width:40px;max-width:160px;height:8px;border-radius:999px;background:#ffffffb0;border:1px solid #b9c8d0;overflow:hidden}
 .lesson-bar>i{display:block;height:100%;background:#2c8a55;border-radius:999px}
+/* 판 고르기: 단계별 세 판, 성공 ✓와 지금 판 테두리 */
+.lesson-pick-note{margin:0 0 10px;line-height:1.55;word-break:keep-all}
+.lesson-pick-grid{display:flex;flex-direction:column;gap:8px}
+.lesson-pick-row{display:grid;grid-template-columns:62px repeat(3,minmax(0,1fr));gap:6px;align-items:center}
+.lesson-pick-tier{font-size:.82rem;font-weight:900;color:#30495a}
+.lesson-pick{min-height:48px;border-radius:12px;border:2px solid #cfdde4;background:#fff;color:#243343;font:inherit;font-weight:900;font-size:1rem;cursor:pointer}
+.lesson-pick.done{background:#dff3e6;border-color:#2c8a55;color:#1d5a3a}
+.lesson-pick.current{border-color:#2563b8;box-shadow:0 0 0 3px #2563b855}
+.lesson-card-actions .action-btn{white-space:normal;word-break:keep-all;line-height:1.25}

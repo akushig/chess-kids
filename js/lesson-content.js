@@ -149,7 +149,8 @@ function lessonProgressValid(all) {
   if (!all || typeof all !== 'object' || Array.isArray(all)) return false;
   return Object.entries(all).every(([id, p]) => {
     const lesson = lessonById(id);
-    return !!lesson && !!p && typeof p === 'object' && p.version === 1 && ['completed', 'assisted', 'independent'].every(k => typeof p[k] === 'boolean') && (p.lastSceneId === null || lesson.levels.some(l => l.id === p.lastSceneId));
+    return !!lesson && !!p && typeof p === 'object' && p.version === 1 && ['completed', 'assisted', 'independent'].every(k => typeof p[k] === 'boolean') && (p.lastSceneId === null || lesson.levels.some(l => l.id === p.lastSceneId))
+      && (p.solved === undefined || Array.isArray(p.solved) && p.solved.length <= lesson.levels.length && new Set(p.solved).size === p.solved.length && p.solved.every(id => lesson.levels.some(l => l.id === id)));
   });
 }
 // 예전(v1) 수업 자료는 오류로 막지 않고 버린다. 그 밖의 모르는 ID는 그대로 거절 대상이다.

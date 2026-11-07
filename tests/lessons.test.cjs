@@ -47,13 +47,15 @@ test('힌트: 1단계는 상대가 노리는 말(없으면 지키는 칸), 2단�
  play(run,timers,quiet);assert.equal(run('state.lesson.result'),'goal');assert.equal(run('state.lesson.reply'),null);assert.match(text(run),/상대 말을 하나 잡아야 해요/);assert.equal(headline(run),'✗ 아직 목표를 이루지 못했어요');
 });
 
-test('15판을 모두 성공해야 수업이 끝나고, 힌트 사용 여부로 도움/혼자를 나눈다. 마지막 수업 다음은 대전 입구',()=>{
+test('15판을 모두 성공하면 수업 완료가 기록되고 마지막 판에서 수업 마치기, 힌트 사용 여부로 도움/혼자를 나눈다. 마지막 수업 다음은 대전 입구',()=>{
  const {run,timers}=load();run("openLesson('protect-capture-v3');lessonHint()");play(run,timers,level(run).witness);
- for(let i=1;i<15;i++){run('lessonPrimary()');assert.match(run('lessonStatusHTML(state.lesson,lessonContext().lesson)'),new RegExp(`판 ${i+1}/15 · `+['첫걸음','쉬움','보통','어려움','도전'][Math.floor(i/3)]));play(run,timers,level(run).witness);}
- assert.equal(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3'].completed"),false,'마지막 판 성공만으로는 아직');
+ for(let i=1;i<15;i++){run('lessonPrimary()');assert.match(run('lessonStatusHTML(state.lesson,lessonContext().lesson)'),new RegExp(`판 ${i+1}/15 · `+['첫걸음','쉬움','보통','어려움','도전'][Math.floor(i/3)]));
+  if(i===13)assert.equal(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3'].completed"),false,'한 판이라도 남으면 아직');play(run,timers,level(run).witness);}
+ assert.equal(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3'].completed"),true,'15판을 모두 성공한 순간 기록');assert.equal(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3'].solved.length"),15);
  run('lessonPrimary()');assert.equal(run('state.lesson.phase'),'complete');assert.equal(headline(run),'🏆 15판 모두 성공!');assert.match(text(run),/수업을 마쳤어요.*다음 수업/);
- assert.deepEqual(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3']"),{version:1,completed:true,assisted:true,independent:false,lastSceneId:'capture-15'});
- finish(run,timers,'protect-capture-v3');assert.deepEqual(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3']"),{version:1,completed:true,assisted:true,independent:true,lastSceneId:'capture-15'});
+ const solvedAll=J(run,"lessonById('protect-capture-v3').levels.map(l=>l.id)");
+ assert.deepEqual(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3']"),{version:1,completed:true,assisted:true,independent:false,lastSceneId:'capture-15',solved:solvedAll});
+ finish(run,timers,'protect-capture-v3');assert.deepEqual(J(run,"readData('lesson_progress_v1',{})['protect-capture-v3']"),{version:1,completed:true,assisted:true,independent:true,lastSceneId:'capture-15',solved:solvedAll});
  assert.ok(run("learningSummary().some(r=>r.label==='체스 수업 · 잡을 때도 조심하기'&&r.independent===1&&r.assisted===1)"));
  run('lessonPrimary()');assert.equal(run('state.lesson.lessonId'),'protect-all-v3','다음 수업');
  finish(run,timers,'protect-all-v3');run('lessonPrimary()');assert.equal(run('state.screen'),'play','마지막 수업 뒤에는 대전 입구');
@@ -82,7 +84,7 @@ test('수업 목록: 다른 놀이의 저장판을 섞지 않고, 세 수업을 
  run("openLesson('protect-capture-v3')");play(run,timers,level(run).trap);
  run("openLesson('protect-all-v3');lessonHint()");
  run('goLessons()');h=html(elements);assert.equal((h.match(/lesson-status-resume/g)||[]).length,3);assert.match(h,/이어하기 · 판 2\/15/);
- assert.match(h,/restartLesson\('protect-escape-v3'\)[\s\S]*↺ 처음부터 다시[\s\S]*openLesson\('protect-escape-v3'\)[\s\S]*▶ 이어하기/);
+ assert.match(h,/lessonPicker\('protect-escape-v3'\)">☰ 판 고르기 · 1\/15[\s\S]*restartLesson\('protect-escape-v3'\)[\s\S]*↺ 처음부터[\s\S]*openLesson\('protect-escape-v3'\)[\s\S]*▶ 이어하기/);
  run("openLesson('protect-escape-v3')");assert.equal(run('state.lesson.levelIndex'),1);run("openLesson('protect-capture-v3')");assert.equal(run('state.lesson.result'),'fail');run("openLesson('protect-all-v3')");assert.equal(run('state.lesson.hintLevel'),1);
  run("goLessons();globalThis.choice=null;showChoice=(m,c)=>{choice={m,c};};restartLesson('protect-escape-v3')");assert.match(run('choice.m'),/첫 판부터 다시/);run('choice.c[0].action()');
  assert.deepEqual([run('state.lesson.levelIndex'),run('state.lesson.phase')],[0,'choose']);run('goLessons()');assert.ok(run("!!lessonSavedSession('protect-capture-v3')&&!!lessonSavedSession('protect-all-v3')"));
@@ -102,4 +104,32 @@ test('수업 마치기 직후 같은 자리의 다음 수업 버튼은 연타로
  for(let i=0;i<15;i++){play(run,timers,level(run).witness);run('lessonChangedAt=0;lessonPrimary()');}
  assert.equal(run('state.lesson.phase'),'complete');run('lessonPrimary()');assert.equal(run('state.lesson.lessonId'),'protect-escape-v3','두 번째 탭은 무시');
  run('lessonChangedAt=Date.now()-1000;lessonPrimary()');assert.equal(run('state.lesson.lessonId'),'protect-capture-v3','잠시 뒤에는 다음 수업');
+});
+
+test('판 고르기: 잠금 없이 아무 판이나 바로 시작하고, 성공 표시는 판별로 남으며, 어떤 순서로든 모두 성공하면 완료로 기록한다',()=>{
+ const {run,timers,elements}=load();run("globalThis.dialogs=[];showActivityDialog=(title,html,actions)=>{dialogs.push({title,html,labels:actions.map(a=>a.label),actions});};goLessons('home')");
+ assert.match(html(elements),/lessonPicker\('protect-all-v3'\)">☰ 판 고르기 · 0\/15[\s\S]*openLesson\('protect-all-v3'\)">▶ 시작하기/,'처음 수업도 판 고르기');
+ run("lessonPicker('protect-all-v3')");let d=J(run,'dialogs.at(-1)');assert.equal(d.title,'3. 내 말 모두 지키기 · 판 고르기');assert.equal((d.html.match(/class="lesson-pick[ "]/g)||[]).length,15);
+ for(const tier of ['첫걸음','쉬움','보통','어려움','도전'])assert.match(d.html,new RegExp(tier));assert.deepEqual(d.labels,['닫기','↺ 1판부터 다시']);
+ // 잘하는 사람은 바로 도전 단계로: 13판부터.
+ run("lessonPickLevel('protect-all-v3',12)");assert.deepEqual([run('state.lesson.lessonId'),run('state.lesson.levelIndex'),run('state.screen')],['protect-all-v3',12,'lesson']);assert.match(html(elements),/판 13\/15 · 도전/);
+ play(run,timers,level(run).witness);assert.equal(run('state.lesson.result'),'success');assert.equal(run('lessonPrimaryLabel(state.lesson,lessonContext().lesson)'),'다음 판 ▶');
+ run('lessonPrimary()');run('lessonPrimary()');assert.equal(run('state.lesson.levelIndex'),13);
+ // 수업 안에서도 판 고르기: ✓와 지금 판 표시, 고르면 그 판으로.
+ run('lessonPicker()');d=J(run,'dialogs.at(-1)');assert.match(d.html,/aria-label="판 13 · 도전 · 성공"[^>]*>13 ✓/);assert.match(d.html,/lesson-pick current" aria-label="판 14 · 도전 · 지금 판"/);
+ run("lessonPickLevel('protect-all-v3',14)");play(run,timers,level(run).witness);assert.equal(run('lessonPrimaryLabel(state.lesson,lessonContext().lesson)'),'남은 판 하기 ▶','마지막 판이지만 안 푼 판이 남음');
+ run('lessonPrimary()');assert.equal(run('state.lesson.levelIndex'),0,'아직 안 푼 첫 판으로');
+ // 응수 중에 판을 골라도 예약된 잡기는 버려진다.
+ const t=level(run).trap;run(`lessonClick(${t[0]},${t[1]});lessonClick(${t[2]},${t[3]})`);assert.equal(run('state.lesson.phase'),'response');run("lessonPickLevel('protect-all-v3',5)");flush(timers);
+ assert.deepEqual([run('state.lesson.levelIndex'),run('state.lesson.phase'),run('state.lesson.move')],[5,'choose',null]);
+ // 나머지 판을 거꾸로 풀어도 마지막으로 남은 판을 푸는 순간 완료가 기록된다.
+ for(const i of [13,11,10,9,8,7,6,4,3,2,1,0]){run(`lessonPickLevel('protect-all-v3',${i})`);play(run,timers,level(run).witness);}
+ assert.equal(J(run,"readData('lesson_progress_v1',{})['protect-all-v3'].completed"),false);run("lessonPickLevel('protect-all-v3',5)");play(run,timers,level(run).witness);
+ assert.equal(J(run,"readData('lesson_progress_v1',{})['protect-all-v3'].completed"),true,'어떤 순서로든 모두 성공');assert.equal(run('lessonPrimaryLabel(state.lesson,lessonContext().lesson)'),'다음 판 ▶');
+ // 목록에서 고르면 하던 판 위치만 바뀌고, 다시 열어도 ✓는 그대로.
+ run("goLessons();lessonPicker('protect-all-v3')");assert.equal((J(run,'dialogs.at(-1)').html.match(/ ✓</g)||[]).length,15);
+ run("lessonPickLevel('protect-all-v3',2)");assert.equal(run('state.lesson.levelIndex'),2);assert.equal(J(run,'state.lesson.solved').every(Boolean),true);
+ // 기록의 판별 성공 목록도 파일 검증 대상이다.
+ assert.equal(run("lessonProgressValid({'protect-all-v3':{version:1,completed:false,assisted:false,independent:false,lastSceneId:null,solved:['escape-01']}})"),false);
+ assert.equal(run("lessonProgressValid({'protect-all-v3':{version:1,completed:false,assisted:false,independent:false,lastSceneId:null,solved:['all-01','all-01']}})"),false);
 });

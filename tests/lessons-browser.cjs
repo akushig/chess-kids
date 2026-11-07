@@ -23,7 +23,7 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   const check=async label=>{
    const r=await rect();if(!base)base=r;for(const k of ['x','y','width','height'])assert.ok(Math.abs(r[k]-base[k])<.6,`${tag} ${label}: 판 ${k} ${base[k]} → ${r[k]}`);
    const info=await ev(()=>{const box=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,text:e.textContent.trim()};};const over=e=>e.scrollHeight-e.clientHeight;
-    return {buttons:[...document.querySelectorAll('.lesson-actions>button,.lesson-header .back-btn,.lesson-restart-btn')].map(box),actions:[...document.querySelectorAll('.lesson-actions>button')].map(box),goal:over(document.querySelector('.lesson-goal')),feedback:over(document.querySelector('.lesson-feedback')),title:over(document.querySelector('.lesson-header h2')),side:!!document.querySelector('.lesson-side'),scroll:document.documentElement.scrollWidth>innerWidth};});
+    return {buttons:[...document.querySelectorAll('.lesson-actions>button,.lesson-header .back-btn,.lesson-pick-btn')].map(box),actions:[...document.querySelectorAll('.lesson-actions>button')].map(box),goal:over(document.querySelector('.lesson-goal')),feedback:over(document.querySelector('.lesson-feedback')),title:over(document.querySelector('.lesson-header h2')),side:!!document.querySelector('.lesson-side'),scroll:document.documentElement.scrollWidth>innerWidth};});
    for(const b of info.buttons){assert.ok(b.y>=0&&b.y+b.h<=viewport.height+.5&&b.x>=0&&b.x+b.w<=viewport.width+.5,`${tag} ${label} ${b.text} 화면 밖 ${JSON.stringify(b)}`);assert.ok(b.h>=44,`${tag} ${label} ${b.text} 높이 ${b.h}`);}
    assert.ok(info.actions.length===2&&info.actions[1].x>info.actions[0].x,`${tag} ${label} 진행 버튼은 오른쪽`);
    assert.ok(info.goal<=1&&info.feedback<=1&&info.title<=1,`${tag} ${label} 문구 넘침 ${JSON.stringify(info)}`);assert.equal(info.side,true);assert.equal(info.scroll,false,`${tag} ${label} 가로 넘침`);
@@ -87,6 +87,16 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   await page.getByRole('dialog').getByRole('button',{name:'대전 시작',exact:true}).click();
   assert.deepEqual(await ev(()=>[state.screen,state.play.content.type,state.play.level,lessonBoardKey(state.game)===lessonBoardKey(lessonLevelGame(lessonById('protect-all-v3').levels[14]))]),['play','lessonPractice',2,true]);
   {const m=await ev(()=>state.game.allMoves()[0]);await page.locator('#screen-play .board-cell').nth(m[0]*8+m[1]).click();await page.locator('#screen-play .board-cell').nth(m[2]*8+m[3]).click();assert.equal(await ev(m=>state.game.board[m[2]][m[3]]?.[0],m),'w','실제 수');}
+
+  // ===== 판 고르기: 목록에서 도전 단계로 바로 가고, 수업 안에서 ✓와 지금 판을 확인한다 =====
+  await ev(()=>{leaveActivity();goLessons('home');});await L.getByRole('button',{name:'2번 판 고르기',exact:true}).click();const picker=page.getByRole('dialog');await picker.waitFor();
+  assert.equal(await picker.locator('.lesson-pick').count(),15);assert.match(await picker.innerText(),/첫걸음[\s\S]*쉬움[\s\S]*보통[\s\S]*어려움[\s\S]*도전/);
+  for(const b of await picker.locator('.lesson-pick').evaluateAll(list=>list.map(e=>{const r=e.getBoundingClientRect();return [r.height,r.bottom];})))assert.ok(b[0]>=44,`${tag} 판 버튼 높이 ${b[0]}`);
+  if(full)await page.screenshot({path:`${output}/picker-${tag}.png`,animations:'disabled'});
+  await picker.getByRole('button',{name:/^판 13 · 도전/}).click();assert.deepEqual(await ev(()=>[state.lesson.lessonId,state.lesson.levelIndex]),['protect-capture-v3',12]);assert.match(await L.locator('.lesson-progress').innerText(),/판 13\/15 · 도전/);await check('판 고르기로 13판');
+  if(!full){assert.equal(await move((await level()).witness),'success');assert.match(await headline(),/판 13 성공!/);}
+  await L.getByRole('button',{name:'☰ 판 고르기',exact:true}).click();await picker.waitFor();assert.equal(await picker.getByRole('button',{name:/^판 13 · 도전 · 성공/}).count(),1,'성공한 판은 ✓');assert.match(await picker.locator('.lesson-pick.current').innerText(),/13/);
+  await picker.getByRole('button',{name:/^판 4 · 쉬움/}).click();assert.equal(await ev(()=>state.lesson.levelIndex),3);await check('수업 안에서 판 고르기');
 
   // ===== 응수 중 목록·새로고침·프로필 전환: 유령 잡기 없음, 처음부터 다시 =====
   await ev(()=>{leaveActivity();goLessons('home');});assert.equal(await L.getByRole('button',{name:'1번 처음부터 다시',exact:true}).count(),0,'끝난 수업은 이어하기 없음');
