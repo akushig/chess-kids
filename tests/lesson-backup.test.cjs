@@ -1,4 +1,4 @@
-// 체스 수업 저장·프로필 파일 v5·예전(v1·v2) 자료 처리·수업 배치 대전. 결과는 실제 입력 함수로만 만든다.
+// 체스 수업 저장·프로필 파일 v5/v6·예전(v1·v2) 자료 처리·수업 배치 대전. 결과는 실제 입력 함수로만 만든다.
 const test=require('node:test'),assert=require('node:assert/strict'),harness=require('./harness.cjs');
 const load=(initial)=>{const h=harness(initial);h.run('const __lessonPrimary=lessonPrimary;lessonPrimary=()=>{lessonChangedAt=0;return __lessonPrimary();}');return h;};
 const J=(run,expr)=>JSON.parse(run(`JSON.stringify(${expr})`));
@@ -22,11 +22,11 @@ test('수업 배치로 대전: 마지막 판의 원래 배치로 표준 대전�
 test('프로필 파일 v5: 수업 진행·기록이 새 기기에서 같은 판으로 이어지고, 변조는 거부한다',()=>{
  const a=load();finish(a.run,a.timers,'protect-escape-v3');
  a.run("openLesson('protect-capture-v3')");play(a.run,a.timers,level(a.run).witness);a.run('lessonPrimary()');play(a.run,a.timers,level(a.run).trap);
- a.run("openLesson('protect-all-v3');lessonHint()");a.run('leaveActivity()');
+ a.run("lessonPickLevel('protect-all-v3',3)");const t3=level(a.run).trap;play(a.run,a.timers,t3);a.run('lessonPrimary()');play(a.run,a.timers,t3);a.run('lessonSecondary()');a.run('leaveActivity()');
  const text=a.run('JSON.stringify(createProfileBackup())'),file=JSON.parse(text);assert.equal(file.version,5);
  const b=load();b.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(text)})).id)`);
  b.run("openLesson('protect-capture-v3')");assert.deepEqual([b.run('state.lesson.levelIndex'),b.run('state.lesson.result')],[1,'fail']);
- b.run('lessonPrimary()');assert.equal(b.run('state.lesson.phase'),'choose');b.run("openLesson('protect-all-v3')");assert.equal(b.run('state.lesson.hintLevel'),1);
+ b.run('lessonPrimary()');assert.equal(b.run('state.lesson.phase'),'choose');b.run("openLesson('protect-all-v3')");assert.deepEqual([b.run('state.lesson.levelIndex'),b.run('state.lesson.hintLevel'),b.run('state.lesson.fails')],[3,1,2]);
  assert.equal(J(b.run,"readData('lesson_progress_v1',{})['protect-escape-v3'].completed"),true);
  const reject=(change,label)=>{const f=JSON.parse(text);change(f);assert.throws(()=>b.run(`parseProfileBackup(${JSON.stringify(JSON.stringify(f))})`),/읽지 못했어요|안전하지 않은|올바르지 않아요/,label);};
  const editLesson=fn=>f=>{const all=JSON.parse(f.data.lesson_sessions_v1);fn(all['protect-capture-v3'].snapshot.values.lesson,all['protect-capture-v3']);f.data.lesson_sessions_v1=JSON.stringify(all);};
@@ -62,7 +62,7 @@ test('예전(v1·v2) 체스 수업 자료가 든 파일과 기기 저장은 오�
  b.run(`switchProfile(importProfileBackup(${JSON.stringify(parsed)}).id);resumeActivity('solo')`);assert.equal(b.run('state.solo.pieces.length'),2);assert.equal(J(b.run,"lessonProgressAll()['protect-escape-v3'].completed"),true);
  // 같은 기기에 남은 예전 기록: 새 수업 목록은 '처음'으로 보이고, 기록을 고쳐 쓸 때 예전 항목은 사라진다.
  const c=load({'chess.child.lesson_progress_v1':JSON.stringify({'protect-escape-v2':{version:1,completed:true,assisted:false,independent:true,lastSceneId:'escape-5'}}),'chess.child.sessions':JSON.stringify({lesson:v2}),'chess.child.last_session':JSON.stringify(v2)});
- c.run("renderHome();goLessons('home')");assert.equal((c.elements.get('screen-lesson').innerHTML.match(/lesson-status-new/g)||[]).length,3);assert.doesNotMatch(c.elements.get('screen-home').innerHTML,/이어서 놀기/);
+ c.run("renderHome();goLessons('home')");assert.equal((c.elements.get('screen-lesson').innerHTML.match(/lesson-status-new/g)||[]).length,15);assert.doesNotMatch(c.elements.get('screen-home').innerHTML,/이어서 놀기/);
  c.run("openLesson('protect-escape-v3')");assert.deepEqual(Object.keys(J(c.run,"readData('lesson_progress_v1',{})")),['protect-escape-v3']);
 });
 
@@ -73,5 +73,23 @@ test('이전 v1~v4 파일은 그대로 읽고, 다른 놀이의 저장 버전 �
  const b=load();b.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(v1)})).id);enterActivity('knight')`);assert.equal(b.run('state.kt.moveCount'),1);
  const c=load();c.run("startSolo(0);soloClick(3,0);soloClick(3,2);leaveActivity()");const v3=c.run('JSON.stringify(createProfileBackup())');assert.equal(JSON.parse(v3).version,3);
  const d=load();d.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(v3)})).id);resumeActivity('solo')`);assert.equal(d.run('state.solo.pieces.length'),2);
- assert.throws(()=>d.run(`parseProfileBackup(${JSON.stringify(JSON.stringify({...JSON.parse(v3),version:6}))})`),/이 버전의 파일은/);
+ assert.throws(()=>d.run(`parseProfileBackup(${JSON.stringify(JSON.stringify({...JSON.parse(v3),version:7}))})`),/이 버전의 파일은/);
+});
+
+test('프로필 파일 v6: 새 수업의 진행·💡 기록·무한 연습 판과 기록이 새 기기에서 그대로 이어지고, 변조는 거부한다. 원래 세 수업만 쓴 파일은 v5 그대로',()=>{
+ const a=load();a.run("openLesson('mate-v1')");play(a.run,a.timers,level(a.run).witness);a.run('lessonPrimary()');const t=level(a.run).trap;play(a.run,a.timers,t);a.run('lessonPrimary()');play(a.run,a.timers,t);a.run('lessonSecondary()');play(a.run,a.timers,level(a.run).witness);a.run('lessonPrimary()');
+ a.run("startLessonDrill('pin-v1',0,4242)");flush(a.timers);play(a.run,a.timers,level(a.run).witness);a.run('lessonPrimary()');flush(a.timers);const fen=a.run('state.lesson.fen');a.run('leaveActivity()');
+ const text=a.run('JSON.stringify(createProfileBackup())'),file=JSON.parse(text);assert.equal(file.version,6);
+ assert.deepEqual(JSON.parse(file.data.lesson_progress_v1)['mate-v1'].helped,['mate-02']);
+ const b=load();b.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(text)})).id)`);
+ b.run("resumeActivity('lesson')");assert.deepEqual([b.run('state.lesson.mode'),b.run('state.lesson.fen')],['drill',fen]);assert.deepEqual(J(b.run,"lessonDrillStats('pin-v1').solved"),[1,0,0,0,0]);
+ b.run("openLesson('mate-v1')");assert.deepEqual([b.run('state.lesson.levelIndex'),b.run('state.lesson.phase')],[2,'choose']);assert.deepEqual(J(b.run,'state.lesson.solved').slice(0,3),[true,true,false]);
+ const reject=(change,label)=>{const f=JSON.parse(text);change(f);assert.throws(()=>b.run(`parseProfileBackup(${JSON.stringify(JSON.stringify(f))})`),/읽지 못했어요|안전하지 않은|올바르지 않아요/,label);};
+ const editDrill=fn=>f=>{const s=JSON.parse(f.data.sessions);fn(s.lesson.snapshot.values.lesson);f.data.sessions=JSON.stringify(s);};
+ reject(editDrill(v=>{v.fen='8/8/8/8/8/8/8/K6k w - - 0 1';}),'단계 조건에 맞지 않는 배치');reject(editDrill(v=>{v.tier=9;}),'없는 단계');reject(editDrill(v=>{v.mode='free';}),'모르는 방식');
+ reject(f=>{const d=JSON.parse(f.data.lesson_drill_v1);d.lessons['pin-v1'].best=[1];f.data.lesson_drill_v1=JSON.stringify(d);},'무한 연습 기록 형식');
+ reject(f=>{const p=JSON.parse(f.data.lesson_progress_v1);p['mate-v1'].helped=['mate-01'];f.data.lesson_progress_v1=JSON.stringify(p);},'✓와 💡에 같은 판');
+ reject(f=>{const all=JSON.parse(f.data.lesson_sessions_v1||'{}');all['pin-v1']=JSON.parse(f.data.sessions).lesson;f.data.lesson_sessions_v1=JSON.stringify(all);},'무한 연습을 수업 이어하기 저장에 넣음');
+ // 원래 세 수업만, 💡 없이 쓴 기록은 예전 앱도 읽는 v5로 남는다.
+ const c=load();finish(c.run,c.timers,'protect-escape-v3');c.run('leaveActivity()');assert.equal(JSON.parse(c.run('JSON.stringify(createProfileBackup())')).version,5);
 });
