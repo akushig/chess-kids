@@ -28,7 +28,8 @@ const output='/tmp/chess-product-qa';fs.mkdirSync(output,{recursive:true});
   await page.getByRole('button',{name:'투어',exact:true}).click();await page.getByRole('button',{name:'힌트 보기',exact:true}).click();assert.equal(await page.locator('.kt-route-number').count(),24);
   await page.evaluate(()=>{goMiniMenu();showScreen('home');renderHome();});await page.getByRole('button',{name:/프로필 · 설정/}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'놀이 기록 보기',exact:true}).click();assert.ok(await page.locator('.learning-summary').textContent());
   await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>!!document.activeElement.closest('[aria-modal="true"]')),true);await page.keyboard.press('Escape');
-  await page.getByRole('button',{name:'🎨 내 꾸미기',exact:true}).click();assert.equal(await page.getByRole('dialog').count(),1);await page.keyboard.press('Escape');
+  // 꾸미기는 대화창 대신 '나의 체스 공방' 화면으로 열린다(docs/PREMIUM_COURSE.md §4).
+  await page.getByRole('button',{name:'🎨 나의 체스 공방',exact:true}).click();assert.equal(await page.evaluate(()=>state.screen),'workshop');assert.equal(await page.getByRole('tab').count(),4);await page.getByRole('button',{name:'← 홈',exact:true}).click();
   await page.evaluate(()=>goPuzzleLevel(2));assert.equal(await page.locator('.target-badge').count(),1);
   await page.evaluate(()=>{const m=puzzleWinningMoves(state.puzzleGame,PUZZLES[state.puzzleIndex])[0];puzzleClick(m[0],m[1]);puzzleClick(m[2],m[3]);});assert.equal(await page.locator('.completion-summary').count(),1);
   await page.getByRole('button',{name:'다음 장면',exact:true}).click();assert.equal(await page.evaluate(()=>state.puzzleIndex),1);

@@ -73,7 +73,7 @@ test('이전 v1~v4 파일은 그대로 읽고, 다른 놀이의 저장 버전 �
  const b=load();b.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(v1)})).id);enterActivity('knight')`);assert.equal(b.run('state.kt.moveCount'),1);
  const c=load();c.run("startSolo(0);soloClick(3,0);soloClick(3,2);leaveActivity()");const v3=c.run('JSON.stringify(createProfileBackup())');assert.equal(JSON.parse(v3).version,3);
  const d=load();d.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(v3)})).id);resumeActivity('solo')`);assert.equal(d.run('state.solo.pieces.length'),2);
- assert.throws(()=>d.run(`parseProfileBackup(${JSON.stringify(JSON.stringify({...JSON.parse(v3),version:7}))})`),/이 버전의 파일은/);
+ assert.throws(()=>d.run(`parseProfileBackup(${JSON.stringify(JSON.stringify({...JSON.parse(v3),version:8}))})`),/이 버전의 파일은/);
 });
 
 test('프로필 파일 v6: 새 수업의 진행·💡 기록·무한 연습 판과 기록이 새 기기에서 그대로 이어지고, 변조는 거부한다. 원래 세 수업만 쓴 파일은 v5 그대로',()=>{
