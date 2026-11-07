@@ -127,6 +127,11 @@ function parseProfileBackup(text){
   if(key==='skin'){if(!SKIN_ORDER.includes(value))throw Error('알 수 없는 꾸미기 정보예요.');}
   else{
    let parsed;try{parsed=JSON.parse(value);}catch{throw Error('프로필 기록을 읽지 못했어요.');}checkBackupJSON(parsed);
+   // 예전(v1) 체스 수업 자료는 교재가 바뀌어 이어할 수 없으므로 오류 대신 버린다. 다른 모르는 수업 ID는 아래에서 거절한다.
+   if(key==='last_session'&&lessonRecordRetired(parsed))continue;
+   if(key==='sessions'&&profilePlainObject(parsed))for(const [k,s]of Object.entries(parsed))if(lessonRecordRetired(s))delete parsed[k];
+   if(key==='play_content_saves'&&profilePlainObject(parsed)&&lessonRecordRetired(parsed.lessonPractice))delete parsed.lessonPractice;
+   if((key==='lesson_sessions_v1'||key==='lesson_progress_v1')&&profilePlainObject(parsed))for(const id of Object.keys(parsed))if(lessonRetired(id))delete parsed[id];
    if(key==='sessions'&&(!profilePlainObject(parsed)||!Object.values(parsed).every(validateBackupSession))||key==='last_session'&&!validateBackupSession(parsed))throw Error('진행 중인 판을 읽지 못했어요. 원래 기기에서 다시 내보내 주세요.');
    if(key==='knight_challenges'&&(!Array.isArray(parsed)||parsed.length>100||!parsed.every(challengeSpecValid)||new Set(parsed.map(p=>p.id)).size!==parsed.length)||key==='challenge_draft'&&(!Array.isArray(parsed)||parsed.length>0&&!challengePathValid(parsed)))throw Error('도전장 경로를 읽지 못했어요.');
    if(['solo_done','scene_done'].includes(key)&&(!Array.isArray(parsed)||!parsed.every(id=>typeof id==='string')))throw Error('완료 기록을 읽지 못했어요.');

@@ -1,69 +1,57 @@
-// 체스 수업 교재와 순수 판정: 내 말 지키기 · 첫 세 수업
-// 명세: docs/lessons/INTERACTIVE_LESSONS_DESIGN.md, 장면: docs/lessons/LESSON_SCENES_V1.json
-// 좌표는 [row,col] = [8-rank, fileIndex]. 모든 장면은 백(학습자) 차례, 캐슬링·앙파상 없음.
-// witness 수순은 검사 근거일 뿐 정답 배열이 아니다. 성공은 아래 술어로 계산한다.
-const LESSON_CONTENT_VERSION = 1;
-const LESSON_BASE_FENS = {
-  A: '7k/6b1/8/8/3R4/8/K7/8 w - - 0 1',
-  B: 'r6k/8/8/8/8/B7/8/4K3 w - - 0 1',
-  C: '7k/8/5n2/3R4/8/8/8/K7 w - - 0 1',
-  D: '7k/1b6/8/8/4p3/8/4R2p/K7 w - - 0 1',
+// 체스 수업 v2: 직접 한 수 두고, 둔 수의 결과를 설명한다 (docs/lessons/LESSON_REDESIGN_V2.md)
+// 판마다 목표 한 줄 → 내가 한 수 → (위험하면) 상대가 실제로 잡음 → 한 문장 설명 → 다시/다음.
+// 좌표는 [row,col] = [8-rank, fileIndex]. 모든 판은 백(나) 차례, 캐슬링·앙파상 없음.
+// 성공: 이동 뒤 흑의 합법 수 중 백 말(킹 제외)을 잡는 수가 없다. mustCapture 판은 잡는 수여야 한다.
+// 범위는 '상대의 바로 다음 한 수'뿐이다. witness/trap은 검사·힌트용 예시이며 유일한 정답이 아니다.
+const LESSON_CONTENT_VERSION = 2;
+// v1(보기·함께·혼자 구조) 수업 ID. 예전 저장·파일에 남아 있으면 오류 대신 조용히 버린다.
+const LESSON_RETIRED_IDS = ['protect-spot-v1', 'protect-escape-v1', 'protect-capture-v1'];
+const LESSON_PIECE_VALUE = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 100 };
+const LESSON_PIECE_MOVES = {
+  R: '가로·세로로 끝까지 와요', B: '대각선으로 끝까지 와요', Q: '가로·세로·대각선으로 끝까지 와요',
+  N: 'L자로 뛰어 다른 말을 넘어와요', P: '앞쪽 대각선 한 칸을 잡아요', K: '바로 옆 칸을 잡아요',
 };
-// mirror(X): 모든 행의 좌우만 뒤집는다. 차례·캐슬링 정보는 그대로. 테스트에서 아래 고정값과 비교한다.
-function lessonMirrorFEN(fen) {
-  const [placement, ...rest] = fen.split(' ');
-  const rows = placement.split('/').map(row => [...row.replace(/[1-8]/g, n => '.'.repeat(Number(n)))].reverse().join('').replace(/\.+/g, s => String(s.length)));
-  return [rows.join('/'), ...rest].join(' ');
-}
 const LESSONS = [
   {
-    id: 'protect-spot-v1', version: 1, number: 1, task: 'spot',
-    title: '상대가 노리는 말 찾기', skill: '상대가 다음에 잡을 수 있는 우리 말을 찾아요', prerequisites: ['말 잡기'],
-    prompt: '상대가 다음에 잡을 수 있는 우리 말을 찾아 눌러요.',
-    why: '내가 두기 전에 상대가 다음에 무엇을 잡을지 살펴봐요.',
-    learned: '두기 전에, 상대가 다음에 잡을 수 있는 우리 말부터 찾아요.',
-    scenes: [
-      { id: 'protect-spot-demo-v1', role: 'demo', fen: LESSON_BASE_FENS.A, focusSquare: [4, 3], witnessSuccess: { select: [4, 3] }, witnessFailure: null },
-      { id: 'protect-spot-guided-v1', role: 'guided', fen: LESSON_BASE_FENS.B, focusSquare: [5, 0], witnessSuccess: { select: [5, 0] }, witnessFailure: null,
-        guide: '상대 말이 갈 수 있는 길을 하나씩 따라가 봐요.' },
-      { id: 'protect-spot-transfer-v1', role: 'transfer', fen: LESSON_BASE_FENS.C, focusSquare: [3, 3], witnessSuccess: { select: [3, 3] }, witnessFailure: null },
+    id: 'protect-escape-v2', version: 2, number: 1, title: '공격받는 말 피하기',
+    skill: '상대가 노리는 내 말을 잡히지 않는 칸으로 옮겨요',
+    learned: '두기 전에 상대가 노리는 내 말이 있는지 봐요. 있으면 상대 말이 닿지 않는 칸으로 옮겨요.',
+    levels: [
+      { id: 'escape-1', fen: '7k/6b1/8/8/3R4/8/K7/8 w - - 0 1', showThreat: true, goal: '상대 비숍이 내 룩을 노려요(빨간 화살표). 룩을 피해요.', witness: [4, 3, 3, 3], trap: [6, 0, 5, 0] },
+      { id: 'escape-2', fen: 'k6r/8/8/8/8/7B/8/3K4 w - - 0 1', goal: '상대 룩이 내 비숍을 노려요. 안전한 칸으로 피해요.', witness: [5, 7, 4, 6], trap: [5, 7, 0, 2] },
+      { id: 'escape-3', fen: 'k7/8/2n5/4R3/8/8/8/7K w - - 0 1', goal: '상대 나이트가 내 룩을 노려요. 나이트를 피해요.', witness: [3, 4, 2, 4], trap: [3, 4, 1, 4] },
+      { id: 'escape-4', fen: '4r3/1p6/1b4k1/8/3N4/7r/8/K7 w - - 0 1', goal: '내 나이트가 공격받아요. 안전한 칸은 몇 개 없어요.', witness: [4, 3, 3, 1], trap: [4, 3, 2, 4] },
+      { id: 'escape-5', fen: '7k/8/8/4b3/8/3B1N2/1R6/7K w - - 0 1', goal: '내 말 하나가 공격받아요. 어떤 말인지 찾아 지켜요.', witness: [6, 1, 4, 1], trap: [5, 3, 4, 4] },
     ],
   },
   {
-    id: 'protect-escape-v1', version: 1, number: 2, task: 'escape',
-    title: '안전한 곳으로 피하기', skill: '공격받는 말을 잡히지 않는 칸으로 옮겨요', prerequisites: ['공격 찾기'],
-    prompt: '공격받는 말을 잡히지 않는 칸으로 옮겨요.',
-    why: '움직일 수 있는 칸과 안전한 칸은 다를 수 있어요.',
-    learned: '공격받는 말은 상대가 다음 수에 잡을 수 없는 칸으로 옮겨요.',
-    scenes: [
-      { id: 'protect-escape-demo-v1', role: 'demo', fen: LESSON_BASE_FENS.A, focusSquare: [4, 3], witnessSuccess: { move: [4, 3, 3, 3], reply: null }, witnessFailure: null },
-      { id: 'protect-escape-guided-v1', role: 'guided', fen: 'k6r/8/8/8/8/7B/8/3K4 w - - 0 1', focusSquare: [5, 7], witnessSuccess: { move: [5, 7, 4, 6], reply: null }, witnessFailure: { move: [5, 7, 0, 2], reply: [0, 7, 0, 2] },
-        guide: '상대 룩이 갈 수 있는 줄을 먼저 살펴봐요.' },
-      { id: 'protect-escape-transfer-v1', role: 'transfer', fen: 'k7/8/2n5/4R3/8/8/8/7K w - - 0 1', focusSquare: [3, 4], witnessSuccess: { move: [3, 4, 2, 4], reply: null }, witnessFailure: { move: [3, 4, 1, 4], reply: [2, 2, 1, 4] } },
+    id: 'protect-capture-v2', version: 2, number: 2, title: '잡을 때도 조심하기',
+    skill: '잡은 뒤에 상대가 내 말을 다시 잡을 수 있는지 살펴요',
+    learned: '잡을 수 있는 말이 보여도 바로 잡지 말고, 그 칸을 상대가 지키는지 먼저 봐요.',
+    levels: [
+      { id: 'capture-1', fen: '7k/1b6/8/8/4p3/8/4R2p/K7 w - - 0 1', mustCapture: true, showThreat: true, goal: '폰 하나를 잡아요. 빨간 화살표는 그 폰을 지키는 말이에요.', witness: [6, 4, 6, 7], trap: [6, 4, 4, 4] },
+      { id: 'capture-2', fen: 'k7/6b1/8/8/3p4/8/p2R4/7K w - - 0 1', mustCapture: true, goal: '폰 하나를 잡아요. 잡은 뒤에도 룩이 안전하게!', witness: [6, 3, 6, 0], trap: [6, 3, 4, 3] },
+      { id: 'capture-3', fen: '6k1/2p2p2/8/1N6/8/1B6/8/7K w - - 0 1', mustCapture: true, goal: '폰 하나를 잡아요. 상대 킹도 바로 옆 칸을 지켜요.', witness: [3, 1, 1, 2], trap: [5, 1, 1, 5] },
+      { id: 'capture-4', fen: '7k/4p3/3n4/6p1/8/5N2/8/K2R4 w - - 0 1', mustCapture: true, goal: '상대 말 하나를 잡아요. 큰 말이 늘 좋은 건 아니에요.', witness: [5, 5, 3, 6], trap: [7, 3, 2, 3] },
+      { id: 'capture-5', fen: '6k1/8/2n4p/8/1b6/8/3Q4/K7 w - - 0 1', mustCapture: true, goal: '내 퀸이 공격받아요! 상대 말을 잡으면서 피해요.', witness: [6, 3, 2, 7], trap: [6, 3, 4, 1] },
     ],
   },
   {
-    id: 'protect-capture-v1', version: 1, number: 3, task: 'captureSafe',
-    title: '잡은 다음도 살펴보기', skill: '잡은 뒤에도 내 말이 안전한지 살펴요', prerequisites: ['안전한 목적지'],
-    prompt: '룩으로 상대 폰을 잡아요. 잡은 뒤에도 룩이 안전한 곳을 찾아요.',
-    why: '잡을 수 있는 말이 보여도 바로 움직이지 말고, 상대가 내 말을 다시 잡을 수 있는지 살펴봐요.',
-    whyNote: '모든 교환이나 희생이 나쁘다는 뜻은 아니에요. 그런 수는 더 깊은 수업에서 다뤄요.',
-    learned: '잡기 전에, 잡은 뒤 상대가 내 말을 다시 잡을 수 있는지 살펴봐요.',
-    scenes: [
-      { id: 'protect-capture-demo-v1', role: 'demo', fen: LESSON_BASE_FENS.D, focusSquare: [6, 4], witnessSuccess: { move: [6, 4, 6, 7], reply: null }, witnessFailure: { move: [6, 4, 4, 4], reply: [1, 1, 4, 4] } },
-      { id: 'protect-capture-guided-v1', role: 'guided', fen: 'k7/6b1/8/8/3p4/8/p2R4/7K w - - 0 1', focusSquare: [6, 3], witnessSuccess: { move: [6, 3, 6, 0], reply: null }, witnessFailure: { move: [6, 3, 4, 3], reply: [1, 6, 4, 3] },
-        guide: '두 폰 중 잡은 뒤 상대 비숍이 닿지 않는 쪽을 찾아요.' },
-      // D에 백 나이트 c3만 더한 배치. 나이트는 배경 변화이고 학습 대상은 여전히 룩이다.
-      { id: 'protect-capture-transfer-v1', role: 'transfer', fen: '7k/1b6/8/8/4p3/2N5/4R2p/K7 w - - 0 1', focusSquare: [6, 4], witnessSuccess: { move: [6, 4, 6, 7], reply: null }, witnessFailure: { move: [6, 4, 4, 4], reply: [1, 1, 4, 4] } },
+    id: 'protect-all-v2', version: 2, number: 3, title: '내 말 모두 지키기',
+    skill: '노려지는 내 말을 찾아 피하거나, 공격한 말을 잡아요',
+    learned: '상대가 잡을 수 있는 내 말이 없게 두어요. 피하거나, 공격한 말을 잡을 수 있어요.',
+    levels: [
+      { id: 'all-1', fen: '6k1/2p5/3p4/4N3/1B6/8/8/7K w - - 0 1', goal: '상대 폰이 내 나이트를 노려요. 폰은 대각선으로 잡아요.', witness: [3, 4, 2, 2], trap: [4, 1, 2, 3] },
+      { id: 'all-2', fen: '6k1/8/2n5/4p3/3Q4/8/8/6K1 w - - 0 1', goal: '작은 폰이 내 퀸을 노려요! 퀸을 안전한 칸으로.', witness: [4, 3, 5, 2], trap: [4, 3, 3, 4] },
+      { id: 'all-3', fen: '8/5pk1/8/1R3B2/3n4/4P3/8/K7 w - - 0 1', goal: '나이트가 내 말 두 개를 노려요. 둘 다 지킬 방법은?', witness: [5, 4, 4, 3], trap: [3, 1, 0, 1] },
+      { id: 'all-4', fen: '6k1/8/8/8/5p2/4n3/8/2BR2K1 w - - 0 1', goal: '내 말 하나가 공격받아요. 찾아서 지켜요.', witness: [7, 3, 4, 3], trap: [7, 2, 5, 4] },
+      { id: 'all-5', fen: 'r5k1/5ppp/8/8/1b6/2N5/5PPP/3R2K1 w - - 0 1', goal: '실전처럼 말이 많아요. 잡힐 수 있는 내 말이 없게!', witness: [5, 2, 4, 4], trap: [5, 2, 4, 0] },
     ],
   },
 ];
-const LESSON_ROLE_LABELS = { demo: '보기', guided: '함께 해보기', transfer: '혼자 해보기' };
-const LESSON_ROLE_SHORT = { demo: '보기', guided: '함께', transfer: '혼자' };
 
 function lessonById(id) { return typeof id === 'string' ? LESSONS.find(l => l.id === id) || null : null; }
-function lessonScene(lesson, sceneId) { return lesson?.scenes.find(s => s.id === sceneId) || null; }
-function lessonSceneGame(scene) { return ChessGame.fromFEN(scene.fen); }
+function lessonLevelGame(level) { return ChessGame.fromFEN(level.fen); }
 function lessonSquareName([r, c]) { return 'abcdefgh'[c] + (8 - r); }
 function lessonPieceName(piece) { return piece ? t(PIECE_NAMES[piece[1]]) : ''; }
 // 받침에 따라 조사를 고른다: lessonJosa('룩','이/가') → '룩이'
@@ -74,106 +62,83 @@ function lessonJosa(word, pair) {
 function lessonCompareMoves(a, b) { for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; }
 function lessonSameSquare(a, b) { return !!a && !!b && a[0] === b[0] && a[1] === b[1]; }
 
-// color가 지금 둔다고 가정한 합법 잡기(좌표 사전순). 복제본에서만 차례를 바꾸고 원본의 차례·기록은 건드리지 않는다.
-function lessonLegalCaptures(game, color) {
+// color가 지금 둔다고 가정한 합법 잡기(상대 킹 제외). 복제본에서만 차례를 바꾸고 원본의 차례·기록은 건드리지 않는다.
+function lessonCaptures(game, color) {
   const g = game.clone();
   g.turn = color; g.selected = null; g.validMoves = [];
   const moves = [];
   for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
     if (g.board[r][c]?.[0] !== color) continue;
-    for (const [tr, tc] of g.legalMoves(r, c)) if (g.board[tr][tc]) moves.push([r, c, tr, tc]);
+    for (const [tr, tc] of g.legalMoves(r, c)) { const p = g.board[tr][tc]; if (p && p[0] !== color && p[1] !== 'K') moves.push([r, c, tr, tc]); }
   }
   return moves.sort(lessonCompareMoves);
 }
-// 수업 1 정답 집합: 왕을 제외하고, 흑이 합법적인 잡기로 취할 수 있는 백 말
-function lessonSpotTargets(game) {
-  const found = new Map();
-  for (const m of lessonLegalCaptures(game, 'b')) {
-    const p = game.board[m[2]][m[3]];
-    if (p?.[0] === 'w' && p[1] !== 'K') found.set(m[2] + ',' + m[3], [m[2], m[3]]);
-  }
-  return [...found.values()];
-}
-function lessonSpotAttackers(game, square) {
-  return lessonLegalCaptures(game, 'b').filter(m => lessonSameSquare([m[2], m[3]], square)).map(m => [m[0], m[1]]);
-}
-// 흑 말이 지금 차례라면 갈 수 있는 칸(공격 경로·착지점 도움)
+// 지금 상대(흑)가 잡을 수 있는 내 말과 그 공격
+function lessonThreats(game) { return lessonCaptures(game, 'b'); }
+// 상대 말이 지금 차례라면 갈 수 있는 칸
 function lessonReach(game, [r, c]) {
   const g = game.clone();
   g.turn = game.board[r][c]?.[0] || 'b'; g.selected = null; g.validMoves = [];
   return g.legalMoves(r, c);
 }
-function lessonLegalMoves(game, [r, c]) {
+function lessonMovesFrom(game, [r, c]) {
   if (game.turn !== 'w' || game.board[r]?.[c]?.[0] !== 'w') return [];
   return game.legalMoves(r, c).map(([tr, tc]) => [r, c, tr, tc]);
 }
-// 이동 과제의 후보: escape는 대상 말의 모든 합법 이동, captureSafe는 대상 말의 합법 잡기만
-function lessonCandidates(game, scene, task) {
-  const moves = lessonLegalMoves(game, scene.focusSquare);
-  return task === 'captureSafe' ? moves.filter(m => game.board[m[2]][m[3]]) : moves;
-}
-// 이동 뒤 흑의 합법 수 중 그 말을 잡는 수가 없으면 성공. 있으면 사전순 첫 수를 교재 응수로 쓴다.
-// 범위는 '다음 한 수에 잡히지 않음'뿐이다. 장기적인 최선 수라고 판정하지 않는다.
-function lessonOutcome(game, move) {
-  const after = game.clone();
+// 한 수의 결과. 위험하면 상대가 가장 값진 내 말을 잡는 수(같으면 좌표 사전순)를 교재 응수로 쓴다.
+function lessonOutcome(game, move, level) {
+  if (!lessonMovesFrom(game, move).some(m => m[2] === move[2] && m[3] === move[3])) return null;
+  const captured = game.board[move[2]][move[3]], after = game.clone();
   if (after.move(move[0], move[1], move[2], move[3]) !== 'moved') return null;
-  const replies = lessonLegalCaptures(after, 'b').filter(m => m[2] === move[2] && m[3] === move[3]);
-  return { safe: !replies.length, reply: replies[0] || null, captured: game.board[move[2]][move[3]] || null, after };
+  after.selected = null; after.validMoves = [];
+  if (level.mustCapture && !captured) return { result: 'goal', after, captured: null, reply: null };
+  const replies = lessonCaptures(after, 'b');
+  // 체크 때문에만 안전한 경우: 상대 말이 내 말을 노리지만 왕부터 지켜야 해서 잡지 못한다.
+  const checkSaved = after.status === 'check' && after.board.some((row, r) => row.some((p, c) => p && p[0] === 'w' && p[1] !== 'K' && after.isAttacked(after.board, r, c, 'b')));
+  if (!replies.length) return { result: 'success', after, captured, reply: null, check: checkSaved };
+  const value = m => LESSON_PIECE_VALUE[after.board[m[2]][m[3]][1]];
+  const reply = replies.slice().sort((a, b) => value(b) - value(a) || lessonCompareMoves(a, b))[0];
+  return { result: 'fail', after, captured, reply, victim: after.board[reply[2]][reply[3]] };
 }
-function lessonSafeMoves(game, scene, task) { return lessonCandidates(game, scene, task).filter(m => lessonOutcome(game, m)?.safe); }
+function lessonSafeMoves(game, level) { return game.allMoves().filter(m => lessonOutcome(game, m, level)?.result === 'success'); }
+// 내가 잡을 수 있는 상대 말 가운데, 잡으면 다시 잡히는 칸과 그 칸을 지키는 상대 말(힌트용)
+function lessonDefended(game) {
+  const out = [];
+  for (const m of lessonCaptures(game, 'w')) {
+    const after = game.clone(); after.move(m[0], m[1], m[2], m[3]);
+    for (const d of lessonCaptures(after, 'b')) if (d[2] === m[2] && d[3] === m[3]) out.push(d);
+  }
+  return out;
+}
 
-// 시범 장면: 강조 → 실제 이동 → 잡힘/안전 결과. 매번 교재로부터 다시 만든다(저장하지 않음).
-function lessonDemoSteps(lesson, scene) {
-  const start = lessonSceneGame(scene), steps = [], focus = scene.focusSquare, focusName = lessonPieceName(start.board[focus[0]][focus[1]]);
-  if (lesson.task === 'spot') {
-    const [attacker] = lessonSpotAttackers(start, focus), attackerName = lessonPieceName(start.board[attacker[0]][attacker[1]]);
-    steps.push({ game: start, marks: { attackers: [attacker], reach: lessonReach(start, attacker) }, text: `빨간 점은 상대(검은색) ${lessonJosa(attackerName, '이/가')} 다음에 갈 수 있는 칸이에요.` });
-    const predict = start.clone(); predict.turn = 'b'; predict.move(attacker[0], attacker[1], focus[0], focus[1]);
-    steps.push({ game: predict, move: [attacker[0], attacker[1], focus[0], focus[1]], predict: true, marks: { danger: [focus] }, text: `상대 차례라면 이렇게 우리 ${lessonJosa(focusName, '을/를')} 잡을 수 있어요.` });
-    steps.push({ game: start, marks: { attackers: [attacker], targets: [focus], arrows: [[...attacker, ...focus]] }, text: `그래서 ${lessonSquareName(focus)}의 우리 ${lessonJosa(focusName, '이/가')} 상대가 노리는 말이에요.` });
-    return steps;
+// 둔 수에 대한 한 문장 설명. 무엇이 일어났는지와 왜 그런지(상대 말의 움직임)를 말한다.
+function lessonExplain(level, start, move, out) {
+  const name = p => lessonPieceName(p), mover = name(start.board[move[0]][move[1]]), captured = out.captured ? name(out.captured) : '';
+  const threats = lessonThreats(start), attack = threats.find(m => m[2] === move[0] && m[3] === move[1]);
+  const attackers = [...new Set(threats.filter(m => m[2] === move[0] && m[3] === move[1]).map(m => name(start.board[m[0]][m[1]])))];
+  const attackerNames = attackers.map((n, i) => i < attackers.length - 1 ? lessonJosa(n, '과/와') : n).join(' ');
+  if (out.result === 'goal') return '이번에는 상대 말을 하나 잡아야 해요. 테두리 칸이 잡을 수 있는 곳이에요.';
+  if (out.result === 'success') {
+    const tookAttacker = !!captured && threats.some(m => m[0] === move[2] && m[1] === move[3]);
+    let text;
+    if (tookAttacker) text = `나를 노리던 상대 ${lessonJosa(captured, '을/를')} 먼저 잡아서 위협을 없앴어요.`;
+    else if (attack && captured) text = `${lessonJosa(captured, '을/를')} 잡으면서 내 ${mover}도 안전한 칸으로 피했어요.`;
+    else if (captured) text = `${lessonJosa(captured, '을/를')} 잡았고, 상대는 내 말을 다시 잡을 수 없어요.`;
+    else if (attack) text = `내 ${lessonJosa(mover, '이/가')} 상대 ${attackerNames}의 길에서 벗어났어요.`;
+    else text = '이제 상대가 잡을 수 있는 내 말이 없어요.';
+    return text + (out.check ? ' 체크라서 상대는 먼저 왕을 지켜야 해요.' : '');
   }
-  const [attacker] = lesson.task === 'escape' ? lessonSpotAttackers(start, focus) : [null];
-  if (lesson.task === 'escape') {
-    const attackerName = lessonPieceName(start.board[attacker[0]][attacker[1]]);
-    steps.push({ game: start, marks: { attackers: [attacker], targets: [focus], arrows: [[...attacker, ...focus]] }, text: `빨간 화살표: 상대 ${lessonJosa(attackerName, '이/가')} 우리 ${lessonJosa(focusName, '을/를')} 노려요.` });
-  } else {
-    const captures = lessonCandidates(start, scene, lesson.task).map(m => [m[2], m[3]]);
-    steps.push({ game: start, marks: { focus: [focus], targets: captures }, text: `우리 ${lessonJosa(focusName, '은/는')} ${captures.map(lessonSquareName).join('와 ')}의 상대 폰을 잡을 수 있어요. 어느 쪽이 안전할까요?` });
-  }
-  if (scene.witnessFailure) {
-    const { move, reply } = scene.witnessFailure, tried = start.clone(); tried.move(...move);
-    const captured = lessonPieceName(start.board[move[2]][move[3]]);
-    steps.push({ game: tried, move, marks: {}, text: `${lessonSquareName([move[2], move[3]])}의 ${lessonJosa(captured, '을/를')} 잡으면…` });
-    const lost = tried.clone(); lost.move(...reply);
-    steps.push({ game: lost, move: reply, marks: { danger: [[reply[2], reply[3]]] }, text: lessonFailureText(lesson, start, move, reply) });
-    steps.push({ game: start, marks: { focus: [focus] }, text: '처음으로 돌아가서 다른 쪽을 볼게요.' });
-  }
-  const { move } = scene.witnessSuccess, done = start.clone(); done.move(...move);
-  steps.push({ game: done, move, marks: {}, text: lesson.task === 'escape' ? `우리 ${lessonJosa(focusName, '을/를')} 상대 말이 닿지 않는 칸으로 옮겨요.` : `이번에는 ${lessonSquareName([move[2], move[3]])}의 폰을 잡아요.` });
-  steps.push({ game: done, marks: { safe: [[move[2], move[3]]] }, text: lessonSuccessText(lesson, start, move) });
-  return steps;
-}
-function lessonSpotSuccessText(game, target) {
-  const [attacker] = lessonSpotAttackers(game, target), a = lessonPieceName(game.board[attacker[0]][attacker[1]]), b = lessonPieceName(game.board[target[0]][target[1]]);
-  return `상대 ${lessonJosa(a, '이/가')} 우리 ${lessonJosa(b, '을/를')} 잡을 수 있어요.`;
-}
-function lessonSuccessText(lesson, start, move) {
-  const captured = lessonPieceName(start.board[move[2]][move[3]]), mover = lessonPieceName(start.board[move[0]][move[1]]);
-  if (lesson.task === 'escape') return `이 칸에서는 상대가 다음 한 수에 우리 ${lessonJosa(mover, '을/를')} 잡을 수 없어요.`;
-  return `${lessonJosa(captured, '을/를')} 잡고 우리 ${mover}도 지켰어요.`;
-}
-function lessonFailureText(lesson, start, move, reply) {
-  const captured = lessonPieceName(start.board[move[2]][move[3]]), mover = lessonPieceName(start.board[move[0]][move[1]]), taker = lessonPieceName(start.board[reply[0]][reply[1]]);
-  if (lesson.task === 'escape') return `상대 ${lessonJosa(taker, '이/가')} 와서 우리 ${lessonJosa(mover, '을/를')} 잡았어요.`;
-  return `${lessonJosa(captured, '은/는')} 잡았지만 상대 ${lessonJosa(taker, '이/가')} 우리 ${lessonJosa(mover, '을/를')} 다시 잡았어요.`;
+  const taker = out.after.board[out.reply[0]][out.reply[1]], takerName = name(taker), victim = name(out.victim);
+  const victimMoved = out.reply[2] === move[2] && out.reply[3] === move[3];
+  let text = captured && victimMoved ? `${lessonJosa(captured, '은/는')} 잡았지만 상대 ${lessonJosa(takerName, '이/가')} 내 ${lessonJosa(victim, '을/를')} 다시 잡았어요.`
+    : `상대 ${lessonJosa(takerName, '이/가')} 내 ${lessonJosa(victim, '을/를')} 잡았어요.`;
+  if (!victimMoved) text += threats.some(m => m[2] === out.reply[2] && m[3] === out.reply[3]) ? ` 처음부터 노려지던 ${lessonJosa(victim, '이에요/예요')}.` : ' 내 말이 움직이면서 길이 열렸어요.';
+  return `${text} ${lessonJosa(takerName, '은/는')} ${LESSON_PIECE_MOVES[taker[1]]}.`;
 }
 
 // ===== 저장 상태 검증 =====
 // 저장된 수업은 신뢰된 교재와 기록된 수로 다시 만든다. 파일 속 배치·문구를 그대로 믿지 않는다.
-const LESSON_PHASES_BY_ROLE = { demo: ['demoReady'], guided: ['choose', 'result'], transfer: ['choose', 'result', 'complete'] };
-const LESSON_NOTICES = ['pickOurs', 'pickFocus', 'notFocus', 'emptyMove', 'cannotGo', 'demoTap'];
-function lessonCoordValid(p) { return Array.isArray(p) && p.length === 2 && p.every(n => Number.isInteger(n) && n >= 0 && n < 8); }
+const LESSON_PHASES = ['choose', 'result', 'complete'];
 function lessonMoveValid(m) { return Array.isArray(m) && m.length === 4 && m.every(n => Number.isInteger(n) && n >= 0 && n < 8); }
 function lessonBoardKey(g) { return g.board.map(r => r.map(p => p || '--').join('')).join('/') + '/' + g.turn; }
 function lessonGameDataValid(g) {
@@ -181,49 +146,40 @@ function lessonGameDataValid(g) {
 }
 function lessonRebuild(v) {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
-  const lesson = lessonById(v.lessonId), scene = lessonScene(lesson, v.sceneId);
-  if (!lesson || lesson.version !== 1 || v.contentVersion !== LESSON_CONTENT_VERSION || !scene || v.sceneRole !== scene.role) return null;
-  if (!LESSON_PHASES_BY_ROLE[scene.role].includes(v.phase)) return null;
-  if (!lessonGameDataValid(v.game) || !lessonGameDataValid(v.attemptStartGame)) return null;
-  if (!Number.isInteger(v.attempts) || v.attempts < 0 || v.attempts > 10000 || !Number.isInteger(v.helpLevel) || v.helpLevel < 0 || v.helpLevel > 3) return null;
-  if (typeof v.helpUsed !== 'boolean' || typeof v.helpShown !== 'boolean' || !v.progress || typeof v.progress.guided !== 'boolean' || typeof v.progress.transfer !== 'boolean') return null;
-  if (v.notice !== null && !LESSON_NOTICES.includes(v.notice)) return null;
-  if (v.selected !== null && !lessonCoordValid(v.selected)) return null;
-  if (v.studentMove !== null && !lessonMoveValid(v.studentMove) || v.responseMove !== null && !lessonMoveValid(v.responseMove)) return null;
-  const start = lessonSceneGame(scene);
-  if (lessonBoardKey(v.attemptStartGame) !== lessonBoardKey(start)) return null;
-  const steps = scene.role === 'demo' ? lessonDemoSteps(lesson, scene).length : 0;
-  if (!Number.isInteger(v.demoStep) || (scene.role === 'demo' ? ![0, steps].includes(v.demoStep) : v.demoStep !== 0)) return null;
-  let game = start.clone(), result = null, studentMove = null, responseMove = null;
-  if (v.phase === 'demoReady' || v.phase === 'choose') {
-    if (v.result !== null || v.studentMove !== null || v.responseMove !== null) return null;
-    if (v.selected !== null) return null;  // 진행 중 선택은 저장하지 않는다
-  } else if (lesson.task === 'spot') {
-    if (!v.selected || start.board[v.selected[0]][v.selected[1]]?.[0] !== 'w' || v.studentMove !== null || v.responseMove !== null) return null;
-    result = lessonSpotTargets(start).some(s => lessonSameSquare(s, v.selected)) ? 'success' : 'retry';
-  } else {
-    if (v.selected !== null || !v.studentMove || !lessonCandidates(start, scene, lesson.task).some(m => lessonCompareMoves(m, v.studentMove) === 0)) return null;
-    const out = lessonOutcome(start, v.studentMove);
-    studentMove = v.studentMove.slice(); game = out.after;
-    if (out.safe) result = 'success';
-    else { result = 'retry'; responseMove = out.reply.slice(); game.move(...responseMove); }
-    if (JSON.stringify(v.responseMove) !== JSON.stringify(responseMove)) return null;
+  const lesson = lessonById(v.lessonId);
+  if (!lesson || v.contentVersion !== LESSON_CONTENT_VERSION || !Number.isInteger(v.levelIndex) || !lesson.levels[v.levelIndex]) return null;
+  const level = lesson.levels[v.levelIndex], n = lesson.levels.length;
+  if (!LESSON_PHASES.includes(v.phase) || !lessonGameDataValid(v.game)) return null;
+  if (!Number.isInteger(v.attempts) || v.attempts < 0 || v.attempts > 100000 || !Number.isInteger(v.hintLevel) || v.hintLevel < 0 || v.hintLevel > 2 || typeof v.helpUsed !== 'boolean') return null;
+  if (!Array.isArray(v.solved) || v.solved.length !== n || !v.solved.every(x => typeof x === 'boolean')) return null;
+  if (v.move !== null && !lessonMoveValid(v.move) || v.reply !== null && !lessonMoveValid(v.reply)) return null;
+  const start = lessonLevelGame(level);
+  let game = start, result = null, reply = null;
+  if (v.phase === 'choose') { if (v.move !== null || v.reply !== null || v.result !== null) return null; }
+  else {
+    const out = v.move && lessonOutcome(start, v.move, level);
+    if (!out) return null;
+    result = out.result; reply = out.reply ? out.reply.slice() : null; game = out.after;
+    if (reply) game.move(reply[0], reply[1], reply[2], reply[3]);
+    if (v.result !== result || JSON.stringify(v.reply) !== JSON.stringify(reply)) return null;
+    if (result === 'success' && !v.solved[v.levelIndex]) return null;
+    if (v.phase === 'complete' && (result !== 'success' || v.levelIndex !== n - 1 || !v.solved.every(Boolean))) return null;
   }
-  if (v.phase !== 'demoReady' && v.phase !== 'choose' && v.result !== result) return null;
-  if (v.phase === 'complete' && (result !== 'success' || !v.progress.transfer)) return null;
   if (lessonBoardKey(v.game) !== lessonBoardKey(game)) return null;
   game.selected = null; game.validMoves = [];
-  return {
-    lessonId: lesson.id, contentVersion: LESSON_CONTENT_VERSION, sceneId: scene.id, sceneRole: scene.role, phase: v.phase,
-    game, attemptStartGame: start, selected: v.selected ? v.selected.slice() : null, attempts: v.attempts, helpLevel: v.helpLevel,
-    helpUsed: v.helpUsed, helpShown: v.helpShown, result, responseMove, studentMove, demoStep: v.demoStep,
-    progress: { guided: v.progress.guided, transfer: v.progress.transfer }, notice: v.notice,
-  };
+  return { lessonId: lesson.id, contentVersion: LESSON_CONTENT_VERSION, levelIndex: v.levelIndex, phase: v.phase, game, move: v.move ? v.move.slice() : null, reply, result,
+    hintLevel: v.hintLevel, helpUsed: v.helpUsed, solved: v.solved.slice(), attempts: v.attempts };
 }
 function lessonProgressValid(all) {
   if (!all || typeof all !== 'object' || Array.isArray(all)) return false;
   return Object.entries(all).every(([id, p]) => {
     const lesson = lessonById(id);
-    return !!lesson && !!p && typeof p === 'object' && p.version === 1 && ['completed', 'assisted', 'independent'].every(k => typeof p[k] === 'boolean') && (p.lastSceneId === null || !!lessonScene(lesson, p.lastSceneId));
+    return !!lesson && !!p && typeof p === 'object' && p.version === 1 && ['completed', 'assisted', 'independent'].every(k => typeof p[k] === 'boolean') && (p.lastSceneId === null || lesson.levels.some(l => l.id === p.lastSceneId));
   });
+}
+// 예전(v1) 수업 자료는 오류로 막지 않고 버린다. 그 밖의 모르는 ID는 그대로 거절 대상이다.
+function lessonRetired(id) { return LESSON_RETIRED_IDS.includes(id); }
+function lessonRecordRetired(saved) {
+  const v = saved?.snapshot?.values;
+  return saved?.kind === 'lesson' && lessonRetired(v?.lesson?.lessonId) || saved?.kind === 'play' && v?.play?.content?.type === 'lessonPractice' && lessonRetired(v.play.content.lessonId);
 }

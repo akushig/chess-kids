@@ -1917,10 +1917,15 @@ button:focus-visible,[role="gridcell"]:focus-visible{outline:3px solid #215cca;o
 .lesson-steps li{flex:1 1 auto;min-width:0;text-align:center;padding:4px 2px;border-radius:999px;background:#ffffffa8;color:#4a5a63;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lesson-steps li.current{background:#2f7d6d;color:#fff;font-weight:900}.lesson-steps li.done{background:#d5efe5;color:#1f5742}
 .lesson-steps li.lesson-step-count{flex:none;padding:4px 8px;background:transparent;color:#30495a;font-weight:900}
-.game-screen.lesson-screen>.status-msg.lesson-message{height:96px;min-height:96px;padding:8px 54px 8px 12px;font-size:.86rem;line-height:1.5;font-weight:700;word-break:keep-all}
-.lesson-message.help{background:#fff8dc;color:#5d4500}.lesson-message b{font-weight:900}
+.game-screen.lesson-screen{gap:5px}
+.game-screen.lesson-screen>.status-msg.lesson-message{height:140px;min-height:140px;padding:6px 52px 6px 12px;display:flex;flex-direction:column;gap:4px;font-size:.84rem;line-height:1.45;font-weight:700;word-break:keep-all;background:#fffffff2}
+.lesson-goal{flex:none;margin:0;max-height:42px;overflow:hidden;color:#1f3b4d;font-weight:900}
+.lesson-feedback{flex:1;margin:0;overflow:auto;padding:4px 6px;border-radius:8px;background:#f2f6f8;color:#243343}
+.lesson-feedback.success{background:#dff3e6;color:#1f5a3a}.lesson-feedback.fail{background:#fde4e4;color:#8f2430}.lesson-feedback.warn{background:#fff3cf;color:#6a4c00}.lesson-feedback.help{background:#fff8dc;color:#5d4500}.lesson-feedback.dim{color:#5b6b75}
+.lesson-progress{flex:1;min-width:0;display:flex;align-items:center;gap:5px;font-size:.78rem;color:#30495a;white-space:nowrap}
+.lesson-dot{width:10px;height:10px;border-radius:50%;background:#ffffffb0;border:2px solid #9fb3bf;flex:none}.lesson-dot.done{background:#2c8a55;border-color:#2c8a55}.lesson-dot.current{border-color:#2563b8;box-shadow:0 0 0 2px #2563b855}
 /* 세로 화면에서는 모든 조작이 한 화면에. 가로·글자 확대처럼 너무 작아질 때는 판을 260px 아래로 줄이지 않고 세로 스크롤을 허용한다. */
-.lesson-screen .chess-board{width:min(100%,max(260px,calc(100vh - 308px)));width:min(100%,max(260px,calc(100dvh - 308px)));max-width:440px}
+.lesson-screen .chess-board{width:min(100%,max(260px,calc(100vh - 312px)));width:min(100%,max(260px,calc(100dvh - 312px)));max-width:440px}
 .lesson-screen .lesson-tools{height:48px;margin:0}
 .lesson-screen .lesson-tools>.icon-btn{height:48px;min-height:48px;padding:4px;font-size:.78rem;line-height:1.15;background:#fff;color:#243343;border:1px solid #d3dde2;box-shadow:0 2px 0 #c3ced4}
 .lesson-screen .icon-btn:disabled{opacity:.45}
