@@ -100,9 +100,10 @@ function lessonStatus(lesson) {
   return { key: 'new', label: `처음 · ${lesson.levels.length}판` };
 }
 function lessonCardHTML(lesson) {
-  const status = lessonStatus(lesson), cleared = lessonSolvedFlags(lesson).filter(Boolean).length;
-  return `<div class="lesson-card-item"><button class="lesson-card" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.number}. ${lesson.title}</strong><small>${lesson.skill}</small></span><span class="lesson-status lesson-status-${status.key}">${status.label}</span></button>
-    <div class="lesson-card-actions"><button class="action-btn secondary" aria-label="${lesson.number}번 판 고르기" onclick="lessonPicker('${lesson.id}')">☰ 판 고르기 · ${cleared}/${lesson.levels.length}</button><button class="action-btn secondary lesson-drill-btn" aria-label="${lesson.number}번 무한 연습" onclick="lessonDrillDialog('${lesson.id}')">∞ 무한 연습</button><button class="action-btn green" aria-label="${lesson.number}번 ${status.key === 'resume' ? '이어하기' : '시작하기'}" onclick="openLesson('${lesson.id}')">▶ ${status.key === 'resume' ? '이어하기' : '시작하기'}</button></div></div>`;
+  // 카드 하나에 모든 행동: 카드 전체 = 시작/이어하기, 아래 두 칸 = 판 고르기 · 무한 연습.
+  const status = lessonStatus(lesson), cleared = lessonSolvedFlags(lesson).filter(Boolean).length, total = lesson.levels.length, go = status.key === 'resume' ? '이어하기' : '시작하기';
+  return `<div class="lesson-card-item"><button class="lesson-card" aria-label="${lesson.number}번 ${go} · ${lesson.title} · ${status.label}" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.title}</strong><small>${lesson.skill}</small><span class="lesson-status lesson-status-${status.key}">${status.label}</span></span><span class="lesson-go" aria-hidden="true">▶ ${go}</span></button>
+    <div class="lesson-card-actions"><button class="lesson-sub-btn" aria-label="${lesson.number}번 판 고르기" onclick="lessonPicker('${lesson.id}')">☰ 판 고르기 <b>${cleared}/${total}</b></button><button class="lesson-sub-btn lesson-drill-btn" aria-label="${lesson.number}번 무한 연습" onclick="lessonDrillDialog('${lesson.id}')">∞ 무한 연습</button></div></div>`;
 }
 function renderLessonList() {
   const fromPlay = lessonOrigin === 'play', total = LESSONS.reduce((n, l) => n + l.levels.length, 0);

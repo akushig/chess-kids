@@ -96,9 +96,10 @@ function goPlay() {
 
 function renderPlaySetup() {
   const s = getPlaySettings();
-  const modes = [['ai', '🤖', 'playModeAi'], ['friend', '👫', 'playModeFriend']].map(([mode, icon, key]) => `
-    <button class="play-mode ${s.mode === mode ? 'active' : ''}" onclick="playSetOption('mode', '${mode}')">
-      <span class="play-mode-icon">${icon}</span>${t(key)}
+  // 상대 고르기: 두 카드가 같은 구조(아이콘 + 제목 + 한 줄 설명)라 글 길이와 상관없이 높이가 같다.
+  const modes = [['ai', '🤖', t('playModeAi'), '10단계 중에서 골라요', t('playModeAi')], ['friend', '👫', '함께 두기', '같은 기기에서 번갈아', t('playModeFriend')]].map(([mode, icon, title, sub, label]) => `
+    <button class="play-mode ${s.mode === mode ? 'active' : ''}" aria-pressed="${s.mode === mode}" aria-label="${label}" onclick="playSetOption('mode', '${mode}')">
+      <span class="play-mode-icon" aria-hidden="true">${icon}</span><span class="play-mode-text"><strong>${title}</strong><small>${sub}</small></span>
     </button>
   `).join('');
 
@@ -111,10 +112,10 @@ function renderPlaySetup() {
         <span class="play-level-name">${t('playLevel' + i)}</span>
       </button>
     `).join('');
-    options = `<div class="play-section-title play-difficulty-heading"><span>${t('playDifficulty')}</span><button class="play-info-button" aria-label="${t('playLevelHelpTitle')}" title="${t('playLevelHelpTitle')}" aria-haspopup="dialog" onclick="playShowDifficultyHelp()"><span aria-hidden="true">!</span></button></div><div class="play-levels play-level-picker" role="group" aria-label="${t('playDifficulty')}">${levels}</div><div class="play-level-summary" role="status"><strong>${playLevelLabel(s.level)}</strong><p>${t('playLevelDesc'+s.level)}</p></div>`;
+    options = `<div class="play-section-title play-difficulty-heading"><span>${t('playDifficulty')}</span><button class="play-info-button" aria-label="${t('playLevelHelpTitle')}" title="${t('playLevelHelpTitle')}" aria-haspopup="dialog" onclick="playShowDifficultyHelp()"><span aria-hidden="true">?</span></button></div><div class="play-levels play-level-picker" role="group" aria-label="${t('playDifficulty')}">${levels}</div><div class="play-level-summary" role="status"><strong>${playLevelLabel(s.level)}</strong><p>${t('playLevelDesc'+s.level)}</p></div>`;
   } else {
     const timers = PLAY_TIMER_OPTIONS.map(sec => `
-      <button class="play-chip ${s.timer === sec ? 'active' : ''}" onclick="playSetOption('timer', ${sec})">${playTimerLabel(sec)}</button>
+      <button class="play-chip ${s.timer === sec ? 'active' : ''}" aria-pressed="${s.timer === sec}" onclick="playSetOption('timer', ${sec})">${playTimerLabel(sec)}</button>
     `).join('');
     options = `
       <div class="play-section-title">${t('playTimer')}</div>
@@ -122,27 +123,33 @@ function renderPlaySetup() {
       <div class="play-note">${t('playFriendNote')}${s.timer ? '<br>' + t('playTimerNote') : ''}</div>
     `;
   }
+  const recommend = !safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner';
 
   document.getElementById('screen-play').innerHTML = `
-    <div class="screen-wrap">
+    <div class="screen-wrap play-setup-screen">
       <div class="screen-header">
         <button class="back-btn" onclick="showScreen('home'); renderHome()">← ${t('btnBack')}</button>
         <h2>${t('menuPlay')}</h2>
       </div>
-      <p class="play-entry-note">${t('playEntryNote')}</p>${savedActivityCard('play')}<div class="play-setup">
+      ${savedActivityCard('play')}<div class="play-setup">
+        <div class="play-section-title">상대</div>
         <div class="play-modes">${modes}</div>
         ${options}
+        <div class="play-section-title">판 설정</div>
         <div class="play-options">
-          <button class="play-chip ${s.help?'active':''}" onclick="playSetOption('help',${!s.help})">🛟 왕 구하기 도움 ${s.help?'켜짐':'꺼짐'}</button>
-          <button class="play-chip ${s.small?'active':''}" onclick="playSetOption('small',${!s.small})">♟ ${s.small?'말이 적은 짧은 판':'모든 말로 한 판'}</button>
-          ${s.mode==='friend'?`<button class="play-chip ${s.face?'active':''}" onclick="playSetOption('face',${!s.face})">${s.face?'마주 보고 두기':'나란히 두기'}</button><button class="play-chip ${s.autoMove?'active':''}" onclick="playSetOption('autoMove',${!s.autoMove})">시간이 끝나면 ${s.autoMove?'도우미가 두기':'천천히 계속하기'}</button>`:''}
+          <button class="play-chip ${s.help?'active':''}" aria-pressed="${!!s.help}" onclick="playSetOption('help',${!s.help})">🛟 왕 구하기 도움 ${s.help?'켜짐':'꺼짐'}</button>
+          <button class="play-chip ${s.small?'active':''}" aria-pressed="${!!s.small}" onclick="playSetOption('small',${!s.small})">♟ ${s.small?'말이 적은 짧은 판':'모든 말로 한 판'}</button>
+          ${s.mode==='friend'?`<button class="play-chip ${s.face?'active':''}" aria-pressed="${!!s.face}" onclick="playSetOption('face',${!s.face})">${s.face?'마주 보고 두기':'나란히 두기'}</button><button class="play-chip ${s.autoMove?'active':''}" aria-pressed="${!!s.autoMove}" onclick="playSetOption('autoMove',${!s.autoMove})">시간이 끝나면 ${s.autoMove?'도우미가 두기':'천천히 계속하기'}</button>`:''}
         </div>
-        <p class="play-note">${s.small?'이 짧은 판은 왕과 룩의 시작 배치가 달라 캐슬링을 하지 않아요.':'캐슬링은 왕을 고른 뒤 ‘캐슬링’ 표시 칸을 눌러요. 왕과 룩을 차례로 눌러도 돼요.'}</p>
+        <p class="play-note play-board-note">${s.small?'이 짧은 판은 왕과 룩의 시작 배치가 달라 캐슬링을 하지 않아요.':'캐슬링은 왕을 고른 뒤 ‘캐슬링’ 표시 칸을 눌러요. 왕과 룩을 차례로 눌러도 돼요.'}</p>
+        <div class="play-cta">
+          <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
+          ${recommend?'<button class="action-btn secondary play-recommend" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">🌱 처음엔 말이 적은 짧은 판 추천</button>':''}
+          <p class="play-entry-note">${t('playEntryNote')}</p>
+        </div>
       </div>
-      ${!safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner'?'<button class="action-btn green" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
-      <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
-      <button class="action-btn secondary play-lesson-link" onclick="goLessons('play')">📘 체스 수업 · 15개 주제와 무한 연습</button>
-      ${playContentMenuHTML()}<section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter" onclick="playStarterBattle('${key}')">${getPieceSVG('w'+key,36)}<span><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span></button>`).join('')}</div></section>
+      <section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter choice-card" onclick="playStarterBattle('${key}')"><span class="choice-icon" aria-hidden="true">${getPieceSVG('w'+key,34)}</span><span class="choice-text"><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span><span class="choice-arrow" aria-hidden="true">›</span></button>`).join('')}</div></section>
+      ${playContentMenuHTML(`<button class="content-card choice-card play-lesson-link" onclick="goLessons('play')"><span class="choice-icon" aria-hidden="true">📘</span><span class="choice-text"><strong>체스 수업</strong><span>${LESSONS.length}개 주제와 무한 연습</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`)}
     </div>
   `;
 }
@@ -709,7 +716,7 @@ function goReward() {
   const playStars=Object.values(progressLedger().achievements||{}).reduce((a,b)=>a+b,0);
   // 별 출처별 카드
   const sourceCards = `
-    <div class="reward-sources"><div class="reward-source"><span class="reward-source-icon">♟</span><span>대전의 발견</span><span class="reward-source-val">⭐ ${playStars}</span></div>
+    <div class="reward-sources"><div class="reward-source"><span class="reward-source-icon">♟</span><span>대전</span><span class="reward-source-val">⭐ ${playStars}</span></div>
       <div class="reward-source"><span class="reward-source-icon">🗺️</span><span>${t('rewardAdventure')}</span><span class="reward-source-val">⭐ ${adventureStars}</span></div>
       <div class="reward-source"><span class="reward-source-icon">🧩</span><span>${t('rewardPuzzle')}</span><span class="reward-source-val">⭐ ${puzzleStars}</span></div>
       <div class="reward-source"><span class="reward-source-icon">🎮</span><span>${t('rewardMiniGame')}</span><span class="reward-source-val">⭐ ${miniStars}</span></div>
@@ -751,9 +758,8 @@ function goReward() {
         <h2>${t('rewardTitle')}</h2>
       </div>
       <div class="reward-wrap">
-        <div class="reward-big">⭐ ${allStars}</div>
-        <div class="reward-label">${t('rewardTotal')}</div>
-        ${learningSummaryHTML()}${sourceCards}
+        <div class="reward-hero"><span class="reward-hero-star" aria-hidden="true">⭐</span><div class="reward-hero-text"><div class="reward-big">${allStars}</div><div class="reward-label">내가 모은 별</div></div><button class="action-btn secondary" onclick="openSkinSelector()">🎨 꾸미기</button></div>
+        ${sourceCards}${learningSummaryHTML()}
         <div class="roadmap-title">${t('rewardRoadmap')}</div>
         <div class="roadmap-list">${roadmap}</div>
       </div>

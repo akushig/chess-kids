@@ -158,7 +158,7 @@ const I18N = {
     rewardAdventure: '모험',
     rewardPuzzle: '퍼즐',
     rewardMiniGame: '미니게임',
-    rewardRoadmap: '스킨 보상',
+    rewardRoadmap: '별로 여는 꾸미기',
     rewardUnlocked: '해금!',
     rewardLocked: '잠김',
     rewardStarsNeeded: '별 필요',
