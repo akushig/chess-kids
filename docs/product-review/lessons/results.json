@@ -1,0 +1,75 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "lessons": 3,
+      "demo": true,
+      "wrongThenRetry": true,
+      "keyboard": true,
+      "modalFocus": true,
+      "undoBundle": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "lessons": 3,
+      "demo": true,
+      "wrongThenRetry": true,
+      "keyboard": true,
+      "modalFocus": true,
+      "undoBundle": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "lessons": 3,
+      "demo": true,
+      "wrongThenRetry": true,
+      "keyboard": true,
+      "modalFocus": true,
+      "undoBundle": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "lessons": 3,
+      "demo": true,
+      "wrongThenRetry": true,
+      "keyboard": true,
+      "modalFocus": true,
+      "undoBundle": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "motion": true
+    },
+    {
+      "offline": true
+    }
+  ],
+  "errors": []
+}
