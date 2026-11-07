@@ -1984,3 +1984,20 @@ html.reduced-motion .lesson-goal-ok,html.reduced-motion .lesson-goal-no{animatio
 .lesson-pick.done{background:#dff3e6;border-color:#2c8a55;color:#1d5a3a}
 .lesson-pick.current{border-color:#2563b8;box-shadow:0 0 0 3px #2563b855}
 .lesson-card-actions .action-btn{white-space:normal;word-break:keep-all;line-height:1.25}
+/* 체스 수업 v4: 단원 목록 · 💡 기록 · 무한 연습 · 주제별 힌트 표시 */
+.lesson-unit{display:flex;flex-direction:column;gap:8px;width:100%;max-width:560px}
+.lesson-unit-title{margin:6px 0 0;padding:4px 10px;border-radius:10px;background:#2f7d6d;color:#fff;font-size:.92rem;align-self:flex-start}
+.lesson-card-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lesson-card-actions .action-btn{font-size:.82rem;line-height:1.2;white-space:normal;word-break:keep-all}
+.lesson-pick.helped{background:#fff6d6;border-color:#d9a400;color:#5d4500}
+.lesson-drill-tiers{display:flex;flex-direction:column;gap:8px}
+.lesson-drill-tier{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:52px;padding:8px 12px;border-radius:12px;border:2px solid #cfdde4;background:#fff;color:#243343;font:inherit;text-align:left;cursor:pointer}
+.lesson-drill-tier strong{font-size:.95rem}.lesson-drill-tier small{font-size:.78rem;color:#45606b}
+.lesson-drill-tier.current{border-color:#2563b8;box-shadow:0 0 0 3px #2563b855}
+.lesson-drill-progress{gap:8px}
+.lesson-seed{font-size:.72rem;color:#45606b;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.board-cell.lesson-guarded::before{content:'';position:absolute;top:6%;right:6%;width:20%;height:20%;border-radius:50%;background:#c83c46cc;pointer-events:none;z-index:2}
+.board-cell.lesson-flight::after{content:'';position:absolute;width:70%;height:70%;border-radius:50%;border:4px solid #2c8a55;box-sizing:border-box;pointer-events:none;z-index:2}
+.lesson-cell-tag.lesson-value-tag{background:#2563b8;bottom:auto;top:1px;left:auto;right:1px}
+.chess-board.lesson-board-loading{position:relative;opacity:.7}
+.lesson-loading-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;font-weight:900;font-size:1rem;color:#243343;background:#ffffff99;pointer-events:none}

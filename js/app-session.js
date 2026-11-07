@@ -6,9 +6,12 @@ const SESSION_KEYS = {
 };
 function copyData(value) { return JSON.parse(JSON.stringify(value)); }
 // 저장 형식 버전: 새 콘텐츠를 모르는 예전 앱이 다른 규칙으로 열지 않게 한다.
-// 5: 체스 수업·수업 배치 대전, 4: 직접 만든 도전장 v2, 3: 새 콘텐츠, 2: 나이트 규칙 문제, 1: 그 밖의 놀이
+// 6: 체스 수업 4~15·무한 연습, 5: 체스 수업·수업 배치 대전, 4: 직접 만든 도전장 v2, 3: 새 콘텐츠, 2: 나이트 규칙 문제, 1: 그 밖의 놀이
 function sessionVersion(kind,values){
-  if(kind==='lesson'||kind==='play'&&values?.play?.content?.type==='lessonPractice')return 5;
+  if(kind==='lesson'||kind==='play'&&values?.play?.content?.type==='lessonPractice'){
+    const lesson=kind==='lesson'?values?.lesson:values.play.content;
+    return lesson&&(lesson.mode==='drill'||typeof lesson.lessonId==='string'&&!LESSON_V5_IDS.includes(lesson.lessonId))?6:5;
+  }
   if(kind==='challenge'&&values?.ch?.spec?.version===2)return 4;
   if(['solo','challenge'].includes(kind)||kind==='play'&&values?.play?.content)return 3;
   return kind==='knight'&&values?.kt?.mode==='puzzle'?2:1;
@@ -50,7 +53,7 @@ function saveActiveSession() {
   writeData('sessions',sessions);writeData('last_session',saved);
   if(saved.kind==='play'){const archive=readData('play_content_saves',{});archive[state.play.content?.type||'standard']=saved;writeData('play_content_saves',archive);}
   // 수업은 ID별로 따로 보관한다. 공통 sessions.lesson은 마지막으로 한 수업이다.
-  if(saved.kind==='lesson'){const all=lessonSessionsAll(),id=state.lesson.lessonId;if(saved.complete)delete all[id];else all[id]=saved;writeData('lesson_sessions_v1',all);}
+  if(saved.kind==='lesson'&&!lessonIsDrill(state.lesson)){const all=lessonSessionsAll(),id=state.lesson.lessonId;if(saved.complete)delete all[id];else all[id]=saved;writeData('lesson_sessions_v1',all);}
 }
 function renderActivity() {
   ({challenge:renderChallenge,solo:renderSolo,lesson:renderLesson,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();

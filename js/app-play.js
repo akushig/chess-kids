@@ -141,7 +141,7 @@ function renderPlaySetup() {
       </div>
       ${!safeStore.getItem('play_settings')&&readData('experience','beginner')==='beginner'?'<button class="action-btn green" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
       <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
-      <button class="action-btn secondary play-lesson-link" onclick="goLessons('play')">📘 체스 수업 · 상대의 공격을 보고 내 말 지키기</button>
+      <button class="action-btn secondary play-lesson-link" onclick="goLessons('play')">📘 체스 수업 · 15개 주제와 무한 연습</button>
       ${playContentMenuHTML()}<section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter" onclick="playStarterBattle('${key}')">${getPieceSVG('w'+key,36)}<span><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span></button>`).join('')}</div></section>
     </div>
   `;

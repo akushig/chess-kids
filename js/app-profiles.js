@@ -61,12 +61,16 @@ function downloadProfile(id=activeProfile){
 }
 // New activities/authored knight data require version 3, built-in knight rule sessions version 2.
 // Older apps refuse unsupported files rather than opening them under the wrong rules.
-// Version 5: chess lessons and lesson-board games.
-const PROFILE_BACKUP_VERSIONS=[1,2,3,4,5];
+// Version 5: chess lessons and lesson-board games. Version 6: lessons 4-15, endless practice and hint (helped) records.
+const PROFILE_BACKUP_VERSIONS=[1,2,3,4,5,6];
 function profileBackupVersion(data){
  const records=[];
  try{records.push(...Object.values(JSON.parse(data.sessions||'{}')||{}));}catch{}
  try{records.push(...Object.values(JSON.parse(data.play_content_saves||'{}')));records.push(JSON.parse(data.last_session||'null'));}catch{}
+ let lessonV6=!!data.lesson_drill_v1;
+ try{lessonV6||=Object.entries(JSON.parse(data.lesson_progress_v1||'{}')||{}).some(([id,p])=>!LESSON_V5_IDS.includes(id)||p?.helped!==undefined);}catch{}
+ try{lessonV6||=Object.keys(JSON.parse(data.lesson_sessions_v1||'{}')||{}).some(id=>!LESSON_V5_IDS.includes(id));}catch{}
+ if(lessonV6||records.some(s=>s?.version===6))return 6;
  if(data.lesson_sessions_v1||data.lesson_progress_v1||records.some(s=>s?.version===5))return 5;
  if(data.challenge_design||JSON.parse(data.knight_challenges||'[]').some(p=>p.version===2)||records.some(s=>s?.version===4))return 4;
  if(data.knight_challenges||data.challenge_draft)return 3;
@@ -136,8 +140,9 @@ function parseProfileBackup(text){
    if(key==='knight_challenges'&&(!Array.isArray(parsed)||parsed.length>100||!parsed.every(challengeSpecValid)||new Set(parsed.map(p=>p.id)).size!==parsed.length)||key==='challenge_draft'&&(!Array.isArray(parsed)||parsed.length>0&&!challengePathValid(parsed)))throw Error('도전장 경로를 읽지 못했어요.');
    if(['solo_done','scene_done'].includes(key)&&(!Array.isArray(parsed)||!parsed.every(id=>typeof id==='string')))throw Error('완료 기록을 읽지 못했어요.');
    if(key==='play_content_saves'&&(!profilePlainObject(parsed)||!Object.entries(parsed).every(([k,s])=>['standard','expedition','team','scene','lessonPractice'].includes(k)&&s.kind==='play'&&validateBackupSession(s))))throw Error('대전 저장을 읽지 못했어요.');
-   if(key==='lesson_sessions_v1'&&(!profilePlainObject(parsed)||Object.keys(parsed).length>LESSONS.length||!Object.entries(parsed).every(([id,s])=>!!lessonById(id)&&s?.kind==='lesson'&&validateBackupSession(s)&&s.snapshot.values.lesson.lessonId===id)))throw Error('체스 수업 저장을 읽지 못했어요. 원래 기기에서 다시 내보내 주세요.');
+   if(key==='lesson_sessions_v1'&&(!profilePlainObject(parsed)||Object.keys(parsed).length>LESSONS.length||!Object.entries(parsed).every(([id,s])=>!!lessonById(id)&&s?.kind==='lesson'&&validateBackupSession(s)&&s.snapshot.values.lesson.lessonId===id&&s.snapshot.values.lesson.mode===undefined)))throw Error('체스 수업 저장을 읽지 못했어요. 원래 기기에서 다시 내보내 주세요.');
    if(key==='lesson_progress_v1'&&!lessonProgressValid(parsed))throw Error('체스 수업 기록을 읽지 못했어요.');
+   if(key==='lesson_drill_v1'&&!lessonDrillValid(parsed))throw Error('체스 수업 무한 연습 기록을 읽지 못했어요.');
    if(key==='challenge_design'&&(!parsed||![5,6,7].includes(parsed.size)||!Array.isArray(parsed.blocked)||!Array.isArray(parsed.start)||![parsed.start,...parsed.blocked].every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isInteger(n)&&n>=0&&n<parsed.size))||!['block','start'].includes(parsed.tool)))throw Error('판 설계를 읽지 못했어요.');
    if(key==='progress_v3'&&(!profilePlainObject(parsed)||parsed.version!==3||!['missions','puzzles','mini'].every(k=>profilePlainObject(parsed[k])&&Object.values(parsed[k]).every(n=>Number.isInteger(n)&&n>=0&&n<=3))))throw Error('놀이 기록이 올바르지 않아요.');
    if(['preferences','play_settings','knight_tour_settings','mission_progress_v2','puzzle_stars','minigame_stars'].includes(key)&&!profilePlainObject(parsed))throw Error('설정이나 기록 형식이 올바르지 않아요.');
