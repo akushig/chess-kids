@@ -1,0 +1,1076 @@
+{
+  "contentVersion": 1,
+  "coordinateSystem": "row 0 = rank 8, column 0 = file a",
+  "scenes": [
+    {
+      "lessonId": "protect-spot-v1",
+      "id": "protect-spot-demo-v1",
+      "role": "demo",
+      "fen": "7k/6b1/8/8/3R4/8/K7/8 w - - 0 1",
+      "task": "spot",
+      "focusSquare": [
+        4,
+        3
+      ],
+      "witnessSuccess": {
+        "select": [
+          4,
+          3
+        ]
+      },
+      "witnessFailure": null,
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [
+          [
+            1,
+            6,
+            4,
+            3
+          ]
+        ],
+        "moves": [
+          {
+            "move": [
+              4,
+              3,
+              3,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              2,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              1,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              0,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              5,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              6,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              7,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              2
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              1
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              0
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              5
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              6
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              7
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-spot-v1",
+      "id": "protect-spot-guided-v1",
+      "role": "guided",
+      "fen": "r6k/8/8/8/8/B7/8/4K3 w - - 0 1",
+      "task": "spot",
+      "focusSquare": [
+        5,
+        0
+      ],
+      "witnessSuccess": {
+        "select": [
+          5,
+          0
+        ]
+      },
+      "witnessFailure": null,
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [
+          [
+            0,
+            0,
+            5,
+            0
+          ]
+        ],
+        "moves": [
+          {
+            "move": [
+              5,
+              0,
+              4,
+              1
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              0,
+              3,
+              2
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              0,
+              2,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              0,
+              1,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              0,
+              0,
+              5
+            ],
+            "reply": [
+              0,
+              0,
+              0,
+              5
+            ]
+          },
+          {
+            "move": [
+              5,
+              0,
+              6,
+              1
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              0,
+              7,
+              2
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-spot-v1",
+      "id": "protect-spot-transfer-v1",
+      "role": "transfer",
+      "fen": "7k/8/5n2/3R4/8/8/8/K7 w - - 0 1",
+      "task": "spot",
+      "focusSquare": [
+        3,
+        3
+      ],
+      "witnessSuccess": {
+        "select": [
+          3,
+          3
+        ]
+      },
+      "witnessFailure": null,
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [
+          [
+            2,
+            5,
+            3,
+            3
+          ]
+        ],
+        "moves": [
+          {
+            "move": [
+              3,
+              3,
+              2,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              1,
+              3
+            ],
+            "reply": [
+              2,
+              5,
+              1,
+              3
+            ]
+          },
+          {
+            "move": [
+              3,
+              3,
+              0,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              4,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              5,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              6,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              7,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              2
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              1
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              0
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              5
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              6
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              3,
+              3,
+              7
+            ],
+            "reply": [
+              2,
+              5,
+              3,
+              7
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-escape-v1",
+      "id": "protect-escape-demo-v1",
+      "role": "demo",
+      "fen": "7k/6b1/8/8/3R4/8/K7/8 w - - 0 1",
+      "task": "escape",
+      "focusSquare": [
+        4,
+        3
+      ],
+      "witnessSuccess": {
+        "move": [
+          4,
+          3,
+          3,
+          3
+        ],
+        "reply": null
+      },
+      "witnessFailure": null,
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [
+          [
+            1,
+            6,
+            4,
+            3
+          ]
+        ],
+        "moves": [
+          {
+            "move": [
+              4,
+              3,
+              3,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              2,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              1,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              0,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              5,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              6,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              7,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              2
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              1
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              0
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              5
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              6
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              4,
+              3,
+              4,
+              7
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-escape-v1",
+      "id": "protect-escape-guided-v1",
+      "role": "guided",
+      "fen": "k6r/8/8/8/8/7B/8/3K4 w - - 0 1",
+      "task": "escape",
+      "focusSquare": [
+        5,
+        7
+      ],
+      "witnessSuccess": {
+        "move": [
+          5,
+          7,
+          4,
+          6
+        ],
+        "reply": null
+      },
+      "witnessFailure": {
+        "move": [
+          5,
+          7,
+          0,
+          2
+        ],
+        "reply": [
+          0,
+          7,
+          0,
+          2
+        ]
+      },
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [
+          [
+            0,
+            7,
+            5,
+            7
+          ]
+        ],
+        "moves": [
+          {
+            "move": [
+              5,
+              7,
+              4,
+              6
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              7,
+              3,
+              5
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              7,
+              2,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              7,
+              1,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              7,
+              0,
+              2
+            ],
+            "reply": [
+              0,
+              7,
+              0,
+              2
+            ]
+          },
+          {
+            "move": [
+              5,
+              7,
+              6,
+              6
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              5,
+              7,
+              7,
+              5
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-escape-v1",
+      "id": "protect-escape-transfer-v1",
+      "role": "transfer",
+      "fen": "k7/8/2n5/4R3/8/8/8/7K w - - 0 1",
+      "task": "escape",
+      "focusSquare": [
+        3,
+        4
+      ],
+      "witnessSuccess": {
+        "move": [
+          3,
+          4,
+          2,
+          4
+        ],
+        "reply": null
+      },
+      "witnessFailure": {
+        "move": [
+          3,
+          4,
+          1,
+          4
+        ],
+        "reply": [
+          2,
+          2,
+          1,
+          4
+        ]
+      },
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [
+          [
+            2,
+            2,
+            3,
+            4
+          ]
+        ],
+        "moves": [
+          {
+            "move": [
+              3,
+              4,
+              2,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              1,
+              4
+            ],
+            "reply": [
+              2,
+              2,
+              1,
+              4
+            ]
+          },
+          {
+            "move": [
+              3,
+              4,
+              0,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              4,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              5,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              6,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              7,
+              4
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              3
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              2
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              1
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              0
+            ],
+            "reply": [
+              2,
+              2,
+              3,
+              0
+            ]
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              5
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              6
+            ],
+            "reply": null
+          },
+          {
+            "move": [
+              3,
+              4,
+              3,
+              7
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-capture-v1",
+      "id": "protect-capture-demo-v1",
+      "role": "demo",
+      "fen": "7k/1b6/8/8/4p3/8/4R2p/K7 w - - 0 1",
+      "task": "captureSafe",
+      "focusSquare": [
+        6,
+        4
+      ],
+      "witnessSuccess": {
+        "move": [
+          6,
+          4,
+          6,
+          7
+        ],
+        "reply": null
+      },
+      "witnessFailure": {
+        "move": [
+          6,
+          4,
+          4,
+          4
+        ],
+        "reply": [
+          1,
+          1,
+          4,
+          4
+        ]
+      },
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [],
+        "moves": [
+          {
+            "move": [
+              6,
+              4,
+              4,
+              4
+            ],
+            "reply": [
+              1,
+              1,
+              4,
+              4
+            ]
+          },
+          {
+            "move": [
+              6,
+              4,
+              6,
+              7
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-capture-v1",
+      "id": "protect-capture-guided-v1",
+      "role": "guided",
+      "fen": "k7/6b1/8/8/3p4/8/p2R4/7K w - - 0 1",
+      "task": "captureSafe",
+      "focusSquare": [
+        6,
+        3
+      ],
+      "witnessSuccess": {
+        "move": [
+          6,
+          3,
+          6,
+          0
+        ],
+        "reply": null
+      },
+      "witnessFailure": {
+        "move": [
+          6,
+          3,
+          4,
+          3
+        ],
+        "reply": [
+          1,
+          6,
+          4,
+          3
+        ]
+      },
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [],
+        "moves": [
+          {
+            "move": [
+              6,
+              3,
+              4,
+              3
+            ],
+            "reply": [
+              1,
+              6,
+              4,
+              3
+            ]
+          },
+          {
+            "move": [
+              6,
+              3,
+              6,
+              0
+            ],
+            "reply": null
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "protect-capture-v1",
+      "id": "protect-capture-transfer-v1",
+      "role": "transfer",
+      "fen": "7k/1b6/8/8/4p3/2N5/4R2p/K7 w - - 0 1",
+      "task": "captureSafe",
+      "focusSquare": [
+        6,
+        4
+      ],
+      "witnessSuccess": {
+        "move": [
+          6,
+          4,
+          6,
+          7
+        ],
+        "reply": null
+      },
+      "witnessFailure": {
+        "move": [
+          6,
+          4,
+          4,
+          4
+        ],
+        "reply": [
+          1,
+          1,
+          4,
+          4
+        ]
+      },
+      "validation": {
+        "status": "playing",
+        "targetCaptures": [],
+        "moves": [
+          {
+            "move": [
+              6,
+              4,
+              4,
+              4
+            ],
+            "reply": [
+              1,
+              1,
+              4,
+              4
+            ]
+          },
+          {
+            "move": [
+              6,
+              4,
+              6,
+              7
+            ],
+            "reply": null
+          }
+        ]
+      }
+    }
+  ]
+}
