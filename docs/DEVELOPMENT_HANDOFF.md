@@ -295,3 +295,4 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 - 연결: 세션 형식 7(`course`, 대전 콘텐츠 `courseMatch`), 프로필 파일 형식 7(`course_progress_v1`, `game_records_v1`, `workshop_v1`, `coach_stats_v1`), 홈 보조 타일 4칸(승급 과정 추가), 대전 설정·결과에서 코치, 보호자 설정에 구매·잠금 미리보기.
 - 이전 원칙의 변화: 2026-11-04까지 "현재 기능 전부 무료"였다. 이번에도 **기존 기능은 하나도 잠그지 않았다.** 유료는 새로 만든 승급 과정(일부)과 코치(일부)뿐이다. 꾸미기는 계속 무료.
 - 검증: 단위 160/160, 브라우저 16종(새 `tests/premium-browser.cjs` 포함).
+- 배포: `56d586a`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42412607325) 성공, 공개 사이트 `2026.11.08.3` 확인. 공개 주소로 `browser-final`(오프라인 포함)·`premium-browser`·`product-completion-browser`를 다시 돌려 통과.
