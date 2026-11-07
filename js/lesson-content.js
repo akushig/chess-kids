@@ -1,54 +1,29 @@
-// 체스 수업 v2: 직접 한 수 두고, 둔 수의 결과를 설명한다 (docs/lessons/LESSON_REDESIGN_V2.md)
+// 체스 수업: 직접 한 수 두고, 둔 수의 결과를 설명한다 (docs/lessons/LESSON_REDESIGN_V2.md)
 // 판마다 목표 한 줄 → 내가 한 수 → (위험하면) 상대가 실제로 잡음 → 한 문장 설명 → 다시/다음.
 // 좌표는 [row,col] = [8-rank, fileIndex]. 모든 판은 백(나) 차례, 캐슬링·앙파상 없음.
 // 성공: 이동 뒤 흑의 합법 수 중 백 말(킹 제외)을 잡는 수가 없다. mustCapture 판은 잡는 수여야 한다.
 // 범위는 '상대의 바로 다음 한 수'뿐이다. witness/trap은 검사·힌트용 예시이며 유일한 정답이 아니다.
-const LESSON_CONTENT_VERSION = 2;
-// v1(보기·함께·혼자 구조) 수업 ID. 예전 저장·파일에 남아 있으면 오류 대신 조용히 버린다.
-const LESSON_RETIRED_IDS = ['protect-spot-v1', 'protect-escape-v1', 'protect-capture-v1'];
+const LESSON_CONTENT_VERSION = 3;
+// 예전 수업 ID(v1: 보기·함께·혼자, v2: 수업당 5판). 예전 저장·파일에 남아 있으면 오류 대신 조용히 버린다.
+const LESSON_RETIRED_IDS = ['protect-spot-v1', 'protect-escape-v1', 'protect-capture-v1', 'protect-escape-v2', 'protect-capture-v2', 'protect-all-v2'];
 const LESSON_PIECE_VALUE = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 100 };
 const LESSON_PIECE_MOVES = {
   R: '가로·세로로 끝까지 와요', B: '대각선으로 끝까지 와요', Q: '가로·세로·대각선으로 끝까지 와요',
   N: 'L자로 뛰어 다른 말을 넘어와요', P: '앞쪽 대각선 한 칸을 잡아요', K: '바로 옆 칸을 잡아요',
 };
+// 판 배치는 scripts/generate-lesson-levels.cjs가 만든 js/lesson-levels.js(LESSON_LEVEL_DATA)에서 온다.
+// 수업마다 5단계(LESSON_TIER_NAMES) × 3판. 단계는 새 개념이 나오는 순서, 단계 안은 난이도 점수 순서다.
 const LESSONS = [
-  {
-    id: 'protect-escape-v2', version: 2, number: 1, title: '공격받는 말 피하기',
+  { id: 'protect-escape-v3', version: 3, number: 1, title: '공격받는 말 피하기',
     skill: '상대가 노리는 내 말을 잡히지 않는 칸으로 옮겨요',
-    learned: '두기 전에 상대가 노리는 내 말이 있는지 봐요. 있으면 상대 말이 닿지 않는 칸으로 옮겨요.',
-    levels: [
-      { id: 'escape-1', fen: '7k/6b1/8/8/3R4/8/K7/8 w - - 0 1', showThreat: true, goal: '상대 비숍이 내 룩을 노려요(빨간 화살표). 룩을 피해요.', witness: [4, 3, 3, 3], trap: [6, 0, 5, 0] },
-      { id: 'escape-2', fen: 'k6r/8/8/8/8/7B/8/3K4 w - - 0 1', goal: '상대 룩이 내 비숍을 노려요. 안전한 칸으로 피해요.', witness: [5, 7, 4, 6], trap: [5, 7, 0, 2] },
-      { id: 'escape-3', fen: 'k7/8/2n5/4R3/8/8/8/7K w - - 0 1', goal: '상대 나이트가 내 룩을 노려요. 나이트를 피해요.', witness: [3, 4, 2, 4], trap: [3, 4, 1, 4] },
-      { id: 'escape-4', fen: '4r3/1p6/1b4k1/8/3N4/7r/8/K7 w - - 0 1', goal: '내 나이트가 공격받아요. 안전한 칸은 몇 개 없어요.', witness: [4, 3, 3, 1], trap: [4, 3, 2, 4] },
-      { id: 'escape-5', fen: '7k/8/8/4b3/8/3B1N2/1R6/7K w - - 0 1', goal: '내 말 하나가 공격받아요. 어떤 말인지 찾아 지켜요.', witness: [6, 1, 4, 1], trap: [5, 3, 4, 4] },
-    ],
-  },
-  {
-    id: 'protect-capture-v2', version: 2, number: 2, title: '잡을 때도 조심하기',
+    learned: '두기 전에 상대가 노리는 내 말이 있는지 봐요. 있으면 상대 말이 닿지 않는 칸으로 옮겨요.' },
+  { id: 'protect-capture-v3', version: 3, number: 2, title: '잡을 때도 조심하기',
     skill: '잡은 뒤에 상대가 내 말을 다시 잡을 수 있는지 살펴요',
-    learned: '잡을 수 있는 말이 보여도 바로 잡지 말고, 그 칸을 상대가 지키는지 먼저 봐요.',
-    levels: [
-      { id: 'capture-1', fen: '7k/1b6/8/8/4p3/8/4R2p/K7 w - - 0 1', mustCapture: true, showThreat: true, goal: '폰 하나를 잡아요. 빨간 화살표는 그 폰을 지키는 말이에요.', witness: [6, 4, 6, 7], trap: [6, 4, 4, 4] },
-      { id: 'capture-2', fen: 'k7/6b1/8/8/3p4/8/p2R4/7K w - - 0 1', mustCapture: true, goal: '폰 하나를 잡아요. 잡은 뒤에도 룩이 안전하게!', witness: [6, 3, 6, 0], trap: [6, 3, 4, 3] },
-      { id: 'capture-3', fen: '6k1/2p2p2/8/1N6/8/1B6/8/7K w - - 0 1', mustCapture: true, goal: '폰 하나를 잡아요. 상대 킹도 바로 옆 칸을 지켜요.', witness: [3, 1, 1, 2], trap: [5, 1, 1, 5] },
-      { id: 'capture-4', fen: '7k/4p3/3n4/6p1/8/5N2/8/K2R4 w - - 0 1', mustCapture: true, goal: '상대 말 하나를 잡아요. 큰 말이 늘 좋은 건 아니에요.', witness: [5, 5, 3, 6], trap: [7, 3, 2, 3] },
-      { id: 'capture-5', fen: '6k1/8/2n4p/8/1b6/8/3Q4/K7 w - - 0 1', mustCapture: true, goal: '내 퀸이 공격받아요! 상대 말을 잡으면서 피해요.', witness: [6, 3, 2, 7], trap: [6, 3, 4, 1] },
-    ],
-  },
-  {
-    id: 'protect-all-v2', version: 2, number: 3, title: '내 말 모두 지키기',
+    learned: '잡을 수 있는 말이 보여도 바로 잡지 말고, 그 칸을 상대가 지키는지 먼저 봐요.' },
+  { id: 'protect-all-v3', version: 3, number: 3, title: '내 말 모두 지키기',
     skill: '노려지는 내 말을 찾아 피하거나, 공격한 말을 잡아요',
-    learned: '상대가 잡을 수 있는 내 말이 없게 두어요. 피하거나, 공격한 말을 잡을 수 있어요.',
-    levels: [
-      { id: 'all-1', fen: '6k1/2p5/3p4/4N3/1B6/8/8/7K w - - 0 1', goal: '상대 폰이 내 나이트를 노려요. 폰은 대각선으로 잡아요.', witness: [3, 4, 2, 2], trap: [4, 1, 2, 3] },
-      { id: 'all-2', fen: '6k1/8/2n5/4p3/3Q4/8/8/6K1 w - - 0 1', goal: '작은 폰이 내 퀸을 노려요! 퀸을 안전한 칸으로.', witness: [4, 3, 5, 2], trap: [4, 3, 3, 4] },
-      { id: 'all-3', fen: '8/5pk1/8/1R3B2/3n4/4P3/8/K7 w - - 0 1', goal: '나이트가 내 말 두 개를 노려요. 둘 다 지킬 방법은?', witness: [5, 4, 4, 3], trap: [3, 1, 0, 1] },
-      { id: 'all-4', fen: '6k1/8/8/8/5p2/4n3/8/2BR2K1 w - - 0 1', goal: '내 말 하나가 공격받아요. 찾아서 지켜요.', witness: [7, 3, 4, 3], trap: [7, 2, 5, 4] },
-      { id: 'all-5', fen: 'r5k1/5ppp/8/8/1b6/2N5/5PPP/3R2K1 w - - 0 1', goal: '실전처럼 말이 많아요. 잡힐 수 있는 내 말이 없게!', witness: [5, 2, 4, 4], trap: [5, 2, 4, 0] },
-    ],
-  },
-];
+    learned: '상대가 잡을 수 있는 내 말이 없게 두어요. 피하거나, 공격한 말을 잡을 수 있어요.' },
+].map(lesson => ({ ...lesson, levels: LESSON_LEVEL_DATA[lesson.id] }));
 
 function lessonById(id) { return typeof id === 'string' ? LESSONS.find(l => l.id === id) || null : null; }
 function lessonLevelGame(level) { return ChessGame.fromFEN(level.fen); }

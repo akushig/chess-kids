@@ -74,7 +74,7 @@ function lessonStatus(lesson) {
 function renderLessonList() {
   const fromPlay = lessonOrigin === 'play';
   document.getElementById('screen-lesson').innerHTML = `<div class="screen-wrap lesson-list"><div class="screen-header"><button class="back-btn" onclick="${fromPlay ? 'goPlay()' : "showScreen('home');renderHome()"}">← ${fromPlay ? '체스 대전' : '홈'}</button><h2>체스 수업</h2></div>
-    <section class="lesson-course"><h3>내 말 지키기 · 세 수업</h3><p>나는 <b>흰색</b>이에요. 판마다 목표를 보고 <b>직접 한 수</b>를 두면, 무슨 일이 일어났는지 바로 알려줘요. 틀려도 바로 다시 할 수 있어요.</p></section>
+    <section class="lesson-course"><h3>내 말 지키기 · 세 수업 · ${LESSONS.reduce((n, l) => n + l.levels.length, 0)}판</h3><p>나는 <b>흰색</b>이에요. 판마다 목표를 보고 <b>직접 한 수</b>를 두면, 무슨 일이 일어났는지 바로 알려줘요. 수업마다 ${LESSON_TIER_NAMES.join(' → ')} 순서로 조금씩 어려워져요.</p></section>
     <div class="lesson-cards">${LESSONS.map(lesson => { const status = lessonStatus(lesson); return `<div class="lesson-card-item"><button class="lesson-card" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.number}. ${lesson.title}</strong><small>${lesson.skill}</small></span><span class="lesson-status lesson-status-${status.key}">${status.label}</span></button>${status.key === 'resume' ? `<div class="lesson-card-actions"><button class="action-btn secondary" aria-label="${lesson.number}번 처음부터 다시" onclick="restartLesson('${lesson.id}')">↺ 처음부터 다시</button><button class="action-btn green" aria-label="${lesson.number}번 이어하기" onclick="openLesson('${lesson.id}')">▶ 이어하기</button></div>` : ''}</div>`; }).join('')}</div>
     <p class="section-note">순서는 추천이에요. 어느 수업부터 시작해도 돼요. 수업마다 하던 판을 따로 기억해요.</p></div>`;
 }
@@ -291,7 +291,7 @@ function lessonBoardHTML(view) {
     cells += `<div class="${cls}" onclick="lessonClick(${r},${c})"${notes.length ? ` data-note="${notes.join(', ')}"` : ''}>${piece ? getPieceSVG(piece) : ''}${owner}${tag}</div>`;
   }
   const arrows = [...(marks.arrows || []).map(a => [a, 'attack']), ...(marks.suggest || []).map(a => [a, 'suggest'])];
-  return `<div class="chess-board lesson-board">${cells}${lessonArrowSVG(arrows)}</div>`;
+  return `<div class="chess-board lesson-board${view.boardTone ? ' lesson-board-' + view.boardTone : ''}">${cells}${lessonArrowSVG(arrows)}</div>`;
 }
 // 위: 이 판의 목표(판 안에서 바뀌지 않음). 아래: 지금 할 일 또는 방금 둔 수의 결과와 이유.
 function lessonFeedback(view) {
@@ -311,9 +311,20 @@ function lessonFeedback(view) {
   }
   return { tone: '', html: l.selected ? '👉 점이 찍힌 칸을 눌러 옮겨요. 상대 말을 누르면 갈 수 있는 칸이 보여요.' : '👉 옮길 내 말(흰색)을 눌러요. 상대 말을 누르면 갈 수 있는 칸이 보여요.' };
 }
+// 진행 줄: 판 번호와 단계(첫걸음→도전), 클리어한 판 수만큼 찬 막대
 function lessonStatusHTML(l, lesson) {
-  const dots = lesson.levels.map((_, i) => `<span class="lesson-dot${l.solved[i] ? ' done' : ''}${i === l.levelIndex && l.phase !== 'complete' ? ' current' : ''}" aria-hidden="true"></span>`).join('');
-  return `<div class="lesson-statusbar"><span class="lesson-progress" aria-label="판 ${l.levelIndex + 1}/${lesson.levels.length}"><b>${l.phase === 'complete' ? '수업 끝' : `판 ${l.levelIndex + 1}/${lesson.levels.length}`}</b>${dots}</span><span class="lesson-side">${getPieceSVG('wK', 18)}<span>나 = 흰색</span></span></div>`;
+  const total = lesson.levels.length, cleared = l.solved.filter(Boolean).length, tier = LESSON_TIER_NAMES[lesson.levels[l.levelIndex].tier - 1];
+  const label = l.phase === 'complete' ? `${total}판 모두 성공` : `판 ${l.levelIndex + 1}/${total} · ${tier}`;
+  return `<div class="lesson-statusbar"><span class="lesson-progress"><b>${label}</b><span class="lesson-bar" role="progressbar" aria-label="클리어한 판" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${cleared}"><i style="width:${Math.round(cleared / total * 100)}%"></i></span></span><span class="lesson-side">${getPieceSVG('wK', 18)}<span>나 = 흰색</span></span></div>`;
+}
+// 목표 칸: 두는 동안에는 목표, 판이 끝나면 성공/실패를 크게 알린다.
+function lessonHeadline(l, lesson, level) {
+  const total = lesson.levels.length, cleared = l.solved.filter(Boolean).length;
+  if (l.phase === 'complete') return { tone: 'ok', html: `🏆 ${total}판 모두 성공!` };
+  if (l.phase === 'result' && l.result === 'success') return { tone: 'ok', html: `🎉 판 ${l.levelIndex + 1} 성공! <small>${cleared}/${total} 클리어</small>` };
+  if (l.phase === 'result' && l.result === 'fail') return { tone: 'no', html: '✗ 잡혔어요! 다시 해봐요' };
+  if (l.phase === 'result') return { tone: 'no', html: '✗ 아직 목표를 이루지 못했어요' };
+  return { tone: '', html: `🎯 ${level.goal}` };
 }
 function lessonButtons(l, lesson) {
   const busy = state.animating || lessonUnstable();
@@ -323,7 +334,8 @@ function lessonButtons(l, lesson) {
 }
 function renderLesson() {
   const { l, lesson, level } = lessonContext(); if (!l || !lesson) return goLessons();
-  const view = lessonView(), feedback = lessonFeedback(view);
-  renderGameScreen('screen-lesson', `<div class="screen-wrap lesson-screen"><div class="screen-header lesson-header"><button class="back-btn" onclick="goLessons()">← 목록</button><h2>${lesson.number}. ${lesson.title}</h2><button class="lesson-restart-btn" onclick="restartLesson('${lesson.id}')">↺ 처음부터</button></div>${lessonStatusHTML(l, lesson)}<div class="status-msg lesson-message"><p class="lesson-goal">🎯 ${level.goal}</p><p class="lesson-feedback ${feedback.tone}">${feedback.html}</p></div>${lessonBoardHTML(view)}${lessonButtons(l, lesson)}</div>`);
+  const view = lessonView(), feedback = lessonFeedback(view), headline = lessonHeadline(l, lesson, level);
+  view.boardTone = headline.tone;
+  renderGameScreen('screen-lesson', `<div class="screen-wrap lesson-screen"><div class="screen-header lesson-header"><button class="back-btn" onclick="goLessons()">← 목록</button><h2>${lesson.number}. ${lesson.title}</h2><button class="lesson-restart-btn" onclick="restartLesson('${lesson.id}')">↺ 처음부터</button></div>${lessonStatusHTML(l, lesson)}<div class="status-msg lesson-message"><p class="lesson-goal${headline.tone ? ' lesson-goal-' + headline.tone : ''}">${headline.html}</p><p class="lesson-feedback ${feedback.tone}">${feedback.html}</p></div>${lessonBoardHTML(view)}${lessonButtons(l, lesson)}</div>`);
   saveActiveSession();
 }
