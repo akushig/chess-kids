@@ -11,12 +11,14 @@ function playContentValid(c){
  if(!c||c.version!==1)return false;
  if(c.type==='scene')return PLAY_SCENES.some(p=>p.id===c.id)&&typeof c.achieved==='boolean';
  if(c.type==='team')return ['full','small','R','B','N'].includes(c.board)&&Array.isArray(c.names)&&c.names.length===2&&c.names.every(n=>typeof n==='string'&&n.trim().length>0&&n.length<=16&&!/[<>\u0000-\u001f]/.test(n))&&Number.isInteger(c.turns)&&c.turns>=0&&c.turns<100000;
+ if(c.type==='lessonPractice')return lessonPracticeValid(c);
  if(c.type==='expedition')return Number.isInteger(c.stage)&&c.stage>=0&&c.stage<=2&&(c.stage===0?c.recruit===null:['B','N'].includes(c.recruit))&&(c.stage<2?c.route===null:['diagonal','jump'].includes(c.route));
  return false;
 }
 function playContentConfig(c){return playContentValid(c)?copyData(c):null;}
-function playContentTitle(c){if(c?.type==='scene')return PLAY_SCENES.find(p=>p.id===c.id)?.title||'승부의 한 장면';if(c?.type==='team')return '우리 팀 체스';return c?.type==='expedition'?`체스 원정대 · ${c.stage+1}/3전`:'';}
+function playContentTitle(c){if(c?.type==='lessonPractice')return '수업 배치로 대전';if(c?.type==='scene')return PLAY_SCENES.find(p=>p.id===c.id)?.title||'승부의 한 장면';if(c?.type==='team')return '우리 팀 체스';return c?.type==='expedition'?`체스 원정대 · ${c.stage+1}/3전`:'';}
 function playContentGame(c){
+ if(c.type==='lessonPractice')return lessonPracticeGame(c);
  if(c.type==='scene')return ChessGame.fromFEN(PLAY_SCENES.find(p=>p.id===c.id).fen);
  if(c.type==='team')return c.board==='full'?new ChessGame():ChessGame.fromFEN(c.board==='small'?PLAY_SMALL_FEN:PLAY_PRESETS[c.board].fen);
  if(c.type==='expedition'){
@@ -28,7 +30,7 @@ function playContentGame(c){
  return null;
 }
 function playContentKeepsSession(){const c=state.play?.content;return c?.type==='expedition'&&!(c.stage===2&&state.game.status==='checkmate'&&state.game.turn==='b');}
-function playContentIntro(c){if(c?.type==='scene')return PLAY_SCENES.find(p=>p.id===c.id).note;if(c?.type==='team')return '둘이 같은 흰색 팀이에요. 컴퓨터가 두고 나면 다음 팀원 차례예요.';return c?.type==='expedition'?'표준 체스로 3번의 전투에 도전해요. 이기면 다음 팀과 길을 고를 수 있어요.':'';}
+function playContentIntro(c){if(c?.type==='lessonPractice')return '수업에서 본 배치예요. 이제 표준 체스로 끝까지 두어요.';if(c?.type==='scene')return PLAY_SCENES.find(p=>p.id===c.id).note;if(c?.type==='team')return '둘이 같은 흰색 팀이에요. 컴퓨터가 두고 나면 다음 팀원 차례예요.';return c?.type==='expedition'?'표준 체스로 3번의 전투에 도전해요. 이기면 다음 팀과 길을 고를 수 있어요.':'';}
 function contentLevelPicker(){return `<label>컴퓨터 난이도<select id="content-level">${AI_LEVELS.map((_,i)=>`<option value="${i}" ${getPlaySettings().level===i?'selected':''}>${playLevelLabel(i)}</option>`).join('')}</select></label>`;}
 function contentChosenLevel(){const level=Number(document.getElementById('content-level')?.value);return Number.isInteger(level)&&level>=0&&level<10?level:getPlaySettings().level;}
 function goExpedition(){leaveActivity();showScreen('mini');
@@ -50,7 +52,7 @@ function playContentResultActions(){const c=state.play?.content;if(c?.type!=='ex
  actions.push({label:expeditionWon()?'이 전투 다시 두기':'같은 전투 재도전',action:playRematch});
  actions.push({label:'원정 입구',secondary:true,action:goExpedition});return actions;
 }
-function playContentPanel(){const c=state.play?.content;if(c?.type==='scene')return scenePanel();if(c?.type==='team')return teamPanel();if(c?.type!=='expedition')return '';
+function playContentPanel(){const c=state.play?.content;if(c?.type==='lessonPractice')return lessonPracticePanel();if(c?.type==='scene')return scenePanel();if(c?.type==='team')return teamPanel();if(c?.type!=='expedition')return '';
  return `<div class="content-context"><strong>${playContentTitle(c)}</strong><span>${c.recruit?t(PIECE_NAMES[c.recruit])+'와 함께':'왕·폰·룩으로 출발'}${c.route?' · '+(c.route==='diagonal'?'비숍의 길':'나이트의 길'):''}</span>${playIsOver()?`<p>${expeditionWon()?(c.stage===2?'🏆 세 전투를 모두 마쳤어요! 다른 동료와 길도 골라봐요.':'승리! 다음 선택이 기다려요.'):'이번 전투부터 다시 도전할 수 있어요.'}</p>`:''}</div>`;
 }
 function playContentMenuHTML(){return `<section class="activity-group"><h3>새로운 대전</h3><div class="content-cards"><button class="content-card" onclick="goExpedition()"><strong>🏕 체스 원정대</strong><span>동료와 길을 고르는 3전 원정</span></button><button class="content-card" onclick="goTeamChess()"><strong>🤝 우리 팀 체스</strong><span>둘이 한 팀으로 컴퓨터에 도전</span></button><button class="content-card" onclick="goPlayScenes()"><strong>🎯 승부의 한 장면</strong><span>승격·왕 구하기·체크메이트 6장면</span></button></div></section>`;}
