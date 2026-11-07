@@ -2,9 +2,17 @@
 const SESSION_KEYS = {
   mission:['missionSpec','missionPiece','missionIdx','missionBoard','missionPlayerPos','missionSolved','missionFailed','missionMoveCount','missionNotice'],
   puzzle:['puzzleLevel','puzzleIndex','puzzleGame','puzzleSolved','puzzleMoveCount','puzzleNotice'],
-  challenge:['ch'],solo:['solo'], play:['game','play'], knight:['kt'], collector:['cl'], bomb:['bm'], defense:['df'], survival:['sv'],
+  challenge:['ch'],solo:['solo'],lesson:['lesson'], play:['game','play'], knight:['kt'], collector:['cl'], bomb:['bm'], defense:['df'], survival:['sv'],
 };
 function copyData(value) { return JSON.parse(JSON.stringify(value)); }
+// 저장 형식 버전: 새 콘텐츠를 모르는 예전 앱이 다른 규칙으로 열지 않게 한다.
+// 5: 체스 수업·수업 배치 대전, 4: 직접 만든 도전장 v2, 3: 새 콘텐츠, 2: 나이트 규칙 문제, 1: 그 밖의 놀이
+function sessionVersion(kind,values){
+  if(kind==='lesson'||kind==='play'&&values?.play?.content?.type==='lessonPractice')return 5;
+  if(kind==='challenge'&&values?.ch?.spec?.version===2)return 4;
+  if(['solo','challenge'].includes(kind)||kind==='play'&&values?.play?.content)return 3;
+  return kind==='knight'&&values?.kt?.mode==='puzzle'?2:1;
+}
 function beginActivity(kind,params={}) {
   gameLayoutSession++;
   saveActiveSession(); cancelActivityCallbacks();
@@ -16,7 +24,7 @@ function activityRandom() {
   let n=state.randomSeed||1;n^=n<<13;n^=n>>>17;n^=n<<5;state.randomSeed=n>>>0;return state.randomSeed/4294967296;
 }
 function activitySnapshot() {
-  const values={};for(const key of SESSION_KEYS[state.activeKind]||[])values[key]=state[key];
+  const values={};for(const key of SESSION_KEYS[state.activeKind]||[])values[key]=key==='lesson'?lessonStableState(state.lesson):state[key];
   return copyData({values,randomSeed:state.randomSeed,supportLevel:state.supportLevel||0});
 }
 function rememberAction() { state.actionHistory ||= [];state.actionHistory.push(activitySnapshot());if(state.actionHistory.length>120)state.actionHistory.shift(); }
@@ -25,27 +33,34 @@ function restoreSnapshot(snap) {
   if(state.activeKind==='play'&&state.play)state.play=playUpgradeDifficulty(state.play);
   if(state.game)state.game=Object.assign(new ChessGame(),state.game);
   if(state.puzzleGame)state.puzzleGame=Object.assign(new ChessGame(),state.puzzleGame);
+  if(state.activeKind==='lesson'&&state.lesson)lessonRevive(state.lesson);
 }
 function activityComplete() {
-  return ({challenge:()=>state.ch.clear,solo:()=>state.solo.clear,mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
+  return ({challenge:()=>state.ch.clear,solo:()=>state.solo.clear,lesson:()=>state.lesson?.phase==='complete',mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
-  // Version 3 protects new content from older apps; built-in knight rule puzzles remain version 2.
-  const saved={version:state.activeKind==='challenge'&&state.ch?.spec.version===2?4:['solo','challenge'].includes(state.activeKind)||state.activeKind==='play'&&state.play?.content?3:state.activeKind==='knight'&&state.kt?.mode==='puzzle'?2:1,rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot:activitySnapshot(),history:state.actionHistory||[],complete:activityComplete(),updatedAt:Date.now()};
+  const snapshot=activitySnapshot();
+  // 수업 응수 도중이면 방금 쌓은 시도 시작 기록은 현재 저장 상태와 같으므로 빼고 저장한다.
+  const history=state.activeKind==='lesson'&&state.lesson?.phase==='response'?(state.actionHistory||[]).slice(0,-1):state.actionHistory||[];
+  const saved={version:sessionVersion(state.activeKind,snapshot.values),rulesVersion:2,kind:state.activeKind,params:state.activityParams,snapshot,history,complete:activityComplete(),updatedAt:Date.now()};
   // Save remaining time, never a deadline that elapses while the app is closed.
   if(saved.kind==='play'&&saved.snapshot.values.play?.timer) saved.snapshot.values.play.pausedLeft=Math.max(0,state.play.pausedLeft??state.play.deadline-Date.now());
   const sessions=readData('sessions',{});if(saved.complete)delete sessions[saved.kind];else sessions[saved.kind]=saved;
   writeData('sessions',sessions);writeData('last_session',saved);
   if(saved.kind==='play'){const archive=readData('play_content_saves',{});archive[state.play.content?.type||'standard']=saved;writeData('play_content_saves',archive);}
+  // 수업은 ID별로 따로 보관한다. 공통 sessions.lesson은 마지막으로 한 수업이다.
+  if(saved.kind==='lesson'){const all=lessonSessionsAll(),id=state.lesson.lessonId;if(saved.complete)delete all[id];else all[id]=saved;writeData('lesson_sessions_v1',all);}
 }
 function renderActivity() {
-  ({challenge:renderChallenge,solo:renderSolo,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
+  ({challenge:renderChallenge,solo:renderSolo,lesson:renderLesson,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
 }
 function undoActivity() {
-  if(state.animating || !state.actionHistory?.length)return;
+  if(state.animating || !state.actionHistory?.length || lessonUnstable())return;
   cancelActivityCallbacks();
-  if(state.activeKind==='play') {
+  if(state.activeKind==='lesson') {
+    const previous=state.lesson;restoreSnapshot(state.actionHistory.pop());lessonAfterRestore(previous);
+  } else if(state.activeKind==='play') {
     playStop();let snap;
     do { snap=state.actionHistory.pop(); } while(state.play.mode==='ai'&&snap.values.game.turn!=='w'&&state.actionHistory.length);
     restoreSnapshot(snap);state.game.selected=null;state.game.validMoves=[];state.play.notice='다른 수를 둘 수 있어요.';state.play.teamPlan=false;state.play.teamProposal=null;
@@ -62,7 +77,7 @@ function resumeActivity(kind) {
   if(state.play)playStop();cancelActivityCallbacks();
   state.supportLevel=saved.snapshot.supportLevel||0;state.activeKind=saved.kind;state.activityParams=saved.params;state.actionHistory=saved.history||[];restoreSnapshot(saved.snapshot);
   state.puzzleWaiting=false;state.puzzleRun=(state.puzzleRun||0)+1;
-  const screen=({mission:'learn',puzzle:'puzzle',play:'play'})[saved.kind]||'mini';showScreen(screen);
+  const screen=({mission:'learn',puzzle:'puzzle',play:'play',lesson:'lesson'})[saved.kind]||'mini';showScreen(screen);
   if(saved.kind==='puzzle'&&state.puzzleGame.turn==='b'&&!state.puzzleSolved)doPuzzleAiMove();
   renderActivity();
   if(saved.kind==='play')playNextTurn();
@@ -86,9 +101,14 @@ function finishLinks(action='goMiniMenu()',label='다른 놀이 보기',extra=''
 function getSavedSession(saved=readData('last_session',null)){
   if(!saved||!SESSION_KEYS[saved.kind]||!saved.snapshot?.values)return null;
   const rulePuzzle=saved.kind==='knight'&&saved.snapshot.values.kt?.mode==='puzzle';
-  if(saved.version!==(saved.kind==='challenge'&&saved.snapshot.values.ch?.spec.version===2?4:['solo','challenge'].includes(saved.kind)||saved.kind==='play'&&saved.snapshot.values.play?.content?3:rulePuzzle?2:1))return null;
+  if(saved.version!==sessionVersion(saved.kind,saved.snapshot.values))return null;
   const v=saved.snapshot.values,validBoard=(b,size)=>Array.isArray(b)&&b.length===size&&b.every(row=>Array.isArray(row)&&row.length===size);
-  if(saved.kind==='challenge'){
+  if(saved.kind==='lesson'){
+    // 수업 상태와 되돌리기 기록은 모두 신뢰된 교재로 다시 만들고, 같은 수업·같은 장면이어야 한다.
+    const rebuilt=lessonRebuild(v.lesson);if(!rebuilt||saved.params?.id&&saved.params.id!==rebuilt.lessonId)return null;
+    for(const snap of saved.history||[]){const h=lessonRebuild(snap?.values?.lesson);if(!h||h.lessonId!==rebuilt.lessonId||h.sceneId!==rebuilt.sceneId)return null;snap.values.lesson=copyData(h);}
+    v.lesson=copyData(rebuilt);
+  }else if(saved.kind==='challenge'){
     if(!challengeStateValid(v.ch)||!(saved.history||[]).every(s=>challengeStateValid(s.values?.ch)))return null;
   }else if(saved.kind==='solo'){
     if(!soloValid(v.solo)||!(saved.history||[]).every(s=>soloValid(s.values?.solo)))return null;
@@ -127,7 +147,7 @@ function getSavedSession(saved=readData('last_session',null)){
   return saved;
 }
 
-const ACTIVITY_NAMES={challenge:'내가 만든 도전장',solo:'잡아서 하나 남기기',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
+const ACTIVITY_NAMES={lesson:'체스 수업',challenge:'내가 만든 도전장',solo:'잡아서 하나 남기기',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
 const KNIGHT_MODE_NAMES={walk:'산책',explore:'10칸 탐험',tour:'전체 투어',puzzle:'규칙 문제'};
 function ongoingActivities(){return Object.entries(readData('sessions',{})).filter(([kind,s])=>!!getSavedSession(s)&&!s.complete).sort((a,b)=>b[1].updatedAt-a[1].updatedAt);}
 function openSavedActivities(){
@@ -138,6 +158,10 @@ function recommendedActivity(){
  const saved=getSavedSession();
  // fallback: a general suggestion that the home entries already offer.
  if(!saved?.complete&&readData('experience','beginner')==='challenge')return {action:'goPlay()',title:'나에게 맞는 대전',description:'표준 판과 10단계 상대를 골라 도전해요.',fallback:true};
+ if(saved?.complete&&saved.kind==='lesson'){
+  const index=LESSONS.findIndex(l=>l.id===saved.snapshot.values.lesson.lessonId),next=LESSONS[index+1];
+  return next?{action:`openLesson('${next.id}')`,title:'다음 체스 수업',description:`${next.number}. ${next.title} · ${next.skill}`}:{action:'goPlay()',title:'배운 것을 대전에서',description:'두기 전에 상대가 다음에 무엇을 잡을지 살피며 한 판 두어요.'};
+ }
  if(saved?.complete&&saved.kind==='puzzle'){
   const last=PUZZLES[saved.snapshot.values.puzzleIndex],next=PUZZLES.find(p=>p.level===last.level&&!progressLedger().puzzles[p.id]);
   if(next)return {action:`openPuzzleScene('${next.id}')`,title:'같은 기술, 새로운 장면',description:last.learning.skill+'을 다른 배치에서도 찾아봐요.'};
@@ -165,7 +189,7 @@ function enterActivity(kind){
   return startDefaultActivity(kind);
 }
 function startDefaultActivity(kind){
-  ({challenge:goChallenges,solo:goSoloMenu,knight:()=>goKnightTour(undefined,preferredKnightMode()),collector:()=>goCollector(0),bomb:()=>goBomb(0),defense:()=>goDefense(0),survival:()=>goSurvival(0),puzzle:goPuzzleLevelSelect,mission:()=>{const i=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));if(i<0)return goAdventure();goMissionPlay('R',i);},play:goPlay}[kind])?.();
+  ({lesson:()=>goLessons(),challenge:goChallenges,solo:goSoloMenu,knight:()=>goKnightTour(undefined,preferredKnightMode()),collector:()=>goCollector(0),bomb:()=>goBomb(0),defense:()=>goDefense(0),survival:()=>goSurvival(0),puzzle:goPuzzleLevelSelect,mission:()=>{const i=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));if(i<0)return goAdventure();goMissionPlay('R',i);},play:goPlay}[kind])?.();
 }
 function requestNewActivity(kind,start=()=>startDefaultActivity(kind)){
   saveActiveSession();const saved=activitySaved(kind);
@@ -208,6 +232,7 @@ function learningSummary(){
   }
   const mini=Object.keys(p.completions||{}).filter(id=>p.mini[id]);
   if(mini.length)rows.push({label:'경로 찾기와 안전 연습',count:mini.length,independent:mini.filter(id=>p.completions[id].independent).length,assisted:mini.filter(id=>p.completions[id].assisted).length,joint:mini.filter(id=>p.completions[id].joint).length});
+  const lessons=lessonProgressAll();for(const lesson of LESSONS){const p=lessons[lesson.id];if(p?.completed)rows.push({label:'체스 수업 · '+lesson.title,count:1,independent:p.independent?1:0,assisted:p.assisted?1:0,joint:0});}
   for(const [id,label]of [['play-first-capture','대전에서 첫 잡기'],['play-first-rescue','대전에서 왕 구하기'],['play-first-finish-ai','컴퓨터와 한 판 완료'],['play-first-finish-friend','가족과 한 판 완료'],...Object.entries(PLAY_PRESETS).map(([key,p])=>[p.id,playPresetTitle(key)+' 완료'])])if(p.achievements[id])rows.push({label,count:1,independent:p.completions?.[id]?.independent?1:0,assisted:p.completions?.[id]?.assisted?1:0,joint:p.completions?.[id]?.joint?1:0});
   return rows;
 }

@@ -19,7 +19,7 @@ function renderHome() {
       ${entry("enterActivity('knight')",getPieceSVG('wN',42),'기사의 여행 · <span class="nowrap">나이트 투어</span>',knight.desc,'menu-knight',knight.saved)}
       ${entry("enterActivity('mission')",'🚩','체스 처음 배우기',learn.desc,'menu-adventure',learn.saved)}
     </div></section>
-    <nav class="home-secondary" aria-label="다른 놀이"><button class="home-more" onclick="goMiniMenu()"><span aria-hidden="true">🎲</span><span><strong>놀이터 · 전체 놀이</strong><small>한 수 발견 · 별 모으기 · 성 지키기 · 왕 지키기</small></span></button><button class="home-more" onclick="goAdventure()"><span aria-hidden="true">🗺</span><span><strong>모험 지도</strong><small>여섯 가지 말을 골라 배워요</small></span></button></nav>
+    <nav class="home-secondary" aria-label="다른 놀이"><button class="home-more home-lesson" onclick="goLessons('home')"><span aria-hidden="true">📘</span><span><strong>체스 수업</strong><small>상대의 공격을 보고 내 말을 지켜요 · 체험 3수업</small></span></button><button class="home-more" onclick="goMiniMenu()"><span aria-hidden="true">🎲</span><span><strong>놀이터 · 전체 놀이</strong><small>한 수 발견 · 별 모으기 · 성 지키기 · 왕 지키기</small></span></button><button class="home-more" onclick="goAdventure()"><span aria-hidden="true">🗺</span><span><strong>모험 지도</strong><small>여섯 가지 말을 골라 배워요</small></span></button></nav>
     ${nextSkin?`<button class="new-skin-card" onclick="safeStore.removeItem('pending_skin');openSkinDetail('${nextSkin}')">🎁 새로운 꾸미기를 얻었어요! 지금 입혀보기</button>`:''}
     <button class="star-bar" onclick="goReward()" aria-label="내 별과 완료 기록">⭐ ${getAllStars()} <small>내가 모은 별</small></button>
     <button class="text-button" onclick="openFamilySettings()">👤 프로필 · 설정</button><div class="app-version">v${APP_VERSION}</div></div>`;
