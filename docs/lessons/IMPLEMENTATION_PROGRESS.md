@@ -1,5 +1,7 @@
 # 체스 수업 구현 기록
 
+> **2026-11-07 갱신:** 사용자 확인 뒤 수업 흐름을 v2(직접 두고, 둔 수를 설명)로 재설계했다(빌드 `2026.11.07.3`). 현재 동작과 판 구성은 [v2 재설계](LESSON_REDESIGN_V2.md)에 있다. 아래 §0~§7은 v1(보기·함께·혼자) 기록이며, 그 화면 캡처는 `product-review/lessons/v1/`로 옮겼다.
+
 작성: 2026-11-07. 근거: [구현 명세](INTERACTIVE_LESSONS_DESIGN.md), [9개 교재 장면](LESSON_SCENES_V1.json), [전달 프롬프트](IMPLEMENTATION_PROMPT.md). 빌드 `2026.11.07.1`.
 
 ## 0. 상태 구분
@@ -113,7 +115,7 @@
   - 같은 기기에 남은 v5 수업·대전 저장은 이어하기로 보이지 않는다.
   - 홈·대전 입구는 정상이다.
   - 예전 앱의 v3 파일은 새 앱에서 그대로 이어진다.
-- 화면 증거(360×640): [목록](../product-review/lessons/list-360x640.png), [수업 1 예측 시범](../product-review/lessons/demo-predict-360x640.png), [수업 1 도움 2](../product-review/lessons/spot-help-360x640.png), [수업 1 마무리](../product-review/lessons/spot-complete-360x640.png), [수업 2 오답 뒤 응수](../product-review/lessons/escape-retry-360x640.png), [수업 3 되잡힘](../product-review/lessons/capture-retry-360x640.png), [이 배치로 대전](../product-review/lessons/practice-dialog-360x640.png), [결과 JSON](../product-review/lessons/results.json).
+- 화면 증거(360×640): [목록](../product-review/lessons/v1/list-360x640.png), [수업 1 예측 시범](../product-review/lessons/v1/demo-predict-360x640.png), [수업 1 도움 2](../product-review/lessons/v1/spot-help-360x640.png), [수업 1 마무리](../product-review/lessons/v1/spot-complete-360x640.png), [수업 2 오답 뒤 응수](../product-review/lessons/v1/escape-retry-360x640.png), [수업 3 되잡힘](../product-review/lessons/v1/capture-retry-360x640.png), [이 배치로 대전](../product-review/lessons/v1/practice-dialog-360x640.png), [결과 JSON](../product-review/lessons/v1/results.json).
 
 자동 검사 통과는 규칙·흐름·화면 계약이 지켜진다는 뜻이다. 재미나 교육 효과를 검증했다는 뜻은 아니다.
 
@@ -176,7 +178,7 @@
 - `npm test` 136/136.
 - `npm run test:browser` 15개 묶음 통과.
 - 수업 브라우저 검사 추가 항목: 소개 창 내용, 시범 중 판 누름 안내, 우리/상대 표시, 결과 뒤 다음 버튼 강조·문구, 수업 안·목록의 처음부터 다시, 버전 글자색.
-- 화면: [소개 창](../product-review/lessons/intro-360x640.png), [수업 2 실패 뒤 안내](../product-review/lessons/escape-retry-360x640.png).
+- 화면: [소개 창](../product-review/lessons/v1/intro-360x640.png), [수업 2 실패 뒤 안내](../product-review/lessons/v1/escape-retry-360x640.png).
 
 이번 수정으로 이해하기 쉬워졌는지는 사용자 확인이 다시 필요하다.
 
@@ -191,3 +193,26 @@
 6. 이 기록
 
 해시는 `git log`로 확인한다. 배포는 §0 참고.
+
+## 8. v2 재설계 · 빌드 `2026.11.07.3`
+
+2차 수정 뒤에도 사용자는 "진행이 여전히 어색하다, 무엇을 하는 콘텐츠인지 모르겠다"고 했다. 고치기 전에 방향을 먼저 검토했다.
+
+- 리체스 학습 메뉴(같은 주제의 보호·전투 단원)와 듀오링고 체스를 확인했다.
+- 우리 앱의 다른 놀이와 조작 방식을 비교했다.
+- 결론: 성인이라서가 아니라 구조 문제다. 사용자가 고른 방향은 "직접 두고 둔 수를 설명"이다.
+
+구현:
+- 수업 3개 × 5판을 엔진으로 설계했다.
+- 판마다 다음 과정을 반복한다: 목표 한 줄 → 내가 한 수 → 위험하면 상대가 실제로 잡음 → 한 문장 설명 → 다시/다음.
+- 상대 말을 누르면 그 말이 갈 칸을 보여 준다.
+- 힌트는 두 단계다.
+- 시범·지목·보기/함께/혼자·소개 창은 없앴다.
+- 예전 v1 수업 자료는 오류 없이 버린다.
+
+검증
+- `npm test` 135/135.
+- `npm run test:browser` 15개 묶음 통과(수업 검사는 15판을 실제 탭·키보드로 진행).
+- 360×640에서 15판 모든 상태의 문구 넘침 없음.
+
+자세한 내용은 [v2 재설계](LESSON_REDESIGN_V2.md)에 있다.

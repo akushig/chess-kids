@@ -1,0 +1,79 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "lessons": 3,
+      "levels": 15,
+      "inspect": true,
+      "failThenRetry": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "lessons": 3,
+      "levels": 15,
+      "inspect": true,
+      "failThenRetry": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "lessons": 3,
+      "levels": 15,
+      "inspect": true,
+      "failThenRetry": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "lessons": 3,
+      "levels": 15,
+      "inspect": true,
+      "failThenRetry": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "motion": true
+    },
+    {
+      "offline": true
+    }
+  ],
+  "errors": []
+}
