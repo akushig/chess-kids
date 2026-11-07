@@ -195,6 +195,8 @@ v2를 써 본 사용자 요청:
 
 v2: 2026-11-07에 `52a6910`까지 푸시했다. [GitHub Pages 배포](https://github.com/akushig/chess-kids/actions/runs/42363195646)가 성공했고, 공개 사이트에서 `2026.11.07.3`을 확인했다. 공개 주소로 `lessons-browser`(4개 화면 크기·애니메이션·오프라인)와 `browser-final`(오프라인 포함)을 다시 돌려 통과했다.
 
+v3: 2026-11-07에 `d0c3b89`까지 푸시했다. [GitHub Pages 배포](https://github.com/akushig/chess-kids/actions/runs/42367322159)가 성공했고, 공개 사이트에서 `2026.11.07.4`와 `js/lesson-levels.js`를 확인했다. 공개 주소로 `lessons-browser`(360×640에서 45판 실제 탭, 4개 화면 크기·애니메이션·오프라인)와 `browser-final`(오프라인 포함)을 다시 돌려 통과했다.
+
 ## 8. 확인할 것(사용자)
 
 새 판을 처음 볼 때 아래를 확인한다. 아이 한 명에게도 보여 주면 좋다.
