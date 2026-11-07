@@ -1,1 +1,1 @@
-globalThis.CHESS_BUILD = '2026.11.07.3';
+globalThis.CHESS_BUILD = '2026.11.07.4';
