@@ -10,7 +10,7 @@ const output=process.env.CHESS_QA_OUTPUT||'/tmp/chess-kids-ui';
    const context=await browser.newContext({viewport,serviceWorkers:'block'}),page=await context.newPage();page.on('pageerror',e=>summary.errors.push(e.message));
    await page.route('https://fonts.googleapis.com/**',r=>r.abort());await page.goto(process.env.CHESS_TEST_URL||'http://127.0.0.1:8765',{waitUntil:'domcontentloaded'});
    await page.evaluate(()=>{writeData('preferences',{motion:false});applyPreferences();window.testSecondProfile=createProfile('두번째','🐱').id;});
-   for(const name of [/^체스 대전/,/^기사의 여행 · 나이트 투어/,/^체스 처음 배우기/,/놀이터 · 전체 놀이/,/모험 지도/])assert.equal(await page.getByRole('button',{name}).count(),1,String(name));
+   for(const name of [/^체스 대전/,/^기사의 여행/,/^체스 처음 배우기/,/^놀이터/,/^모험 지도/])assert.equal(await page.getByRole('button',{name}).count(),1,String(name));
    summary.build=await page.evaluate(()=>APP_VERSION);
    if(viewport.width===360)await page.screenshot({path:output+'/home-mobile.png',fullPage:true,animations:'disabled'});
    await page.getByRole('button',{name:/프로필 · 설정/}).click();await page.locator('#family-overlay .profile-button').filter({hasText:'두번째'}).click();assert.equal(await page.evaluate(()=>activeProfile===window.testSecondProfile),true);

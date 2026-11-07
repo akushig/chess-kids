@@ -97,7 +97,7 @@ test('수업 목록: 5단원 15개 주제, 다른 놀이의 저장판을 섞지 
  run("openLesson('protect-capture-v3')");play(run,timers,level(run).trap);
  run("lessonPickLevel('protect-all-v3',4)");
  run('goLessons()');h=html(elements);assert.equal((h.match(/lesson-status-resume/g)||[]).length,3);assert.match(h,/이어하기 · 판 2\/15/);
- assert.match(h,/lessonPicker\('protect-escape-v3'\)">☰ 판 고르기 · 1\/15[\s\S]*lessonDrillDialog\('protect-escape-v3'\)">∞ 무한 연습[\s\S]*openLesson\('protect-escape-v3'\)">▶ 이어하기/);
+ assert.match(h,/aria-label="1번 이어하기[^"]*" onclick="openLesson\('protect-escape-v3'\)"[\s\S]*▶ 이어하기[\s\S]*lessonPicker\('protect-escape-v3'\)">☰ 판 고르기 <b>1\/15<\/b>[\s\S]*lessonDrillDialog\('protect-escape-v3'\)">∞ 무한 연습/,'카드 하나에 이어하기·판 고르기·무한 연습');
  run("openLesson('protect-escape-v3')");assert.equal(run('state.lesson.levelIndex'),1);run("openLesson('protect-capture-v3')");assert.equal(run('state.lesson.result'),'fail');run("openLesson('protect-all-v3')");assert.equal(run('state.lesson.levelIndex'),4);
  run("goLessons();globalThis.choice=null;showChoice=(m,c)=>{choice={m,c};};restartLesson('protect-escape-v3')");assert.match(run('choice.m'),/첫 판부터 다시/);run('choice.c[0].action()');
  assert.deepEqual([run('state.lesson.levelIndex'),run('state.lesson.phase')],[0,'choose']);run('goLessons()');assert.ok(run("!!lessonSavedSession('protect-capture-v3')&&!!lessonSavedSession('protect-all-v3')"));
@@ -121,7 +121,7 @@ test('수업 마치기 직후 같은 자리의 다음 수업 버튼은 연타로
 
 test('판 고르기: 잠금 없이 아무 판이나 바로 시작하고, 성공 표시는 판별로 남으며, 어떤 순서로든 모두 성공하면 완료로 기록한다',()=>{
  const {run,timers,elements}=load();run("globalThis.dialogs=[];showActivityDialog=(title,html,actions)=>{dialogs.push({title,html,labels:actions.map(a=>a.label),actions});};goLessons('home')");
- assert.match(html(elements),/lessonPicker\('protect-all-v3'\)">☰ 판 고르기 · 0\/15[\s\S]*openLesson\('protect-all-v3'\)">▶ 시작하기/,'처음 수업도 판 고르기');
+ assert.match(html(elements),/aria-label="3번 시작하기[^"]*" onclick="openLesson\('protect-all-v3'\)"[\s\S]*▶ 시작하기[\s\S]*lessonPicker\('protect-all-v3'\)">☰ 판 고르기 <b>0\/15<\/b>/,'처음 수업도 판 고르기');
  run("lessonPicker('protect-all-v3')");let d=J(run,'dialogs.at(-1)');assert.equal(d.title,'3. 내 말 모두 지키기 · 판 고르기');assert.equal((d.html.match(/class="lesson-pick[ "]/g)||[]).length,15);
  for(const tier of ['첫걸음','쉬움','보통','어려움','도전'])assert.match(d.html,new RegExp(tier));assert.deepEqual(d.labels,['닫기','∞ 무한 연습','↺ 1판부터 다시']);
  // 잘하는 사람은 바로 도전 단계로: 13판부터.

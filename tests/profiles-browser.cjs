@@ -4,7 +4,7 @@ const output='/tmp/chess-profiles-qa';fs.mkdirSync(output,{recursive:true});
  const browser=await chromium.launch({headless:true,...(process.env.CHESS_BROWSER_EXECUTABLE?{executablePath:process.env.CHESS_BROWSER_EXECUTABLE}:{})});const errors=[],results=[];
  try{
  async function fresh(viewport){const context=await browser.newContext({viewport,serviceWorkers:'block',acceptDownloads:true}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.route('https://fonts.googleapis.com/**',r=>r.abort());await page.goto(process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});return {context,page};}
- const open=page=>page.getByRole('button',{name:'👤 프로필 · 설정',exact:true}).click();
+ const open=page=>page.getByRole('button',{name:/^프로필 · 설정/}).click();
  for(const viewport of [{width:360,height:780},{width:768,height:1024}]){
   const {context,page}=await fresh(viewport);
   assert.equal(await page.evaluate(()=>allProfiles().length),1);await open(page);assert.equal(await page.locator('.learning-summary').count(),0,'records stay optional');

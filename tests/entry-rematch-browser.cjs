@@ -26,7 +26,7 @@ const SMALL='3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
   async function mateWithClicks(){await ev(fen=>{state.game=ChessGame.fromFEN(fen);state.game.selected=null;renderPlay();},WIN);await cells().nth(22).click();await cells().nth(14).click();await dialog().waitFor();}
 
   // --- A-1: a first visit reaches each purpose with one tap; everything else is still there. ---
-  for(const name of ['체스 대전','기사의 여행 · 나이트 투어','체스 처음 배우기'])assert.equal(await primary(name).count(),1,name);
+  for(const name of ['체스 대전','기사의 여행','체스 처음 배우기'])assert.equal(await primary(name).count(),1,name);
   assert.equal(await page.locator('#screen-home .experience-picker, #screen-home .resume-card').count(),0,'no duplicate start picker on a first visit');
   assert.ok((await primary('체스 대전').boundingBox()).y+40<viewport.height,'primary entries start above the fold');
   await noOverflow('home');await page.screenshot({path:`${output}/home-first-${w}.png`,fullPage:true,animations:'disabled'});
@@ -41,14 +41,14 @@ const SMALL='3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
 
   await home();await primary('체스 처음 배우기').click();assert.equal(await ev(()=>state.activeKind),'mission');assert.equal(await ev(()=>state.missionPiece),'R');
   assert.ok(await page.locator('#screen-learn .board-cell').count()>0);await noOverflow('lesson');
-  await home();await page.getByRole('button',{name:/놀이터 · 전체 놀이/}).click();
+  await home();await page.getByRole('button',{name:/^놀이터/}).click();
   for(const name of ['나이트 투어','한 수 발견','별 모으기','이동 수 도전','성 지키기','왕 지키기'])assert.equal(await page.locator('#screen-mini .menu-btn').filter({hasText:name}).count(),1,name);
   await page.locator('#screen-mini .menu-btn').filter({hasText:'성 지키기'}).click();assert.equal(await ev(()=>state.activeKind),'defense');
   await home();await page.getByRole('button',{name:/모험 지도/}).click();assert.equal(await page.locator('#screen-learn .world-card').count(),6);
 
   // --- A-1 play entry: saved game, computer game and same-device play; nothing replaced early. ---
   await home();await primary('체스 대전').click();
-  assert.equal(await play.locator('.play-mode').filter({hasText:'컴퓨터와 두기'}).count(),1);assert.equal(await play.locator('.play-mode').filter({hasText:'같은 기기에서 함께 두기'}).count(),1);
+  assert.equal(await play.locator('.play-mode').filter({hasText:'컴퓨터와 두기'}).count(),1);assert.equal(await play.locator('.play-mode').filter({hasText:'함께 두기'}).count(),1);
   assert.doesNotMatch(await play.innerText(),/온라인/);await page.getByRole('button',{name:'5단계 · 보통',exact:true}).click();
   await play.locator('.play-chip').filter({hasText:'모든 말로 한 판'}).click();await play.getByRole('button',{name:'🤖 컴퓨터와 새 판 시작',exact:true}).click();
   assert.equal(await position(),await ev(f=>ChessGame.fromFEN(f).positionKey(),SMALL));
@@ -58,7 +58,7 @@ const SMALL='3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
   const savedGame=await ev(()=>JSON.stringify([state.game.board,state.actionHistory.length,playConfigOf(state.play)]));
   await play.getByRole('button',{name:'저장하고 나가기',exact:true}).click();assert.match(await primary('체스 대전').innerText(),/▶ 이어하기.*컴퓨터 5단계.*짧은 판/s);
   await primary('체스 대전').click();assert.equal(await play.getByRole('button',{name:/▶ 하던 판 이어하기/}).count(),1);
-  await play.locator('.play-mode').filter({hasText:'같은 기기에서 함께 두기'}).click();await play.getByRole('button',{name:'👫 같은 기기에서 함께 두기 시작',exact:true}).click();
+  await play.locator('.play-mode').filter({hasText:'함께 두기'}).click();await play.getByRole('button',{name:'👫 같은 기기에서 함께 두기 시작',exact:true}).click();
   await page.getByRole('dialog').waitFor();assert.match(await page.getByRole('dialog').innerText(),/하던 판이 바뀌어요/);await page.getByRole('button',{name:'취소',exact:true}).click();
   assert.equal(await ev(()=>JSON.stringify(readData('sessions',{}).play.snapshot.values.game.board)),JSON.stringify(JSON.parse(savedGame)[0]),'save survives choosing options and cancelling');
   if(w===360)await page.screenshot({path:`${output}/play-entry-${w}.png`,fullPage:true,animations:'disabled'});await noOverflow('play entry');
@@ -107,7 +107,7 @@ const SMALL='3rk3/2ppp3/8/8/8/8/2PPP3/3RK3 w - - 0 1';
   assert.equal(await position(),replaced);assert.deepEqual(await ev(()=>[state.game.turn,state.actionHistory.length,state.play.level]),['w',0,9]);
 
   // --- A-2 same device: short game, move timer, seating and helper survive; fresh full timer; clock pauses for the result. ---
-  await ev(()=>goPlay());await play.locator('.play-mode').filter({hasText:'같은 기기에서 함께 두기'}).click();await play.locator('.play-timers .play-chip').filter({hasText:'30초'}).click();
+  await ev(()=>goPlay());await play.locator('.play-mode').filter({hasText:'함께 두기'}).click();await play.locator('.play-timers .play-chip').filter({hasText:'30초'}).click();
   await play.locator('.play-chip').filter({hasText:'마주 보고 두기'}).click();await play.locator('.play-chip').filter({hasText:'천천히 계속하기'}).click();
   await play.getByRole('button',{name:'👫 같은 기기에서 함께 두기 시작',exact:true}).click();if(await page.getByRole('dialog').count())await page.getByRole('button',{name:'새 판 시작',exact:true}).click();
   assert.equal(await play.locator('.screen-header h2').innerText(),'같은 기기에서 함께');assert.doesNotMatch(await play.innerText(),/온라인/);

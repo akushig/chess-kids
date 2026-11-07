@@ -62,10 +62,10 @@ const output=process.env.CHESS_PUZZLE_QA_OUTPUT||'/tmp/chess-knight-puzzle-qa';f
 
   // Save mid-board, export the real file, import it in a separate browser and continue with undo.
   await mini.getByRole('button',{name:'다음 문제',exact:true}).click();const s7=await solution('knight-order-center-5-v1');for(const [r,c] of s7.slice(1,4))await tap(r,c);
-  await ev(()=>{leaveActivity();showScreen('home');renderHome();});await page.getByRole('button',{name:'👤 프로필 · 설정',exact:true}).click();
+  await ev(()=>{leaveActivity();showScreen('home');renderHome();});await page.getByRole('button',{name:/^프로필 · 설정/}).click();
   const downloaded=page.waitForEvent('download');await page.getByRole('button',{name:'플레이어 1 내보내기',exact:true}).click();const file=`${output}/puzzle-profile-${w}.json`;await (await downloaded).saveAs(file);
   assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).version,2,'a file with a rule board is version 2');
-  const target=await fresh(viewport),p=target.page;await p.getByRole('button',{name:'👤 프로필 · 설정',exact:true}).click();await p.locator('#profile-import-file').setInputFiles(file);
+  const target=await fresh(viewport),p=target.page;await p.getByRole('button',{name:/^프로필 · 설정/}).click();await p.locator('#profile-import-file').setInputFiles(file);
   await p.getByRole('button',{name:'새 프로필로 불러오기',exact:true}).click();await p.keyboard.press('Escape');await p.getByRole('button',{name:/이어서 놀기/}).click();
   assert.deepEqual(await p.evaluate(()=>[state.kt.puzzle.id,state.kt.moveCount,state.actionHistory.length,ktNextMark(state.kt)]),['knight-order-center-5-v1',3,3,await ev(()=>{const s=KNIGHT_PUZZLES[6];return s.solution.slice(0,4).some(([r,c])=>r===2&&c===2)?1:0;})]);
   await p.getByRole('button',{name:/되돌리기/}).click();assert.equal(await p.evaluate(()=>state.kt.moveCount),2);
