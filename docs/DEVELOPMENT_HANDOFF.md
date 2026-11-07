@@ -282,3 +282,16 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 - 게임 규칙·저장 형식·판 크기와 위치 규칙은 바꾸지 않았다.
 - 검증: 빌드 `2026.11.08.2`, 단위 142/142, 브라우저 15종 통과. 전후 스크린숏 `docs/product-review/design-v5/`.
 - 배포: `8571b91`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42401030647) 성공, 공개 사이트 `2026.11.08.2` 확인. 공개 주소로 `browser-final`(오프라인 포함)·`entry-rematch-browser`·`product-completion-browser`를 다시 돌려 통과.
+
+## 16. 유료 핵심 콘텐츠: 승급 과정 · 내 대국 코치 · 나의 체스 공방 · 2026-11-08
+
+요청: 유료로 팔 핵심 콘텐츠 제안(승급 과정) 뒤 "제안 순서대로 진행", 내 대국 코치 추가, 꾸미기를 새 형태로, 한 번에 배포. 앱으로 감쌀 때 인앱 결제, 서버는 최소로.
+
+상태 구분: **구현 완료 · 자동 검증 완료 · 공개 웹은 미리보기(결제 없음, 모두 열림) · 실제 결제 연결 없음 · 체스 지도자 검수 없음 · 실제 사용자 관찰 없음**. 빌드 `2026.11.08.3`.
+
+- 진입 문서: [유료 핵심 콘텐츠](PREMIUM_COURSE.md) — 무료/유료 경계, 12주제 판정, 코치 장면 기준, 공방, 앱 결제 연결 방법, 검증, 남은 일.
+- 서버 기능 설계(구현 안 함): [서버를 쓰는 기능](SERVER_FEATURES_PLAN.md).
+- 코드: 판정 `js/course-rules.js`(두 수 메이트 탐색·끝내기 계산표), 생성 `js/course-gen.js` → `scripts/generate-course-levels.cjs`(`npm run generate:course`, 빠른 불러오기 `scripts/fast-load.cjs`) → `js/course-levels.js`, 교재·기록 `js/course-content.js`, 화면 `js/app-course.js`, 코치 `js/app-coach.js`, 공방 `js/app-workshop.js`, 권한·보호자 확인·구매 화면 `js/store.js`.
+- 연결: 세션 형식 7(`course`, 대전 콘텐츠 `courseMatch`), 프로필 파일 형식 7(`course_progress_v1`, `game_records_v1`, `workshop_v1`, `coach_stats_v1`), 홈 보조 타일 4칸(승급 과정 추가), 대전 설정·결과에서 코치, 보호자 설정에 구매·잠금 미리보기.
+- 이전 원칙의 변화: 2026-11-04까지 "현재 기능 전부 무료"였다. 이번에도 **기존 기능은 하나도 잠그지 않았다.** 유료는 새로 만든 승급 과정(일부)과 코치(일부)뿐이다. 꾸미기는 계속 무료.
+- 검증: 단위 160/160, 브라우저 16종(새 `tests/premium-browser.cjs` 포함).
