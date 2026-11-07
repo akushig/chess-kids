@@ -1,0 +1,87 @@
+{
+  "results": [
+    {
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "levelsPlayed": 45,
+      "newLevelsChecked": 180,
+      "drill": true,
+      "failShown": true,
+      "successShown": true,
+      "inspect": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "levelsPlayed": 31,
+      "newLevelsChecked": 12,
+      "drill": true,
+      "failShown": true,
+      "successShown": true,
+      "inspect": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "levelsPlayed": 31,
+      "newLevelsChecked": 12,
+      "drill": true,
+      "failShown": true,
+      "successShown": true,
+      "inspect": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "levelsPlayed": 31,
+      "newLevelsChecked": 12,
+      "drill": true,
+      "failShown": true,
+      "successShown": true,
+      "inspect": true,
+      "hints": true,
+      "keyboard": true,
+      "practiceGame": true,
+      "interruptions": true,
+      "restart": true,
+      "fileMove": true,
+      "fixedBoard": true
+    },
+    {
+      "motion": true
+    },
+    {
+      "offline": true
+    }
+  ],
+  "errors": []
+}
