@@ -149,7 +149,7 @@ function renderPlaySetup() {
         </div>
       </div>
       <section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter choice-card" onclick="playStarterBattle('${key}')"><span class="choice-icon" aria-hidden="true">${getPieceSVG('w'+key,34)}</span><span class="choice-text"><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span><span class="choice-arrow" aria-hidden="true">›</span></button>`).join('')}</div></section>
-      ${playContentMenuHTML(`<button class="content-card choice-card play-lesson-link" onclick="goLessons('play')"><span class="choice-icon" aria-hidden="true">📘</span><span class="choice-text"><strong>체스 수업</strong><span>${LESSONS.length}개 주제와 무한 연습</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`)}
+      ${playContentMenuHTML(`<button class="content-card choice-card play-coach-card" onclick="goCoach()"><span class="choice-icon" aria-hidden="true">🔍</span><span class="choice-text"><strong>내 대국 코치</strong><span>${coachRecords().length?'지난 대국에서 살펴볼 장면 찾기':'컴퓨터와 한 판을 끝까지 두면 열려요'}</span></span><span class="choice-arrow" aria-hidden="true">›</span></button><button class="content-card choice-card play-lesson-link" onclick="goLessons('play')"><span class="choice-icon" aria-hidden="true">📘</span><span class="choice-text"><strong>체스 수업</strong><span>${LESSONS.length}개 주제와 무한 연습</span></span><span class="choice-arrow" aria-hidden="true">›</span></button><button class="content-card choice-card play-course-link" onclick="goCourse('play')"><span class="choice-icon" aria-hidden="true">🏅</span><span class="choice-text"><strong>승급 과정</strong><span>두 수 메이트·끝내기·초반 원칙</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`)}
     </div>
   `;
 }
@@ -239,6 +239,7 @@ function playStart(config) {
     buzzed: null,
     timeoutSide: null,  // 시간 초과로 대신 둔 쪽 (그 패널에 안내 표시)
   };
+  coachRecordStart();
   showScreen('play');
   renderPlay();
   playTimerStart();
@@ -316,7 +317,7 @@ function playPresentEvent(force=false) {
     if(next!==null)actions.push({label:t('playNextLevel').replace('{n}',next+1),tone:'green',action:playNextLevel});
     if(!contentActions)actions.push({label:t('playChangeSettings'),secondary:true,action:playChangeSettings});
     const top=!p.content&&p.mode==='ai'&&g.status==='checkmate'&&g.turn==='b'&&next===null;
-    body+=`${top?`<p class="play-event-explanation">${t('playTopLevelWin')}</p>`:''}<p class="play-dialog-note play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(p))}</p>`;
+    body+=`${top?`<p class="play-event-explanation">${t('playTopLevelWin')}</p>`:''}<p class="play-dialog-note play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(p))}</p>${p.mode==='ai'&&p.record?`<button class="text-button play-coach-link" onclick="playCloseDialog(false);goCoach('${p.record.id}')">🔍 코치와 이 대국 다시 보기</button>`:''}`;
   }
   playTimerPauseForHelp();
   playShowDialog('event',title,`<div class="play-event-icon" aria-hidden="true">${icon}</div>${body}${!playIsOver()?`<p class="play-dialog-note">${t('playReadingPause')}</p>`:''}`,actions,playAcknowledgeEvent);
@@ -503,6 +504,7 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
   playTimerStop();
   state.play.pausedLeft=state.play.timer?state.play.timer*1000:null;
   game.move(fr, fc, tr, tc,promotion);
+  coachRecordMove(fr,fc,tr,tc,piece,promotion);
   playContentAfterMove(mover,piece,tr);
   const castle=piece[1]==='K'&&Math.abs(tc-fc)===2;
   if(castle)state.play.notice='왕과 룩이 함께 움직였어요. 캐슬링이에요.';
@@ -517,6 +519,7 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
     if(first&&!wasCheck&&!special&&game.status==='playing')state.play.notice='⭐ 첫 말 잡기를 해냈어요! 배운 움직임을 대전에서 써봤어요.';
   }
   if(playIsOver())awardStars('achievements','play-first-finish-'+state.play.mode,1);
+  if(playIsOver()){coachSaveRecord();workshopUnlockCheck();}
   if(playIsOver()&&state.play.preset)awardStars('achievements',PLAY_PRESETS[state.play.preset].id,1);
   saveActiveSession();
   const finishMove=() => {
@@ -758,7 +761,7 @@ function goReward() {
         <h2>${t('rewardTitle')}</h2>
       </div>
       <div class="reward-wrap">
-        <div class="reward-hero"><span class="reward-hero-star" aria-hidden="true">⭐</span><div class="reward-hero-text"><div class="reward-big">${allStars}</div><div class="reward-label">내가 모은 별</div></div><button class="action-btn secondary" onclick="openSkinSelector()">🎨 꾸미기</button></div>
+        <div class="reward-hero"><span class="reward-hero-star" aria-hidden="true">⭐</span><div class="reward-hero-text"><div class="reward-big">${allStars}</div><div class="reward-label">내가 모은 별</div></div><button class="action-btn secondary" onclick="goWorkshop('skin','reward')">🎨 꾸미기</button></div>
         ${sourceCards}${learningSummaryHTML()}
         <div class="roadmap-title">${t('rewardRoadmap')}</div>
         <div class="roadmap-list">${roadmap}</div>
@@ -792,7 +795,7 @@ function playActionsHTML() {
 function playFinishActionsHTML() {
   if(state.play.content?.type==='expedition')return `<div class="finish-actions">${expeditionWon()&&state.play.content.stage<2?'<button class="action-btn green" onclick="expeditionChoices()">'+(state.play.content.stage===0?'동료 고르기':'다음 길 고르기')+'</button>':''}<button class="action-btn" onclick="playRematch()">같은 전투 재도전</button><button class="action-btn secondary" onclick="goExpedition()">원정 입구</button></div>`;
   const next=playNextLevelIndex();
-  return `<div class="finish-actions play-finish-actions"><button class="action-btn" onclick="playRematch()">${t('playRematch')}</button>${next!==null?`<button class="action-btn green" onclick="playNextLevel()">${t('playNextLevel').replace('{n}',next+1)}</button>`:''}<button class="action-btn secondary" onclick="playChangeSettings()">${t('playChangeSettings')}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div><p class="play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(state.play))}</p><button class="text-button play-rescue-practice" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 연습</button>`;
+  return `<div class="finish-actions play-finish-actions"><button class="action-btn" onclick="playRematch()">${t('playRematch')}</button>${next!==null?`<button class="action-btn green" onclick="playNextLevel()">${t('playNextLevel').replace('{n}',next+1)}</button>`:''}<button class="action-btn secondary" onclick="playChangeSettings()">${t('playChangeSettings')}</button><button class="action-btn secondary" onclick="leaveActivity();showScreen('home');renderHome()">여기까지</button></div><p class="play-rematch-summary"><strong>${t('playRematchSummary')}</strong> ${playConfigSummary(playConfigOf(state.play))}</p>${state.play.mode==='ai'&&state.play.record?`<button class="text-button play-coach-link" onclick="goCoach('${state.play.record.id}')">🔍 코치와 이 대국 다시 보기</button>`:''}<button class="text-button play-rescue-practice" onclick="goPuzzleLevel(5);showScreen('puzzle')">🛟 왕 구하기 연습</button>`;
 }
 // 대국 중 새 판은 교체를 확인하고, 확인하면 이 판과 같은 설정으로 시작한다.
 function playRestartRequest() {

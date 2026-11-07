@@ -26,11 +26,12 @@ function getPieceSVGForSkin(skinName, piece, size) {
 const SKIN_META = {
   cute:        { nameKey: 'skinCute' },
   classic:     { nameKey: 'skinClassic' },
-  hellocarbot: { nameKey: 'skinHellocarbot' },
+  // licensed: 다른 회사의 캐릭터·상표. 앱(인앱 결제) 판에서는 보이지 않는다(웹 미리보기에서만).
+  hellocarbot: { nameKey: 'skinHellocarbot', licensed: true },
   dino:        { nameKey: 'skinDino' },
-  tiniping:    { nameKey: 'skinTiniping' },
+  tiniping:    { nameKey: 'skinTiniping', licensed: true },
   robot:       { nameKey: 'skinRobot' },
-  baemin:      { nameKey: 'skinBaemin' },
+  baemin:      { nameKey: 'skinBaemin', licensed: true },
 };
 
 const SKIN_ORDER = ['cute', 'classic', 'hellocarbot', 'dino', 'tiniping', 'robot', 'baemin'];

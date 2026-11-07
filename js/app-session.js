@@ -2,12 +2,13 @@
 const SESSION_KEYS = {
   mission:['missionSpec','missionPiece','missionIdx','missionBoard','missionPlayerPos','missionSolved','missionFailed','missionMoveCount','missionNotice'],
   puzzle:['puzzleLevel','puzzleIndex','puzzleGame','puzzleSolved','puzzleMoveCount','puzzleNotice'],
-  challenge:['ch'],solo:['solo'],lesson:['lesson'], play:['game','play'], knight:['kt'], collector:['cl'], bomb:['bm'], defense:['df'], survival:['sv'],
+  challenge:['ch'],solo:['solo'],lesson:['lesson'],course:['course'], play:['game','play'], knight:['kt'], collector:['cl'], bomb:['bm'], defense:['df'], survival:['sv'],
 };
 function copyData(value) { return JSON.parse(JSON.stringify(value)); }
 // 저장 형식 버전: 새 콘텐츠를 모르는 예전 앱이 다른 규칙으로 열지 않게 한다.
-// 6: 체스 수업 4~15·무한 연습, 5: 체스 수업·수업 배치 대전, 4: 직접 만든 도전장 v2, 3: 새 콘텐츠, 2: 나이트 규칙 문제, 1: 그 밖의 놀이
+// 7: 승급 과정·실전 승급전, 6: 체스 수업 4~15·무한 연습, 5: 체스 수업·수업 배치 대전, 4: 직접 만든 도전장 v2, 3: 새 콘텐츠, 2: 나이트 규칙 문제, 1: 그 밖의 놀이
 function sessionVersion(kind,values){
+  if(kind==='course'||kind==='play'&&values?.play?.content?.type==='courseMatch')return 7;
   if(kind==='lesson'||kind==='play'&&values?.play?.content?.type==='lessonPractice'){
     const lesson=kind==='lesson'?values?.lesson:values.play.content;
     return lesson&&(lesson.mode==='drill'||typeof lesson.lessonId==='string'&&!LESSON_V5_IDS.includes(lesson.lessonId))?6:5;
@@ -27,7 +28,7 @@ function activityRandom() {
   let n=state.randomSeed||1;n^=n<<13;n^=n>>>17;n^=n<<5;state.randomSeed=n>>>0;return state.randomSeed/4294967296;
 }
 function activitySnapshot() {
-  const values={};for(const key of SESSION_KEYS[state.activeKind]||[])values[key]=key==='lesson'?lessonStableState(state.lesson):state[key];
+  const values={};for(const key of SESSION_KEYS[state.activeKind]||[])values[key]=key==='lesson'?lessonStableState(state.lesson):key==='course'?courseStableState(state.course):state[key];
   return copyData({values,randomSeed:state.randomSeed,supportLevel:state.supportLevel||0});
 }
 function rememberAction() { state.actionHistory ||= [];state.actionHistory.push(activitySnapshot());if(state.actionHistory.length>120)state.actionHistory.shift(); }
@@ -37,9 +38,10 @@ function restoreSnapshot(snap) {
   if(state.game)state.game=Object.assign(new ChessGame(),state.game);
   if(state.puzzleGame)state.puzzleGame=Object.assign(new ChessGame(),state.puzzleGame);
   if(state.activeKind==='lesson'&&state.lesson)lessonRevive(state.lesson);
+  if(state.activeKind==='course'&&state.course)courseRevive(state.course);
 }
 function activityComplete() {
-  return ({challenge:()=>state.ch.clear,solo:()=>state.solo.clear,lesson:()=>state.lesson?.phase==='complete',mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
+  return ({challenge:()=>state.ch.clear,solo:()=>state.solo.clear,lesson:()=>state.lesson?.phase==='complete',course:()=>state.course?.phase==='complete',mission:()=>state.missionSolved,puzzle:()=>state.puzzleSolved,play:()=>playIsOver()&&!playContentKeepsSession(),knight:()=>state.kt.clear,collector:()=>state.cl.clear,bomb:()=>state.bm.clear,defense:()=>state.df.clear,survival:()=>state.sv.clear}[state.activeKind]||(()=>true))();
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
@@ -56,7 +58,7 @@ function saveActiveSession() {
   if(saved.kind==='lesson'&&!lessonIsDrill(state.lesson)){const all=lessonSessionsAll(),id=state.lesson.lessonId;if(saved.complete)delete all[id];else all[id]=saved;writeData('lesson_sessions_v1',all);}
 }
 function renderActivity() {
-  ({challenge:renderChallenge,solo:renderSolo,lesson:renderLesson,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
+  ({challenge:renderChallenge,solo:renderSolo,lesson:renderLesson,course:renderCourse,mission:renderMissionBoard,puzzle:renderPuzzleBoard,play:renderPlay,knight:renderKnightTour,collector:renderCollector,bomb:renderBomb,defense:renderDefense,survival:renderSurvival}[state.activeKind]||renderHome)();
 }
 function undoActivity() {
   if(state.animating || !state.actionHistory?.length || lessonUnstable())return;
@@ -80,7 +82,7 @@ function resumeActivity(kind) {
   if(state.play)playStop();cancelActivityCallbacks();
   state.supportLevel=saved.snapshot.supportLevel||0;state.activeKind=saved.kind;state.activityParams=saved.params;state.actionHistory=saved.history||[];restoreSnapshot(saved.snapshot);
   state.puzzleWaiting=false;state.puzzleRun=(state.puzzleRun||0)+1;
-  const screen=({mission:'learn',puzzle:'puzzle',play:'play',lesson:'lesson'})[saved.kind]||'mini';showScreen(screen);
+  const screen=({mission:'learn',puzzle:'puzzle',play:'play',lesson:'lesson',course:'course'})[saved.kind]||'mini';showScreen(screen);
   if(saved.kind==='puzzle'&&state.puzzleGame.turn==='b'&&!state.puzzleSolved)doPuzzleAiMove();
   renderActivity();
   if(saved.kind==='play')playNextTurn();
@@ -111,6 +113,10 @@ function getSavedSession(saved=readData('last_session',null)){
     const rebuilt=lessonRebuild(v.lesson);if(!rebuilt||saved.params?.id&&saved.params.id!==rebuilt.lessonId)return null;
     for(const snap of saved.history||[]){const h=lessonRebuild(snap?.values?.lesson);if(!h||h.lessonId!==rebuilt.lessonId||h.sceneId!==rebuilt.sceneId)return null;snap.values.lesson=copyData(h);}
     v.lesson=copyData(rebuilt);
+  }else if(saved.kind==='course'){
+    // 승급 과정도 신뢰된 교재와 기록된 수로 다시 만든다(되돌리기 기록은 쓰지 않는다).
+    const rebuilt=courseRebuild(v.course);if(!rebuilt)return null;
+    v.course=copyData(rebuilt);saved.history=[];
   }else if(saved.kind==='challenge'){
     if(!challengeStateValid(v.ch)||!(saved.history||[]).every(s=>challengeStateValid(s.values?.ch)))return null;
   }else if(saved.kind==='solo'){
@@ -150,7 +156,7 @@ function getSavedSession(saved=readData('last_session',null)){
   return saved;
 }
 
-const ACTIVITY_NAMES={lesson:'체스 수업',challenge:'내가 만든 도전장',solo:'잡아서 하나 남기기',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
+const ACTIVITY_NAMES={lesson:'체스 수업',course:'승급 과정',challenge:'내가 만든 도전장',solo:'잡아서 하나 남기기',mission:'모험',puzzle:'한 수 발견',play:'체스 대전',knight:'기사의 여행',collector:'별 모으기',bomb:'이동 수 도전',defense:'성 지키기',survival:'왕 지키기'};
 const KNIGHT_MODE_NAMES={walk:'산책',explore:'10칸 탐험',tour:'전체 투어',puzzle:'규칙 문제'};
 function ongoingActivities(){return Object.entries(readData('sessions',{})).filter(([kind,s])=>!!getSavedSession(s)&&!s.complete).sort((a,b)=>b[1].updatedAt-a[1].updatedAt);}
 function openSavedActivities(){
@@ -192,7 +198,7 @@ function enterActivity(kind){
   return startDefaultActivity(kind);
 }
 function startDefaultActivity(kind){
-  ({lesson:()=>goLessons(),challenge:goChallenges,solo:goSoloMenu,knight:()=>goKnightTour(undefined,preferredKnightMode()),collector:()=>goCollector(0),bomb:()=>goBomb(0),defense:()=>goDefense(0),survival:()=>goSurvival(0),puzzle:goPuzzleLevelSelect,mission:()=>{const i=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));if(i<0)return goAdventure();goMissionPlay('R',i);},play:goPlay}[kind])?.();
+  ({lesson:()=>goLessons(),course:()=>goCourse(),challenge:goChallenges,solo:goSoloMenu,knight:()=>goKnightTour(undefined,preferredKnightMode()),collector:()=>goCollector(0),bomb:()=>goBomb(0),defense:()=>goDefense(0),survival:()=>goSurvival(0),puzzle:goPuzzleLevelSelect,mission:()=>{const i=MISSIONS.R.findIndex((m,i)=>!m.optional&&!isMissionCleared('R',i));if(i<0)return goAdventure();goMissionPlay('R',i);},play:goPlay}[kind])?.();
 }
 function requestNewActivity(kind,start=()=>startDefaultActivity(kind)){
   saveActiveSession();const saved=activitySaved(kind);

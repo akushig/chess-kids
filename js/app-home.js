@@ -6,14 +6,14 @@ function renderHome() {
   const resume=saved&&!saved.complete&&SESSION_KEYS[saved.kind];
   // Generic suggestions repeat the entries below; only a next step after a finished activity is shown.
   const recommendation=recommendedActivity(),showCard=resume||!recommendation.fallback;
-  const nextSkin=readData('pending_skin',null),stars=getAllStars(),name=profileText(profile.name);
+  const nextSkin=readData('pending_skin',null),stars=getAllStars(),name=profileText(profile.name),title=workshopTitle(),fresh=readData('workshop_new',null);
   // 모든 메뉴는 같은 모양: 아이콘 칸 + 제목 한 줄 + 설명(최대 두 줄, 높이 고정). 글이 길어도 카드 크기가 같다.
   const entry=(action,icon,title,desc,color,saved)=>`<button class="menu-btn ${color}" onclick="${action}"><span class="menu-icon" aria-hidden="true">${icon}</span><span class="menu-label"><span class="menu-title">${title}</span><span class="menu-sub">${saved?'<b class="menu-saved">▶ 이어하기</b> ':''}${desc}</span></span><span class="menu-arrow" aria-hidden="true">›</span></button>`;
   const more=(action,icon,title,desc,extra='')=>`<button class="home-more${extra}" onclick="${action}"><span class="home-more-icon" aria-hidden="true">${icon}</span><strong>${title}</strong><small>${desc}</small></button>`;
   const play=homeEntryDetail('play'),knight=homeEntryDetail('knight'),learn=homeEntryDetail('mission');
   document.getElementById('screen-home').innerHTML=`<div class="home-wrap">
-    ${window.chessUpdateReady?'<button class="new-skin-card" onclick="applyAppUpdate()">새 버전이 있어요 · 저장하고 업데이트</button>':''}<div class="home-topbar"><button class="profile-button home-profile" onclick="openFamilySettings()" aria-label="프로필 · 설정 · ${name}"><span class="home-avatar" aria-hidden="true">${profile.icon}</span><span class="home-profile-name">${name}</span><span class="home-gear" aria-hidden="true">⚙</span></button><div class="home-top-actions"><button class="home-chip home-stars" onclick="goReward()" aria-label="내 별 ${stars}개와 완료 기록">⭐ <b>${stars}</b></button><button class="home-chip" onclick="openSkinSelector()" aria-label="🎨 내 꾸미기">🎨<span class="home-chip-text">꾸미기</span></button></div></div>
-    <div class="home-hero"><div class="app-title">${t('appName')}</div><div class="home-greeting">움직이고, 발견하고, 함께 두어요.</div></div>
+    ${window.chessUpdateReady?'<button class="new-skin-card" onclick="applyAppUpdate()">새 버전이 있어요 · 저장하고 업데이트</button>':''}<div class="home-topbar"><button class="profile-button home-profile" onclick="openFamilySettings()" aria-label="프로필 · 설정 · ${name}"><span class="home-avatar" aria-hidden="true">${profile.icon}</span><span class="home-profile-name">${name}</span><span class="home-gear" aria-hidden="true">⚙</span></button><div class="home-top-actions"><button class="home-chip home-stars" onclick="goReward()" aria-label="내 별 ${stars}개와 완료 기록">⭐ <b>${stars}</b></button><button class="home-chip" onclick="goWorkshop()" aria-label="🎨 나의 체스 공방">🎨<span class="home-chip-text">꾸미기</span></button></div></div>
+    <div class="home-hero"><div class="app-title">${t('appName')}</div><button class="home-title-chip" onclick="goWorkshop('title')" aria-label="내 칭호 ${title.name} · 공방에서 바꾸기"><span aria-hidden="true">${title.icon}</span> ${title.name}</button></div>
     ${showCard?`<button class="resume-card" onclick="${resume?'resumeActivity()':recommendation.action}"><span class="resume-icon" aria-hidden="true">${resume?'▶':'🚩'}</span><span class="resume-text"><strong>${resume?'이어서 놀기':recommendation.title}</strong><small>${resume?ACTIVITY_NAMES[saved.kind]+' · 하던 판이 기다리고 있어요.':recommendation.description}</small></span><span class="menu-arrow" aria-hidden="true">›</span></button>`:''}
     ${ongoingActivities().length?'<button class="text-button home-saved-all" onclick="openSavedActivities()">📚 하던 놀이 모두 보기</button>':''}
     <section class="home-primary" aria-labelledby="home-primary-title"><h2 id="home-primary-title" class="home-section-title">무엇을 할까요?</h2><div class="menu-grid">
@@ -21,8 +21,8 @@ function renderHome() {
       ${entry("enterActivity('knight')",getPieceSVG('wN',44),'기사의 여행',knight.desc,'menu-knight',knight.saved)}
       ${entry("enterActivity('mission')",getPieceSVG('wR',44),'체스 처음 배우기',learn.desc,'menu-adventure',learn.saved)}
     </div></section>
-    <nav class="home-secondary" aria-labelledby="home-secondary-title"><h2 id="home-secondary-title" class="home-section-title">더 배우고 놀기</h2><div class="home-more-grid">${more("goLessons('home')",'📘','체스 수업',`${LESSONS.length}개 주제`,' home-lesson')}${more('goMiniMenu()','🎲','놀이터','전체 놀이')}${more('goAdventure()','🗺️','모험 지도','말 골라 배우기')}</div></nav>
-    ${nextSkin?`<button class="new-skin-card" onclick="safeStore.removeItem('pending_skin');openSkinDetail('${nextSkin}')">🎁 새로운 꾸미기를 얻었어요! 지금 입혀보기</button>`:''}
+    <nav class="home-secondary" aria-labelledby="home-secondary-title"><h2 id="home-secondary-title" class="home-section-title">더 배우고 놀기</h2><div class="home-more-grid">${more("goLessons('home')",'📘','체스 수업',`${LESSONS.length}개 주제`,' home-lesson')}${more("goCourse('home')",'🏅','승급 과정','두 수 · 끝내기 · 초반',' home-course')}${more('goMiniMenu()','🎲','놀이터','전체 놀이')}${more('goAdventure()','🗺️','모험 지도','말 골라 배우기')}</div></nav>
+    ${nextSkin?`<button class="new-skin-card" onclick="safeStore.removeItem('pending_skin');openSkinDetail('${nextSkin}')">🎁 새로운 꾸미기를 얻었어요! 지금 입혀보기</button>`:''}${Array.isArray(fresh)&&fresh.length?`<button class="new-skin-card" onclick="goWorkshop()">🎁 공방에 새 꾸미기: ${fresh.map(profileText).join(', ')}</button>`:''}
     <div class="app-version">v${APP_VERSION}</div></div>`;
 }
 // Each primary entry says what one tap will do: continue its own saved board or begin.
@@ -36,7 +36,7 @@ function homeEntryDetail(kind){
 // ===== 스킨 컬렉션 모달 =====
 function openSkinSelector() {
   const allStars = getAllStars();
-  const cards = SKIN_ORDER.map(name => {
+  const cards = SKIN_ORDER.filter(name => typeof workshopSkinVisible !== 'function' || workshopSkinVisible(name)).map(name => {
     const meta = SKIN_META[name];
     const isActive = currentSkin === name;
     const unlocked = isSkinUnlocked(name);

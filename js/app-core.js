@@ -175,9 +175,13 @@ function spawnParticles() {
   document.body.appendChild(container);
 
   const colors = ['#FFD93D','#FF6B6B','#4ECDC4','#A29BFE','#55EFC4','#FF9F43'];
+  // 공방에서 고른 성공 효과: 색종이(기본) · 별똥별 · 하트 · 비눗방울 · 불꽃놀이
+  const effect = typeof workshopEffect === 'function' ? workshopEffect() : 'confetti';
+  const emoji = { stars: ['⭐', '🌟', '✨'], hearts: ['💖', '💗', '💕'], fireworks: ['🎆', '🎇', '✨'] }[effect];
   for (let i = 0; i < 30; i++) {
     const p = document.createElement('div');
-    p.className = 'confetti';
+    p.className = 'confetti' + (emoji ? ' confetti-emoji' : effect === 'bubbles' ? ' confetti-bubble' : '');
+    if (emoji) p.textContent = emoji[i % emoji.length];
     p.style.left = Math.random() * 100 + '%';
     p.style.top = '-20px';
     p.style.background = colors[Math.floor(Math.random() * colors.length)];
@@ -372,6 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(()=>{});
   }
   applyPreferences();
+  workshopUnlockCheck();
+  storeRefresh().then(()=>{if(state.screen==='home')renderHome();});
   renderHome();
   showScreen('home');
 });

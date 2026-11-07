@@ -14,11 +14,12 @@ function openFamilySettings(){
  <button class="action-btn secondary profile-add" onclick="openProfileEditor()">＋ 프로필 추가</button>
  <section class="profile-transfer"><h3>휴대폰을 바꿀 때</h3><p>파일로 저장한 뒤 새 휴대폰에서 불러오세요. 자동으로 동기화되지는 않아요.</p><button class="action-btn secondary" onclick="downloadProfile()">${profileText(current.name)} 내보내기</button><button class="action-btn secondary" onclick="document.getElementById('profile-import-file').click()">프로필 파일 불러오기</button><input id="profile-import-file" type="file" accept=".json,application/json" hidden onchange="readProfileFile(this.files[0]);this.value=''" /></section>
  <details class="profile-preferences"><summary>소리 · 화면 · 시작 추천</summary><div class="experience-options"><p>시작 추천</p>${[['beginner','처음 해요'],['familiar','조금 알아요'],['challenge','도전하고 싶어요']].map(([v,label])=>`<button class="play-chip" aria-pressed="${readData('experience','beginner')===v}" onclick="setProfileExperience('${v}')">${label}</button>`).join('')}</div><div class="play-options"><button class="play-chip" onclick="setPreference('voice',${!prefs.voice})">🔊 자동 안내 읽기 ${prefs.voice?'켜짐':'꺼짐'}</button><button class="play-chip" onclick="setPreference('motion',${prefs.motion===false})">움직임 ${prefs.motion===false?'적게':'보통'}</button><button class="play-chip" onclick="setPreference('badges',${prefs.badges===false})">말 이름 ${prefs.badges===false?'숨김':'보임'}</button></div><p class="section-note">대전 난이도와 도움은 대전 화면에서 바꿀 수 있어요.</p></details>
+ <section class="profile-transfer profile-parent"><h3>보호자</h3><p>${storeMode()==='native'?'유료 콘텐츠 구매와 복원은 보호자 확인 뒤에 열려요.':'지금은 웹 미리보기라 모든 콘텐츠가 열려 있어요. 앱에서 잠기는 모습을 미리 볼 수 있어요.'}</p><button class="action-btn secondary" onclick="openStoreSheet()">구매와 복원</button>${storeMode()!=='native'?`<button class="action-btn secondary" onclick="storeParentGate(()=>{storeTogglePreview();openFamilySettings();},'잠금 미리보기')">앱 잠금 미리보기 ${storeMode()==='locked'?'끄기':'켜기'}</button>`:''}</section>
  <button class="text-button" onclick="openProfileRecords()">놀이 기록 보기</button><button class="text-button profile-delete" ${allProfiles().length===1?'disabled':''} onclick="requestProfileDelete()">${profileText(current.name)} 삭제</button>${allProfiles().length===1?'<p class="section-note">프로필은 하나 이상 필요해요. 이름은 수정할 수 있어요.</p>':''}`,[{label:'설정 마치기',action:()=>{}}],'family-overlay');
 }
 function setPreference(key,value){const p=readData('preferences',{});p[key]=value;writeData('preferences',p);applyPreferences();openFamilySettings();}
 function setProfileExperience(value){writeData('experience',value);openFamilySettings();document.querySelector('.profile-preferences')?.setAttribute('open','');}
-function applyPreferences(){document.documentElement?.classList.toggle('reduced-motion',readData('preferences',{}).motion===false);}
+function applyPreferences(){document.documentElement?.classList.toggle('reduced-motion',readData('preferences',{}).motion===false);if(typeof applyWorkshop==='function')applyWorkshop();}
 function openProfileRecords(){showActivityDialog('놀이 기록',learningSummaryHTML(),[{label:'프로필 · 설정으로',action:openFamilySettings}]);}
 let profileEditorDone=null;
 function openProfileEditor(id=null,onDone=null){
@@ -62,7 +63,8 @@ function downloadProfile(id=activeProfile){
 // New activities/authored knight data require version 3, built-in knight rule sessions version 2.
 // Older apps refuse unsupported files rather than opening them under the wrong rules.
 // Version 5: chess lessons and lesson-board games. Version 6: lessons 4-15, endless practice and hint (helped) records.
-const PROFILE_BACKUP_VERSIONS=[1,2,3,4,5,6];
+// Version 7: 승급 과정·실전 승급전·대국 기록(코치)·공방 꾸미기.
+const PROFILE_BACKUP_VERSIONS=[1,2,3,4,5,6,7];
 function profileBackupVersion(data){
  const records=[];
  try{records.push(...Object.values(JSON.parse(data.sessions||'{}')||{}));}catch{}
@@ -70,6 +72,8 @@ function profileBackupVersion(data){
  let lessonV6=!!data.lesson_drill_v1;
  try{lessonV6||=Object.entries(JSON.parse(data.lesson_progress_v1||'{}')||{}).some(([id,p])=>!LESSON_V5_IDS.includes(id)||p?.helped!==undefined);}catch{}
  try{lessonV6||=Object.keys(JSON.parse(data.lesson_sessions_v1||'{}')||{}).some(id=>!LESSON_V5_IDS.includes(id));}catch{}
+ // 7은 승급 과정 판·실전 승급전 저장이 들어 있을 때만. 새 기록(과정·코치·공방)만 있는 파일은 예전 앱도 그대로 읽는다.
+ if(records.some(s=>s?.version===7))return 7;
  if(lessonV6||records.some(s=>s?.version===6))return 6;
  if(data.lesson_sessions_v1||data.lesson_progress_v1||records.some(s=>s?.version===5))return 5;
  if(data.challenge_design||JSON.parse(data.knight_challenges||'[]').some(p=>p.version===2)||records.some(s=>s?.version===4))return 4;
@@ -95,6 +99,7 @@ function backupSnapshotValid(kind,v){
   return board(v.missionBoard,v.missionSpec?.size||6);
  }
  if(kind==='lesson')return !!lessonRebuild(v.lesson);
+ if(kind==='course')return !!courseRebuild(v.course);
  if(kind==='challenge')return challengeStateValid(v.ch);
  if(kind==='solo')return soloValid(v.solo);
  if(kind==='puzzle')return gameValid(v.puzzleGame);
@@ -139,10 +144,15 @@ function parseProfileBackup(text){
    if(key==='sessions'&&(!profilePlainObject(parsed)||!Object.values(parsed).every(validateBackupSession))||key==='last_session'&&!validateBackupSession(parsed))throw Error('진행 중인 판을 읽지 못했어요. 원래 기기에서 다시 내보내 주세요.');
    if(key==='knight_challenges'&&(!Array.isArray(parsed)||parsed.length>100||!parsed.every(challengeSpecValid)||new Set(parsed.map(p=>p.id)).size!==parsed.length)||key==='challenge_draft'&&(!Array.isArray(parsed)||parsed.length>0&&!challengePathValid(parsed)))throw Error('도전장 경로를 읽지 못했어요.');
    if(['solo_done','scene_done'].includes(key)&&(!Array.isArray(parsed)||!parsed.every(id=>typeof id==='string')))throw Error('완료 기록을 읽지 못했어요.');
-   if(key==='play_content_saves'&&(!profilePlainObject(parsed)||!Object.entries(parsed).every(([k,s])=>['standard','expedition','team','scene','lessonPractice'].includes(k)&&s.kind==='play'&&validateBackupSession(s))))throw Error('대전 저장을 읽지 못했어요.');
+   if(key==='play_content_saves'&&(!profilePlainObject(parsed)||!Object.entries(parsed).every(([k,s])=>['standard','expedition','team','scene','lessonPractice','courseMatch'].includes(k)&&s.kind==='play'&&validateBackupSession(s))))throw Error('대전 저장을 읽지 못했어요.');
    if(key==='lesson_sessions_v1'&&(!profilePlainObject(parsed)||Object.keys(parsed).length>LESSONS.length||!Object.entries(parsed).every(([id,s])=>!!lessonById(id)&&s?.kind==='lesson'&&validateBackupSession(s)&&s.snapshot.values.lesson.lessonId===id&&s.snapshot.values.lesson.mode===undefined)))throw Error('체스 수업 저장을 읽지 못했어요. 원래 기기에서 다시 내보내 주세요.');
    if(key==='lesson_progress_v1'&&!lessonProgressValid(parsed))throw Error('체스 수업 기록을 읽지 못했어요.');
    if(key==='lesson_drill_v1'&&!lessonDrillValid(parsed))throw Error('체스 수업 무한 연습 기록을 읽지 못했어요.');
+   if(key==='course_progress_v1'&&!courseProgressValid(parsed))throw Error('승급 과정 기록을 읽지 못했어요.');
+   if(key==='game_records_v1'&&!coachRecordsValid(parsed))throw Error('대국 기록을 읽지 못했어요.');
+   if(key==='workshop_v1'&&!workshopValid(parsed))throw Error('공방 꾸미기 기록을 읽지 못했어요.');
+   if(key==='coach_stats_v1'&&!(profilePlainObject(parsed)&&parsed.version===1&&Number.isInteger(parsed.solved)&&parsed.solved>=0&&parsed.solved<1e7&&Object.keys(parsed).length===2))throw Error('코치 기록을 읽지 못했어요.');
+   if(key==='workshop_new'&&parsed!==null&&!(Array.isArray(parsed)&&parsed.length<=4&&parsed.every(x=>typeof x==='string'&&x.length<=60)))throw Error('공방 알림을 읽지 못했어요.');
    if(key==='challenge_design'&&(!parsed||![5,6,7].includes(parsed.size)||!Array.isArray(parsed.blocked)||!Array.isArray(parsed.start)||![parsed.start,...parsed.blocked].every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isInteger(n)&&n>=0&&n<parsed.size))||!['block','start'].includes(parsed.tool)))throw Error('판 설계를 읽지 못했어요.');
    if(key==='progress_v3'&&(!profilePlainObject(parsed)||parsed.version!==3||!['missions','puzzles','mini'].every(k=>profilePlainObject(parsed[k])&&Object.values(parsed[k]).every(n=>Number.isInteger(n)&&n>=0&&n<=3))))throw Error('놀이 기록이 올바르지 않아요.');
    if(['preferences','play_settings','knight_tour_settings','mission_progress_v2','puzzle_stars','minigame_stars'].includes(key)&&!profilePlainObject(parsed))throw Error('설정이나 기록 형식이 올바르지 않아요.');
