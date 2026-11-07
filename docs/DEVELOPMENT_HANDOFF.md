@@ -272,3 +272,12 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
   - 자세한 내용: [v4 확장](lessons/LESSON_EXPANSION_V4.md).
   - 배포: [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42391864805) 성공, 공개 사이트 `2026.11.08.1` 확인, 공개 주소 재검사 통과.
 - 다음 후보: v4 실기기 확인(v4 문서 §8)과 명세 §11 관찰, 체스 지도자 검수(기록 §5, 새 12수업 포함). 관찰 근거 없이 유료 과정·가격 실험을 시작하지 않는다.
+
+## 15. 화면 디자인 정리 v5 · 2026-11-08
+
+요청: 앱 전체 UI/UX·레이아웃·디자인 재평가와 개선(메뉴 일관성, 글 때문에 밀리는 버튼, 답답한 전체 인상). 예전의 "게임처럼" 방향은 유지했다.
+
+- 기록: [디자인 정리 v5](DESIGN_REFRESH_V5.md) — 진단표, 공통 규칙(글자 500/900, 흰 카드 한 가지, 버튼 세 가지, 고정 높이 메뉴 타일), 화면별 변경, 바꾸지 않은 것.
+- 코드: 공통 규칙은 `css/style.css` 끝 "디자인 정리 v5" 묶음. 홈(`app-home.js`), 대전 설정(`app-play.js`), 놀이터(`mini-menu.js`, `play-content.js`), 수업 목록(`app-lessons.js`), 한 수 발견(`app-puzzle.js`), 잡아서 하나 남기기(`mini-solo.js`), 내가 모은 별(`app-play.js` `goReward`).
+- 게임 규칙·저장 형식·판 크기와 위치 규칙은 바꾸지 않았다.
+- 검증: 빌드 `2026.11.08.2`, 단위 142/142, 브라우저 15종 통과. 전후 스크린숏 `docs/product-review/design-v5/`.
