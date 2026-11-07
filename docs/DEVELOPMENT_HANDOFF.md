@@ -281,3 +281,4 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 - 코드: 공통 규칙은 `css/style.css` 끝 "디자인 정리 v5" 묶음. 홈(`app-home.js`), 대전 설정(`app-play.js`), 놀이터(`mini-menu.js`, `play-content.js`), 수업 목록(`app-lessons.js`), 한 수 발견(`app-puzzle.js`), 잡아서 하나 남기기(`mini-solo.js`), 내가 모은 별(`app-play.js` `goReward`).
 - 게임 규칙·저장 형식·판 크기와 위치 규칙은 바꾸지 않았다.
 - 검증: 빌드 `2026.11.08.2`, 단위 142/142, 브라우저 15종 통과. 전후 스크린숏 `docs/product-review/design-v5/`.
+- 배포: `8571b91`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42401030647) 성공, 공개 사이트 `2026.11.08.2` 확인. 공개 주소로 `browser-final`(오프라인 포함)·`entry-rematch-browser`·`product-completion-browser`를 다시 돌려 통과.

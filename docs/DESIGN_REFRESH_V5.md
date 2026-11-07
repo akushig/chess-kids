@@ -58,6 +58,8 @@
 - 바뀐 구조에 맞춰 고친 테스트: 수업 카드 순서(이어하기 → 판 고르기 → 무한 연습), 홈 이름(`기사의 여행`, `놀이터`, `프로필 · 설정 · 이름`), 대전 상대 카드(`함께 두기`), 수업 카드 버튼 선택자, 원정대 카드 이름(꾸밈 아이콘은 읽지 않음).
 - 화면별 스크린숏: `docs/product-review/design-v5/` (바꾸기 전 `before-`, 뒤 `after-`).
 
+- 배포: `8571b91`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42401030647) 성공, 공개 사이트 `2026.11.08.2` 확인. 공개 주소로 `browser-final`(오프라인 포함)·`entry-rematch-browser`·`product-completion-browser`를 다시 돌려 통과.
+
 ## 5. 남은 일
 
 - 실제 휴대폰에서 글자 크기·눌림 확인(특히 360px 폭 홈 위 줄, 수업 목록).
