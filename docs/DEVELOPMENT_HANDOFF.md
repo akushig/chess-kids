@@ -270,4 +270,5 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
   - 주제: 5단원 15수업 225판.
   - 저장 v6. 원래 세 수업만 쓴 기록은 v5 그대로다.
   - 자세한 내용: [v4 확장](lessons/LESSON_EXPANSION_V4.md).
+  - 배포: [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42391864805) 성공, 공개 사이트 `2026.11.08.1` 확인, 공개 주소 재검사 통과.
 - 다음 후보: v4 실기기 확인(v4 문서 §8)과 명세 §11 관찰, 체스 지도자 검수(기록 §5, 새 12수업 포함). 관찰 근거 없이 유료 과정·가격 실험을 시작하지 않는다.
