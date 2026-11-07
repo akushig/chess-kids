@@ -25,7 +25,7 @@ const LESSONS = [
     scenes: [
       { id: 'protect-spot-demo-v1', role: 'demo', fen: LESSON_BASE_FENS.A, focusSquare: [4, 3], witnessSuccess: { select: [4, 3] }, witnessFailure: null },
       { id: 'protect-spot-guided-v1', role: 'guided', fen: LESSON_BASE_FENS.B, focusSquare: [5, 0], witnessSuccess: { select: [5, 0] }, witnessFailure: null,
-        guide: '상대 말을 하나씩 보고, 그 말이 갈 수 있는 길을 따라가 봐요.' },
+        guide: '상대 말이 갈 수 있는 길을 하나씩 따라가 봐요.' },
       { id: 'protect-spot-transfer-v1', role: 'transfer', fen: LESSON_BASE_FENS.C, focusSquare: [3, 3], witnessSuccess: { select: [3, 3] }, witnessFailure: null },
     ],
   },
@@ -38,7 +38,7 @@ const LESSONS = [
     scenes: [
       { id: 'protect-escape-demo-v1', role: 'demo', fen: LESSON_BASE_FENS.A, focusSquare: [4, 3], witnessSuccess: { move: [4, 3, 3, 3], reply: null }, witnessFailure: null },
       { id: 'protect-escape-guided-v1', role: 'guided', fen: 'k6r/8/8/8/8/7B/8/3K4 w - - 0 1', focusSquare: [5, 7], witnessSuccess: { move: [5, 7, 4, 6], reply: null }, witnessFailure: { move: [5, 7, 0, 2], reply: [0, 7, 0, 2] },
-        guide: '테두리의 말을 누르면 갈 수 있는 칸이 보여요. 상대 말이 닿지 않는 칸을 골라요.' },
+        guide: '상대 룩이 갈 수 있는 줄을 먼저 살펴봐요.' },
       { id: 'protect-escape-transfer-v1', role: 'transfer', fen: 'k7/8/2n5/4R3/8/8/8/7K w - - 0 1', focusSquare: [3, 4], witnessSuccess: { move: [3, 4, 2, 4], reply: null }, witnessFailure: { move: [3, 4, 1, 4], reply: [2, 2, 1, 4] } },
     ],
   },
@@ -52,13 +52,14 @@ const LESSONS = [
     scenes: [
       { id: 'protect-capture-demo-v1', role: 'demo', fen: LESSON_BASE_FENS.D, focusSquare: [6, 4], witnessSuccess: { move: [6, 4, 6, 7], reply: null }, witnessFailure: { move: [6, 4, 4, 4], reply: [1, 1, 4, 4] } },
       { id: 'protect-capture-guided-v1', role: 'guided', fen: 'k7/6b1/8/8/3p4/8/p2R4/7K w - - 0 1', focusSquare: [6, 3], witnessSuccess: { move: [6, 3, 6, 0], reply: null }, witnessFailure: { move: [6, 3, 4, 3], reply: [1, 6, 4, 3] },
-        guide: '테두리의 룩으로 잡을 수 있는 폰이 두 개예요. 잡은 뒤 상대가 룩을 잡을 수 있는지 살펴봐요.' },
+        guide: '두 폰 중 잡은 뒤 상대 비숍이 닿지 않는 쪽을 찾아요.' },
       // D에 백 나이트 c3만 더한 배치. 나이트는 배경 변화이고 학습 대상은 여전히 룩이다.
       { id: 'protect-capture-transfer-v1', role: 'transfer', fen: '7k/1b6/8/8/4p3/2N5/4R2p/K7 w - - 0 1', focusSquare: [6, 4], witnessSuccess: { move: [6, 4, 6, 7], reply: null }, witnessFailure: { move: [6, 4, 4, 4], reply: [1, 1, 4, 4] } },
     ],
   },
 ];
 const LESSON_ROLE_LABELS = { demo: '보기', guided: '함께 해보기', transfer: '혼자 해보기' };
+const LESSON_ROLE_SHORT = { demo: '보기', guided: '함께', transfer: '혼자' };
 
 function lessonById(id) { return typeof id === 'string' ? LESSONS.find(l => l.id === id) || null : null; }
 function lessonScene(lesson, sceneId) { return lesson?.scenes.find(s => s.id === sceneId) || null; }
@@ -126,19 +127,19 @@ function lessonDemoSteps(lesson, scene) {
   const start = lessonSceneGame(scene), steps = [], focus = scene.focusSquare, focusName = lessonPieceName(start.board[focus[0]][focus[1]]);
   if (lesson.task === 'spot') {
     const [attacker] = lessonSpotAttackers(start, focus), attackerName = lessonPieceName(start.board[attacker[0]][attacker[1]]);
-    steps.push({ game: start, marks: { attackers: [attacker], reach: lessonReach(start, attacker) }, text: `상대 ${lessonJosa(attackerName, '이/가')} 갈 수 있는 칸을 살펴봐요.` });
+    steps.push({ game: start, marks: { attackers: [attacker], reach: lessonReach(start, attacker) }, text: `빨간 점은 상대(검은색) ${lessonJosa(attackerName, '이/가')} 다음에 갈 수 있는 칸이에요.` });
     const predict = start.clone(); predict.turn = 'b'; predict.move(attacker[0], attacker[1], focus[0], focus[1]);
-    steps.push({ game: predict, move: [attacker[0], attacker[1], focus[0], focus[1]], predict: true, marks: { danger: [focus] }, text: `상대 차례라면 이렇게 ${lessonJosa(focusName, '을/를')} 잡을 수 있어요.` });
-    steps.push({ game: start, marks: { attackers: [attacker], targets: [focus], arrows: [[...attacker, ...focus]] }, text: lessonSpotSuccessText(start, focus) });
+    steps.push({ game: predict, move: [attacker[0], attacker[1], focus[0], focus[1]], predict: true, marks: { danger: [focus] }, text: `상대 차례라면 이렇게 우리 ${lessonJosa(focusName, '을/를')} 잡을 수 있어요.` });
+    steps.push({ game: start, marks: { attackers: [attacker], targets: [focus], arrows: [[...attacker, ...focus]] }, text: `그래서 ${lessonSquareName(focus)}의 우리 ${lessonJosa(focusName, '이/가')} 상대가 노리는 말이에요.` });
     return steps;
   }
   const [attacker] = lesson.task === 'escape' ? lessonSpotAttackers(start, focus) : [null];
   if (lesson.task === 'escape') {
     const attackerName = lessonPieceName(start.board[attacker[0]][attacker[1]]);
-    steps.push({ game: start, marks: { attackers: [attacker], targets: [focus], arrows: [[...attacker, ...focus]] }, text: `상대 ${lessonJosa(attackerName, '이/가')} 우리 ${lessonJosa(focusName, '을/를')} 노려요.` });
+    steps.push({ game: start, marks: { attackers: [attacker], targets: [focus], arrows: [[...attacker, ...focus]] }, text: `빨간 화살표: 상대 ${lessonJosa(attackerName, '이/가')} 우리 ${lessonJosa(focusName, '을/를')} 노려요.` });
   } else {
     const captures = lessonCandidates(start, scene, lesson.task).map(m => [m[2], m[3]]);
-    steps.push({ game: start, marks: { focus: [focus], targets: captures }, text: `${lessonJosa(focusName, '은/는')} ${captures.map(lessonSquareName).join('와 ')}의 폰을 잡을 수 있어요. 어느 쪽이 안전할까요?` });
+    steps.push({ game: start, marks: { focus: [focus], targets: captures }, text: `우리 ${lessonJosa(focusName, '은/는')} ${captures.map(lessonSquareName).join('와 ')}의 상대 폰을 잡을 수 있어요. 어느 쪽이 안전할까요?` });
   }
   if (scene.witnessFailure) {
     const { move, reply } = scene.witnessFailure, tried = start.clone(); tried.move(...move);
@@ -146,32 +147,32 @@ function lessonDemoSteps(lesson, scene) {
     steps.push({ game: tried, move, marks: {}, text: `${lessonSquareName([move[2], move[3]])}의 ${lessonJosa(captured, '을/를')} 잡으면…` });
     const lost = tried.clone(); lost.move(...reply);
     steps.push({ game: lost, move: reply, marks: { danger: [[reply[2], reply[3]]] }, text: lessonFailureText(lesson, start, move, reply) });
-    steps.push({ game: start, marks: { focus: [focus] }, text: '처음으로 돌아가서 다른 방법을 볼게요.' });
+    steps.push({ game: start, marks: { focus: [focus] }, text: '처음으로 돌아가서 다른 쪽을 볼게요.' });
   }
   const { move } = scene.witnessSuccess, done = start.clone(); done.move(...move);
-  steps.push({ game: done, move, marks: {}, text: lesson.task === 'escape' ? `${lessonJosa(focusName, '을/를')} 상대 말이 닿지 않는 칸으로 옮겨요.` : `이번에는 ${lessonSquareName([move[2], move[3]])}의 폰을 잡아요.` });
+  steps.push({ game: done, move, marks: {}, text: lesson.task === 'escape' ? `우리 ${lessonJosa(focusName, '을/를')} 상대 말이 닿지 않는 칸으로 옮겨요.` : `이번에는 ${lessonSquareName([move[2], move[3]])}의 폰을 잡아요.` });
   steps.push({ game: done, marks: { safe: [[move[2], move[3]]] }, text: lessonSuccessText(lesson, start, move) });
   return steps;
 }
 function lessonSpotSuccessText(game, target) {
   const [attacker] = lessonSpotAttackers(game, target), a = lessonPieceName(game.board[attacker[0]][attacker[1]]), b = lessonPieceName(game.board[target[0]][target[1]]);
-  return `이 ${lessonJosa(a, '이/가')} 우리 ${lessonJosa(b, '을/를')} 노려요.`;
+  return `상대 ${lessonJosa(a, '이/가')} 우리 ${lessonJosa(b, '을/를')} 잡을 수 있어요.`;
 }
 function lessonSuccessText(lesson, start, move) {
-  if (lesson.task === 'escape') return '이 칸에서는 상대가 다음 한 수에 이 말을 잡을 수 없어요.';
   const captured = lessonPieceName(start.board[move[2]][move[3]]), mover = lessonPieceName(start.board[move[0]][move[1]]);
-  return `${lessonJosa(captured, '을/를')} 잡고 ${mover}도 지켰어요.`;
+  if (lesson.task === 'escape') return `이 칸에서는 상대가 다음 한 수에 우리 ${lessonJosa(mover, '을/를')} 잡을 수 없어요.`;
+  return `${lessonJosa(captured, '을/를')} 잡고 우리 ${mover}도 지켰어요.`;
 }
 function lessonFailureText(lesson, start, move, reply) {
-  if (lesson.task === 'escape') return '여기로 가도 상대가 잡을 수 있어요. 다른 칸도 살펴볼까요?';
   const captured = lessonPieceName(start.board[move[2]][move[3]]), mover = lessonPieceName(start.board[move[0]][move[1]]), taker = lessonPieceName(start.board[reply[0]][reply[1]]);
-  return `${lessonJosa(captured, '을/를')} 잡았지만 상대 ${taker}에게 ${lessonJosa(mover, '을/를')} 잃었어요.`;
+  if (lesson.task === 'escape') return `상대 ${lessonJosa(taker, '이/가')} 와서 우리 ${lessonJosa(mover, '을/를')} 잡았어요.`;
+  return `${lessonJosa(captured, '은/는')} 잡았지만 상대 ${lessonJosa(taker, '이/가')} 우리 ${lessonJosa(mover, '을/를')} 다시 잡았어요.`;
 }
 
 // ===== 저장 상태 검증 =====
 // 저장된 수업은 신뢰된 교재와 기록된 수로 다시 만든다. 파일 속 배치·문구를 그대로 믿지 않는다.
 const LESSON_PHASES_BY_ROLE = { demo: ['demoReady'], guided: ['choose', 'result'], transfer: ['choose', 'result', 'complete'] };
-const LESSON_NOTICES = ['pickOurs', 'pickFocus', 'notFocus', 'emptyMove', 'cannotGo'];
+const LESSON_NOTICES = ['pickOurs', 'pickFocus', 'notFocus', 'emptyMove', 'cannotGo', 'demoTap'];
 function lessonCoordValid(p) { return Array.isArray(p) && p.length === 2 && p.every(n => Number.isInteger(n) && n >= 0 && n < 8); }
 function lessonMoveValid(m) { return Array.isArray(m) && m.length === 4 && m.every(n => Number.isInteger(n) && n >= 0 && n < 8); }
 function lessonBoardKey(g) { return g.board.map(r => r.map(p => p || '--').join('')).join('/') + '/' + g.turn; }

@@ -13,12 +13,12 @@ function lessonFreshState(lesson, scene, progress = { guided: false, transfer: f
     result: null, responseMove: null, studentMove: null, demoStep: 0, progress: { ...progress }, notice: null };
 }
 // 응수·시범 도중의 저장은 그 시도의 시작(choose)으로 남긴다. 복원할 때 갑자기 말이 움직이지 않는다.
-// 진행 중 선택은 저장하지 않는다. 수업 1의 지목 결과(result의 selected)는 시도 내용이라 남긴다.
+// 진행 중 선택과 잠깐의 안내 문구는 저장하지 않는다. 수업 1의 지목 결과(result의 selected)는 시도 내용이라 남긴다.
 function lessonStableState(l) {
   if (!l) return l;
-  if (l.phase === 'choose' && l.selected) return { ...l, selected: null, notice: null };
   if (l.phase === 'response') return { ...l, phase: 'choose', game: l.attemptStartGame, selected: null, result: null, responseMove: null, studentMove: null, notice: null, helpShown: false };
-  if (l.phase === 'demoPlaying') return { ...l, phase: 'demoReady', demoStep: 0 };
+  if (l.phase === 'demoPlaying') return { ...l, phase: 'demoReady', demoStep: 0, notice: null };
+  if (l.notice || (l.phase === 'choose' && l.selected)) return { ...l, notice: null, selected: l.phase === 'choose' ? null : l.selected };
   return l;
 }
 function lessonUnstable() { return state.activeKind === 'lesson' && ['response', 'demoPlaying'].includes(state.lesson?.phase); }
@@ -84,8 +84,8 @@ function lessonStatus(lesson) {
 function renderLessonList() {
   const fromPlay = lessonOrigin === 'play';
   document.getElementById('screen-lesson').innerHTML = `<div class="screen-wrap lesson-list"><div class="screen-header"><button class="back-btn" onclick="${fromPlay ? 'goPlay()' : "showScreen('home');renderHome()"}">← ${fromPlay ? '체스 대전' : '홈'}</button><h2>체스 수업</h2></div>
-    <section class="lesson-course"><h3>내 말 지키기 · 첫 세 수업</h3><p>상대의 공격을 보고 내 말을 지켜요. 수업마다 <b>보기 → 함께 해보기 → 혼자 해보기</b> 순서로 직접 두어요.</p></section>
-    <div class="lesson-cards">${LESSONS.map(lesson => { const status = lessonStatus(lesson); return `<div class="lesson-card-item"><button class="lesson-card" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.number}. ${lesson.title}</strong><small>${lesson.skill}</small></span><span class="lesson-status lesson-status-${status.key}">${status.label}</span></button>${status.key === 'resume' ? `<button class="text-button lesson-restart" onclick="restartLesson('${lesson.id}')">${lesson.number}번 처음부터 다시</button>` : ''}</div>`; }).join('')}</div>
+    <section class="lesson-course"><h3>내 말 지키기 · 첫 세 수업</h3><p>우리는 <b>흰색(판 아래쪽)</b>, 상대는 검은색이에요. 상대가 잡으려는 우리 말을 찾고 지켜요. 수업마다 <b>보기 → 함께 해보기 → 혼자 해보기</b> 순서예요.</p></section>
+    <div class="lesson-cards">${LESSONS.map(lesson => { const status = lessonStatus(lesson); return `<div class="lesson-card-item"><button class="lesson-card" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.number}. ${lesson.title}</strong><small>${lesson.skill}</small></span><span class="lesson-status lesson-status-${status.key}">${status.label}</span></button>${status.key === 'resume' ? `<div class="lesson-card-actions"><button class="action-btn secondary" aria-label="${lesson.number}번 처음부터 다시" onclick="restartLesson('${lesson.id}')">↺ 처음부터 다시</button><button class="action-btn green" aria-label="${lesson.number}번 이어하기" onclick="openLesson('${lesson.id}')">▶ 이어하기</button></div>` : ''}</div>`; }).join('')}</div>
     <p class="section-note">순서는 추천이에요. 어느 수업부터 시작해도 돼요. 수업마다 하던 곳을 따로 기억해요.</p></div>`;
 }
 function openLesson(id) {
@@ -105,10 +105,11 @@ function startLesson(id) {
   state.lesson = lessonFreshState(lesson, lesson.scenes[0]);
   lessonProgressUpdate(id, () => ({ lastSceneId: lesson.scenes[0].id }));
   lessonChangedAt = Date.now(); showScreen('lesson'); renderLesson();
+  lessonHowTo(true);
 }
 function restartLesson(id) {
   const lesson = lessonById(id); if (!lesson) return;
-  showChoice(`${lesson.number}. ${lesson.title}을 처음부터 다시 할까요? 해본 기록은 그대로예요.`, [
+  showChoice(`${lesson.number}. ${lesson.title}을 처음부터 다시 할까요? 시범부터 다시 시작해요. 해본 기록은 그대로예요.`, [
     { label: '처음부터 시작', action: () => { lessonDiscardSave(id); startLesson(id); } },
     { label: '취소', action: () => {} },
   ]);
@@ -157,7 +158,7 @@ function lessonRetry() {
 function lessonDemoPlay() {
   const { l, lesson, scene } = lessonContext(); if (!l || l.sceneRole !== 'demo' || state.animating) return;
   cancelActivityCallbacks(); const token = ++lessonToken;
-  l.phase = 'demoPlaying'; l.demoStep = 1; renderLesson();
+  l.phase = 'demoPlaying'; l.demoStep = 1; l.notice = null; renderLesson();
   lessonDemoContinue(token, lessonDemoSteps(lesson, scene));
 }
 function lessonDemoContinue(token, steps) {
@@ -175,13 +176,16 @@ function lessonDemoContinue(token, steps) {
 function lessonDemoSkip() {
   const { l, lesson, scene } = lessonContext(); if (l?.phase !== 'demoPlaying') return;
   cancelActivityCallbacks(); lessonToken++;
-  l.phase = 'demoReady'; l.demoStep = lessonDemoSteps(lesson, scene).length; renderLesson();
+  l.phase = 'demoReady'; l.demoStep = lessonDemoSteps(lesson, scene).length; l.notice = null; renderLesson();
 }
 
 // ===== 입력 =====
 function lessonClick(r, c) {
   const { l, lesson, scene } = lessonContext();
-  if (!l || state.animating || activityDialog || l.phase !== 'choose') return;
+  if (!l || state.animating || activityDialog) return;
+  if (l.phase === 'demoReady') { l.notice = 'demoTap'; return renderLesson(); }
+  if (l.phase === 'result' || l.phase === 'complete') return lessonNudge();
+  if (l.phase !== 'choose') return;
   lessonChangedAt = 0;  // 판을 눌렀다면 진행 버튼 연타가 아니다
   const piece = l.game.board[r][c];
   if (lesson.task === 'spot') {
@@ -239,14 +243,36 @@ function lessonHelp() {
   l.helpShown = true; l.helpUsed = true; l.notice = null;
   noteHelp(l.helpLevel); renderLesson();
 }
-function lessonWhy() {
-  const { lesson } = lessonContext(); if (!lesson) return;
-  showActivityDialog('왜 그런가요?', `<p>${lesson.why}</p>${lesson.whyNote ? `<p>${lesson.whyNote}</p>` : ''}<p class="section-note">이 수업은 상대의 바로 다음 한 수만 살펴봐요. 읽는 동안 판은 멈춰 있어요.</p>`,
-    [{ label: '알겠어요', action: lessonWhyClosed }], 'lesson-why-overlay', lessonWhyClosed);
+// 수업 방법·표시의 뜻·이유. 새 수업을 시작할 때 자동으로, 그 뒤에는 ❓ 버튼으로 연다.
+const LESSON_CONTROLS = {
+  spot: '말을 움직이지 않아요. 상대(검은색)가 다음 차례에 잡을 수 있는 <b>우리 말을 찾아 한 번 눌러</b> 알려 줘요.',
+  escape: '① 파란 테두리의 우리 말을 눌러요. ② 점이 찍힌 칸 중 <b>상대가 잡을 수 없는 칸</b>을 눌러 옮겨요. 위험한 칸이면 상대가 실제로 잡는 모습을 보여줘요.',
+  captureSafe: '① 파란 테두리의 우리 룩을 눌러요. ② 노란 테두리 칸의 상대 폰을 눌러 잡아요. <b>잡은 뒤에도 룩이 잡히지 않는 쪽</b>이 정답이에요.',
+};
+function lessonHowToHTML(lesson) {
+  return `<div class="lesson-howto"><p><b>배울 것</b> ${lesson.skill}.</p>
+    <p class="lesson-howto-sides"><span>${getPieceSVG('wK', 28)}<b>우리 = 흰색</b> 판 아래쪽</span><span>${getPieceSVG('bK', 28)}<b>상대 = 검은색</b> 판 위쪽</span></p>
+    <p class="section-note">판의 말에도 <span class="lesson-owner mine">우리</span> <span class="lesson-owner theirs">상대</span> 표시가 붙어 있어요.</p>
+    <p><b>어떻게 하나요?</b> ${LESSON_CONTROLS[lesson.task]}</p>
+    <ol class="lesson-howto-steps"><li><b>보기</b> 시범을 보기만 해요.</li><li><b>함께 해보기</b> 안내를 보며 직접 해요.</li><li><b>혼자 해보기</b> 다른 판에서 혼자 해요.</li></ol>
+    <p><b>표시</b> <span class="lesson-legend red">빨강</span> 상대의 공격 · <span class="lesson-legend blue">파랑</span> 지킬 우리 말 · <span class="lesson-legend green">초록</span> 안전한 칸. 막히면 💡 도움을 눌러요.</p>
+    <p><b>왜 그런가요?</b> ${lesson.why}${lesson.whyNote ? ' ' + lesson.whyNote : ''} 이 수업은 상대의 바로 다음 한 수만 살펴봐요.</p></div>`;
 }
-function lessonWhyClosed() {
+function lessonHowTo(first = false) {
+  const { lesson } = lessonContext(); if (!lesson) return;
+  const actions = first
+    ? [{ label: '▶ 시범 보기', action: () => { lessonHowToClosed(); lessonDemoPlay(); } }, { label: '바로 해보기', action: () => { lessonHowToClosed(); lessonGoScene(1); } }]
+    : [{ label: '알겠어요', action: lessonHowToClosed }];
+  showActivityDialog(`${lesson.number}. ${lesson.title}`, lessonHowToHTML(lesson), actions, 'lesson-howto-overlay', lessonHowToClosed);
+}
+function lessonHowToClosed() {
   if (!document.activeElement || document.activeElement === document.body) document.querySelector?.('#screen-lesson .lesson-why')?.focus?.({ preventScroll: true });
   lessonResumePending();
+}
+function lessonNudge() {
+  const button = document.querySelector('#screen-lesson .lesson-actions .action-btn.lesson-next');
+  if (!button?.classList) return;
+  button.classList.remove('lesson-nudge'); void button.offsetWidth; button.classList.add('lesson-nudge');
 }
 
 // ===== 대전으로 연결 =====
@@ -277,17 +303,27 @@ function lessonPracticePanel() {
 }
 
 // ===== 화면 =====
+// 설명 영역은 늘 '👉 지금 누를 것'을 말한다. 결과 뒤에는 다음 버튼의 이름을 그대로 적는다.
+function lessonPrimaryLabel(l, lesson) {
+  if (l.sceneRole === 'demo') return '직접 해보기';
+  const next = LESSONS[LESSONS.indexOf(lesson) + 1];
+  if (l.phase === 'complete') return next ? '다음 수업' : '대전에 써보기';
+  if (l.phase === 'result' && l.result === 'retry') return '다른 방법으로';
+  return l.sceneRole === 'guided' ? '다음 연습' : '수업 마치기';
+}
+function lessonPress(label, verb = '눌러요') { return `<span class="lesson-key">${label}</span>${lessonJosa(label, '을/를').slice(label.length)} ${verb}`; }
 const LESSON_NOTICE_TEXT = {
-  pickOurs: () => '흰색 우리 말 중에서 골라요.',
-  pickFocus: () => '먼저 테두리가 있는 말을 눌러요.',
-  notFocus: lesson => lesson.task === 'captureSafe' ? '이번에는 테두리가 있는 룩으로 폰을 잡아봐요.' : '이번에는 테두리의 말을 지켜봐요.',
-  emptyMove: () => '이번에는 폰을 잡는 두 방법을 비교해요.',
-  cannotGo: () => '그 칸으로는 갈 수 없어요. 점이 있는 칸 중에서 골라요.',
+  pickOurs: () => '그건 상대(검은색) 말이거나 빈칸이에요. 👉 <b>우리(흰색) 말</b>을 눌러요.',
+  pickFocus: () => '👉 먼저 <b>파란 테두리의 우리 말</b>을 눌러요.',
+  notFocus: lesson => lesson.task === 'captureSafe' ? '이번에는 파란 테두리의 우리 룩으로 폰을 잡아봐요. 👉 그 룩을 눌러요.' : '이번에는 파란 테두리의 우리 말을 지켜요. 👉 그 말을 눌러요.',
+  emptyMove: () => '빈칸으로 옮기는 대신, 이번에는 폰을 잡는 두 방법을 비교해요. 👉 <b>노란 테두리 칸</b>을 눌러요.',
+  cannotGo: () => '그 칸으로는 갈 수 없어요. 👉 <b>점이 찍힌 칸</b> 중에서 골라요.',
+  demoTap: () => `지금은 시범 단계라 판을 누르지 않아요. 👉 ${lessonPress('직접 해보기')}.`,
 };
 const LESSON_HELP_TEXT = {
-  spot: ['', '빨간 테두리의 상대 말을 살펴봐요. 이 말이 다음에 무엇을 잡을 수 있을까요?', '점은 그 상대 말이 갈 수 있는 칸이에요. 우리 말과 만나는 곳을 찾아봐요.', '주황 테두리의 우리 말이 상대가 노리는 말이에요.'],
-  escape: ['', '빨간 테두리의 상대 말이 테두리의 말을 노려요.', '빗금 칸으로 가면 화살표의 상대 말이 잡을 수 있어요. 다른 칸을 살펴봐요.', '초록 화살표처럼 옮기면 다음 수에 잡히지 않아요. 다른 안전한 칸을 골라도 좋아요.'],
-  captureSafe: ['', '주황 테두리가 룩으로 잡을 수 있는 폰이에요.', '빗금 칸의 폰을 잡으면 화살표의 상대 말이 룩을 다시 잡아요.', '초록 화살표처럼 잡으면 룩도 안전해요.'],
+  spot: ['', '빨간 테두리가 상대 말이에요. 이 말이 다음에 무엇을 잡을 수 있을지 살펴봐요.', '빨간 점은 그 상대 말이 갈 수 있는 칸이에요. 점이 닿는 우리 말을 찾아봐요.', '주황 테두리의 우리 말이 정답이에요. 👉 그 말을 눌러요.'],
+  escape: ['', '빨간 테두리의 상대 말이 우리 말을 노려요.', '빗금 칸으로 가면 빨간 화살표의 상대 말이 잡아요. 👉 다른 칸을 골라요.', '초록 화살표처럼 옮기면 안전해요. 다른 안전한 칸을 골라도 좋아요.'],
+  captureSafe: ['', '주황 테두리가 우리 룩으로 잡을 수 있는 상대 폰이에요.', '빗금 칸의 폰을 잡으면 빨간 화살표의 상대 말이 룩을 다시 잡아요.', '초록 화살표처럼 잡으면 우리 룩도 안전해요.'],
 };
 function lessonHelpMarks(l, lesson, scene) {
   const g = l.game, level = l.helpLevel, marks = {};
@@ -308,12 +344,12 @@ function lessonHelpMarks(l, lesson, scene) {
 function lessonView() {
   const { l, lesson, scene } = lessonContext();
   if (l.sceneRole === 'demo') {
-    if (l.demoStep > 0) { const step = lessonDemoSteps(lesson, scene)[l.demoStep - 1]; return { game: step.game, marks: step.marks, predict: !!step.predict, text: step.text }; }
+    if (l.demoStep > 0) { const steps = lessonDemoSteps(lesson, scene), step = steps[l.demoStep - 1]; return { game: step.game, marks: step.marks, predict: !!step.predict, text: step.text, total: steps.length }; }
     return { game: l.game, marks: lesson.task === 'spot' ? {} : { focus: [scene.focusSquare] } };
   }
   const marks = {};
   if (l.phase === 'choose') {
-    if (lesson.task !== 'spot') marks.focus = [scene.focusSquare];
+    if (lesson.task !== 'spot') { marks.focus = [scene.focusSquare]; if (!l.selected) marks.tap = [scene.focusSquare]; }
     if (l.selected) {
       const moves = lessonLegalMoves(l.game, l.selected);
       marks.selected = l.selected; marks.moves = moves.map(m => [m[2], m[3]]); marks.captureMoves = moves.filter(m => l.game.board[m[2]][m[3]]).map(m => [m[2], m[3]]);
@@ -343,9 +379,10 @@ function lessonBoardHTML(view, lesson) {
   for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
     const piece = game.board[r][c], notes = [];
     let cls = 'board-cell ' + ((r + c) % 2 ? 'dark' : 'light');
-    if (piece) cls += ' pc-' + piece[0];
+    if (piece) { cls += ' pc-' + piece[0]; notes.push(piece[0] === 'w' ? '우리 말' : '상대 말'); }
     if (last && ((last[0] === r && last[1] === c) || (last[2] === r && last[3] === c))) cls += ' last-move';
-    if (has(marks.focus, r, c)) { cls += ' lesson-focus'; notes.push('테두리: 지킬 말'); }
+    if (has(marks.focus, r, c)) { cls += ' lesson-focus'; notes.push('파란 테두리: 지킬 우리 말'); }
+    if (has(marks.tap, r, c)) cls += ' lesson-tap';
     if (marks.selected && lessonSameSquare(marks.selected, [r, c])) cls += ' selected';
     if (has(marks.moves, r, c)) cls += has(marks.captureMoves, r, c) ? ' move-hint lesson-capture-hint' : ' move-hint';
     if (has(marks.attackers, r, c)) { cls += ' lesson-attacker'; notes.push('공격하는 상대 말'); }
@@ -354,56 +391,68 @@ function lessonBoardHTML(view, lesson) {
     if (has(marks.danger, r, c)) { cls += ' danger-cell'; notes.push('잡히는 칸'); }
     if (has(marks.safe, r, c)) { cls += ' lesson-safe'; notes.push('다음 수에 안전한 칸'); }
     if (has(marks.picked, r, c)) { cls += ' lesson-picked'; notes.push('고른 말'); }
+    const owner = piece ? `<span class="lesson-owner ${piece[0] === 'w' ? 'mine' : 'theirs'}" aria-hidden="true">${piece[0] === 'w' ? '우리' : '상대'}</span>` : '';
     const tag = marks.tag && marks.tag[0] === r && marks.tag[1] === c ? `<span class="lesson-cell-tag" aria-hidden="true">${marks.tag[2]}</span>` : '';
-    cells += `<div class="${cls}" onclick="lessonClick(${r},${c})"${notes.length ? ` data-note="${notes.join(', ')}"` : ''}>${piece ? getPieceSVG(piece) : ''}${tag}</div>`;
+    cells += `<div class="${cls}" onclick="lessonClick(${r},${c})"${notes.length ? ` data-note="${notes.join(', ')}"` : ''}>${piece ? getPieceSVG(piece) : ''}${owner}${tag}</div>`;
   }
   const arrows = [...(marks.arrows || []).map(a => [a, 'attack']), ...(marks.suggest || []).map(a => [a, 'suggest'])];
   return `<div class="chess-board lesson-board${predict ? ' lesson-predict' : ''}">${cells}${lessonArrowSVG(arrows)}${predict ? '<span class="lesson-predict-badge">예측 · 상대 차례라면</span>' : ''}</div>`;
 }
 function lessonMessage(view) {
-  const { l, lesson, scene } = lessonContext();
-  if (l.phase === 'demoReady') return l.demoStep ? { tone: 'success', html: `${view.text} <b>이제 직접 해볼까요?</b>` } : { tone: '', html: `<b>목표</b> ${lesson.prompt} 시범 보기를 누르면 차례대로 보여줘요.` };
-  if (l.phase === 'demoPlaying') return { tone: '', html: view.text };
+  const { l, lesson, scene } = lessonContext(), next = lessonPrimaryLabel(l, lesson);
+  const focusName = lessonPieceName(l.attemptStartGame.board[scene.focusSquare[0]][scene.focusSquare[1]]);
+  if (l.notice) return { tone: 'warn', html: LESSON_NOTICE_TEXT[l.notice](lesson) };
+  if (l.phase === 'demoReady') return l.demoStep
+    ? { tone: 'success', html: `시범 끝! ${view.text} 👉 이제 ${lessonPress(next)}.` }
+    : { tone: '', html: `<b>시범</b>은 보기만 하면 돼요. 👉 ${lessonPress('▶ 시범 보기')}. 바로 하려면 <span class="lesson-key">${next}</span>.` };
+  if (l.phase === 'demoPlaying') return { tone: '', html: `<b>시범 ${l.demoStep}/${view.total}</b> ${view.text}` };
   if (l.phase === 'choose') {
-    if (l.notice) return { tone: 'warn', html: LESSON_NOTICE_TEXT[l.notice](lesson) };
     if (l.helpShown && l.helpLevel) {
       const noDanger = l.helpLevel === 2 && lesson.task !== 'spot' && !lessonHelpMarks(l, lesson, scene).danger?.length;
       return { tone: 'help', html: `💡 도움 ${l.helpLevel}/3 · ${noDanger ? '이 말이 갈 수 있는 칸은 모두 다음 수에 안전해요.' : LESSON_HELP_TEXT[lesson.task][l.helpLevel]}` };
     }
-    return { tone: '', html: l.sceneRole === 'guided' && scene.guide && !l.attempts ? `${lesson.prompt} ${scene.guide}` : lesson.prompt };
+    if (lesson.task === 'spot') return { tone: '', html: `👉 상대(검은색)가 다음 차례에 잡을 수 있는 <b>우리(흰색) 말을 눌러</b> 알려 주세요. 말은 움직이지 않아요.` };
+    if (!l.selected) return { tone: '', html: `👉 ① 파란 테두리의 <b>우리 ${focusName}</b>${lessonJosa(focusName, '을/를').slice(focusName.length)} 눌러요.${l.sceneRole === 'guided' && scene.guide ? ' ' + scene.guide : ''}` };
+    return { tone: '', html: lesson.task === 'escape' ? '👉 ② 점이 찍힌 칸 중 <b>상대가 다음에 잡을 수 없는 칸</b>을 눌러 옮겨요.' : '👉 ② 노란 테두리 칸의 <b>상대 폰</b>을 눌러 잡아요. 잡은 뒤에도 우리 룩이 안전한 쪽이에요.' };
   }
-  if (l.phase === 'response') return { tone: 'dim', html: '상대 차례예요…' };
-  if (l.phase === 'complete') return { tone: 'success', html: `✓ 수업을 마쳤어요! ${lesson.learned} ${l.helpUsed ? '혼자 해보기는 도움과 함께 해냈어요.' : '혼자 해보기를 도움 없이 해냈어요.'}` };
+  if (l.phase === 'response') return { tone: 'dim', html: '상대(검은색) 차례예요…' };
+  if (l.phase === 'complete') return { tone: 'success', html: `✓ 수업 끝! ${lesson.learned} 👉 ${lessonPress(next)}.` };
   const start = l.attemptStartGame;
-  if (lesson.task === 'spot') return l.result === 'success' ? { tone: 'success', html: `✓ ${lessonSpotSuccessText(start, l.selected)}` } : { tone: 'fail', html: '이 말은 지금 바로 잡히지 않아요. 상대 말이 갈 수 있는 곳을 살펴봐요.' };
-  return l.result === 'success' ? { tone: 'success', html: `✓ ${lessonSuccessText(lesson, start, l.studentMove)}` } : { tone: 'fail', html: lessonFailureText(lesson, start, l.studentMove, l.responseMove) };
+  if (l.result === 'success') {
+    const core = lesson.task === 'spot' ? `맞아요! 빨간 화살표처럼 ${lessonSpotSuccessText(start, l.selected)}` : lesson.task === 'escape' ? `안전해요! ${lessonSuccessText(lesson, start, l.studentMove)}` : lessonSuccessText(lesson, start, l.studentMove);
+    return { tone: 'success', html: `✓ ${core} 👉 ${lessonPress(next)}.` };
+  }
+  const why = lesson.task === 'spot' ? '그 말은 지금 바로 잡히지 않아요.' : `빨간 화살표처럼 ${lessonFailureText(lesson, start, l.studentMove, l.responseMove)}`;
+  const then = lesson.task === 'spot' ? '다른 우리 말을 골라요.' : lesson.task === 'escape' ? '다른 칸을 골라요.' : '다른 폰을 잡아봐요.';
+  return { tone: 'fail', html: `✗ ${why} 👉 ${lessonPress(next, '누르고')} ${then}` };
 }
 function lessonStepsHTML(l) {
   const order = ['demo', 'guided', 'transfer'], index = order.indexOf(l.sceneRole), done = l.phase === 'complete';
-  return `<ol class="lesson-steps" aria-label="수업 단계">${order.map((role, k) => `<li class="${done || k < index ? 'done' : k === index ? 'current' : ''}"${!done && k === index ? ' aria-current="step"' : ''}>${LESSON_ROLE_LABELS[role]}</li>`).join('')}<li class="lesson-step-count">${done ? '마무리' : `${index + 1}/3`}</li></ol>`;
+  const steps = order.map((role, k) => { const current = !done && k === index; return `<li class="${done || k < index ? 'done' : current ? 'current' : ''}"${current ? ' aria-current="step"' : ''}>${current ? `${k + 1}/3 ${LESSON_ROLE_LABELS[role]}` : LESSON_ROLE_SHORT[role]}</li>`; }).join('');
+  return `<div class="lesson-statusbar"><ol class="lesson-steps" aria-label="수업 단계">${steps}${done ? '<li class="current" aria-current="step">마무리</li>' : ''}</ol><span class="lesson-side">${getPieceSVG('wK', 18)}<span>우리 = 흰색</span></span></div>`;
 }
 function lessonButtons(l, lesson) {
   const busy = state.animating || lessonUnstable(), canUndo = !busy && !!state.actionHistory?.length && l.sceneRole !== 'demo';
   const undo = `<button class="icon-btn" onclick="requestActivityUndo()" ${canUndo ? '' : 'disabled'}>↶ 되돌리기</button>`;
-  const why = `<button class="icon-btn lesson-why" onclick="lessonWhy()">❓ 왜 그런가요?</button>`;
+  const why = `<button class="icon-btn lesson-why" onclick="lessonHowTo()">❓ 방법과 이유</button>`;
   const middle = l.phase === 'complete' ? `<button class="icon-btn" onclick="lessonPracticeDialog()">⚔ 이 배치로 대전</button>`
     : `<button class="icon-btn" onclick="lessonHelp()" ${l.phase === 'choose' ? '' : 'disabled'}>💡 도움${l.helpLevel ? ` ${l.helpLevel}/3` : ''}</button>`;
+  const label = lessonPrimaryLabel(l, lesson);
   let left, right;
+  // 다음에 누를 버튼은 반짝임으로 짚어준다(동작 줄이기에서는 테두리만).
   if (l.sceneRole === 'demo') {
-    left = l.phase === 'demoPlaying' ? `<button class="action-btn secondary" onclick="lessonDemoSkip()">⏭ 끝 장면 보기</button>` : `<button class="action-btn secondary" onclick="lessonDemoPlay()">${l.demoStep ? '↻ 다시 보기' : '▶ 시범 보기'}</button>`;
-    right = `<button class="action-btn green" onclick="lessonPrimary()">직접 해보기</button>`;
+    left = l.phase === 'demoPlaying' ? `<button class="action-btn secondary" onclick="lessonDemoSkip()">⏭ 끝 장면 보기</button>` : `<button class="action-btn secondary${l.demoStep ? '' : ' lesson-next'}" onclick="lessonDemoPlay()">${l.demoStep ? '↻ 다시 보기' : '▶ 시범 보기'}</button>`;
+    right = `<button class="action-btn green${l.phase === 'demoReady' && l.demoStep ? ' lesson-next' : ''}" onclick="lessonPrimary()">${label}</button>`;
   } else {
     left = `<button class="action-btn secondary" onclick="goLessons()">수업 목록</button>`;
-    const next = LESSONS[LESSONS.indexOf(lesson) + 1];
-    const label = l.phase === 'complete' ? (next ? '다음 수업' : '대전에 써보기') : l.phase === 'result' && l.result === 'retry' ? '다른 방법으로' : l.sceneRole === 'guided' ? '다음 연습' : '수업 마치기';
-    const enabled = l.phase === 'complete' || l.phase === 'result';
-    right = `<button class="action-btn green" onclick="lessonPrimary()" ${enabled && !busy ? '' : 'disabled'}>${label}</button>`;
+    const enabled = (l.phase === 'complete' || l.phase === 'result') && !busy;
+    right = `<button class="action-btn green${enabled ? ' lesson-next' : ''}" onclick="lessonPrimary()" ${enabled ? '' : 'disabled'}>${label}</button>`;
   }
   return `<div class="mission-actions lesson-tools">${undo}${middle}${why}</div><div class="lesson-actions">${left}${right}</div>`;
 }
 function renderLesson() {
   const { l, lesson } = lessonContext(); if (!l || !lesson) return goLessons();
   const view = lessonView(), message = lessonMessage(view);
-  renderGameScreen('screen-lesson', `<div class="screen-wrap lesson-screen"><div class="screen-header lesson-header"><button class="back-btn" onclick="goLessons()">← 목록</button><h2>${lesson.number}. ${lesson.title}</h2></div>${lessonStepsHTML(l)}<div class="status-msg lesson-message ${message.tone}">${message.html}</div>${lessonBoardHTML(view, lesson)}${lessonButtons(l, lesson)}</div>`);
+  renderGameScreen('screen-lesson', `<div class="screen-wrap lesson-screen"><div class="screen-header lesson-header"><button class="back-btn" onclick="goLessons()">← 목록</button><h2>${lesson.number}. ${lesson.title}</h2><button class="lesson-restart-btn" onclick="restartLesson('${lesson.id}')">↺ 처음부터</button></div>${lessonStepsHTML(l)}<div class="status-msg lesson-message ${message.tone}">${message.html}</div>${lessonBoardHTML(view, lesson)}${lessonButtons(l, lesson)}</div>`);
   saveActiveSession();
 }
