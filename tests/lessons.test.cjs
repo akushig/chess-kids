@@ -22,7 +22,7 @@ test('수업 1: 지목은 판·차례를 바꾸지 않고, 오답에 정답을 �
  const html=run('lessonBoardHTML(lessonView(),lessonById("protect-spot-v1"))');assert.doesNotMatch(html,/lesson-target|lesson-attacker/,'첫 오답에서 정답 표시 없음');assert.match(run('lessonMessage(lessonView()).html'),/지금 바로 잡히지 않아요/);
  run('lessonRetry()');assert.equal(run('state.lesson.phase'),'choose');assert.equal(run('state.actionHistory.length'),0);
  run('lessonClick(5,0)');s=lesson(run);assert.equal(s.result,'success');assert.deepEqual(s.board,start.board);assert.equal(s.attempts,2);
- assert.match(run('lessonMessage(lessonView()).html'),/이 룩이 우리 비숍을 노려요/);assert.match(run('lessonBoardHTML(lessonView(),lessonById("protect-spot-v1"))'),/lesson-attacker[\s\S]*lesson-overlay/);
+ assert.match(run('lessonMessage(lessonView()).html'),/상대 룩이 우리 비숍을 잡을 수 있어요.*다음 연습/);assert.match(run('lessonBoardHTML(lessonView(),lessonById("protect-spot-v1"))'),/lesson-attacker[\s\S]*lesson-overlay/);
  run('lessonPrimary()');assert.equal(run('state.lesson.sceneId'),'protect-spot-transfer-v1');assert.equal(run('state.actionHistory.length'),0,'새 장면은 새 되돌리기');
 });
 
@@ -42,7 +42,7 @@ test('수업 2: 대상 말의 모든 합법 이동을 실제로 두어 보면 �
   assert.ok(safe>=6,'안전한 칸이 여러 개');
  }
  // 대상이 아닌 백 말은 과제 범위 밖으로 안내하고 시도로 세지 않는다.
- const {run}=load();run("startLesson('protect-escape-v1');lessonGoScene(1);lessonClick(7,3)");assert.equal(run('state.lesson.notice'),'notFocus');assert.match(run('lessonMessage(lessonView()).html'),/테두리의 말을 지켜봐요/);assert.equal(run('state.lesson.attempts'),0);
+ const {run}=load();run("startLesson('protect-escape-v1');lessonGoScene(1);lessonClick(7,3)");assert.equal(run('state.lesson.notice'),'notFocus');assert.match(run('lessonMessage(lessonView()).html'),/파란 테두리의 우리 말을 지켜요/);assert.equal(run('state.lesson.attempts'),0);
  run('lessonClick(5,7);lessonClick(0,0)');assert.equal(run('state.lesson.notice'),'cannotGo');assert.equal(run('state.lesson.attempts'),0);
 });
 
@@ -52,10 +52,10 @@ test('수업 3: 안전한 잡기·되잡힘·빈칸 이동을 구분하고, 나�
  run('lessonClick(6,4);lessonClick(6,5)');assert.equal(run('state.lesson.notice'),'emptyMove');assert.match(run('lessonMessage(lessonView()).html'),/폰을 잡는 두 방법을 비교해요/);assert.equal(run('state.lesson.attempts'),0);assert.equal(run('state.lesson.phase'),'choose');
  run('lessonClick(4,4)');assert.equal(run('state.lesson.phase'),'response');assert.equal(run('state.lesson.game.board[4][4]'),'wR');
  assert.equal(run('lessonButtons(state.lesson,lessonContext().lesson).includes(\'requestActivityUndo()" disabled\')'),true,'응수 중 되돌리기 비활성');run('undoActivity()');assert.equal(run('state.lesson.phase'),'response');
- flush(timers);assert.equal(run('state.lesson.result'),'retry');assert.equal(run('state.lesson.game.board[4][4]'),'bB');assert.match(run('lessonMessage(lessonView()).html'),/폰을 잡았지만 상대 비숍에게 룩을 잃었어요/);
+ flush(timers);assert.equal(run('state.lesson.result'),'retry');assert.equal(run('state.lesson.game.board[4][4]'),'bB');assert.match(run('lessonMessage(lessonView()).html'),/폰은 잡았지만 상대 비숍이 우리 룩을 다시 잡았어요.*다른 방법으로/);
  // 되돌리기는 학생 수와 교재 응수를 한 번에 되돌린다.
  run('undoActivity()');let s=lesson(run);assert.equal(s.phase,'choose');assert.equal(s.board[6][4],'wR');assert.equal(s.board[4][4],'bP');assert.equal(s.board[1][1],'bB');assert.equal(s.attempts,1);
- run('lessonClick(6,4);lessonClick(6,7)');flush(timers);s=lesson(run);assert.equal(s.result,'success');assert.equal(s.board[6][7],'wR');assert.match(run('lessonMessage(lessonView()).html'),/폰을 잡고 룩도 지켰어요/);
+ run('lessonClick(6,4);lessonClick(6,7)');flush(timers);s=lesson(run);assert.equal(s.result,'success');assert.equal(s.board[6][7],'wR');assert.match(run('lessonMessage(lessonView()).html'),/폰을 잡고 우리 룩도 지켰어요.*수업 마치기/);
 });
 
 test('도움 3단계는 답을 대신 두지 않고, 도움 기록은 재시도·되돌리기 뒤에도 남으며 완료를 도움/혼자로 구분한다',()=>{
@@ -129,4 +129,24 @@ test('마무리 직후 같은 자리의 다음 수업 버튼은 연타로 눌리
  run('lessonClick(5,0);lessonChangedAt=0;lessonPrimary();lessonClick(3,3);lessonChangedAt=0;lessonPrimary()');assert.equal(run('state.lesson.phase'),'complete');
  run('lessonPrimary()');assert.equal(run('state.lesson.lessonId'),'protect-spot-v1','두 번째 탭은 무시');
  run('lessonChangedAt=Date.now()-1000;lessonPrimary()');assert.equal(run('state.lesson.lessonId'),'protect-escape-v1','잠시 뒤에는 다음 수업');
+});
+
+test('사용자 피드백: 우리=흰색과 우리/상대 표시, 단계마다 지금 누를 것, 새 수업 소개 창, 처음부터 다시',()=>{
+ const {run,timers,elements}=load();run("globalThis.dialogs=[];showActivityDialog=(title,html,actions)=>{dialogs.push({title,html,labels:actions.map(a=>a.label),actions});};startLesson('protect-escape-v1')");
+ // 새로 시작한 수업은 무엇을·어떻게·누가 우리 편인지 먼저 보여준다.
+ let d=J(run,'dialogs.at(-1)');assert.equal(d.title,'2. 안전한 곳으로 피하기');assert.match(d.html,/우리 = 흰색[\s\S]*상대 = 검은색/);assert.match(d.html,/점이 찍힌 칸 중/);assert.match(d.html,/왜 그런가요\?/);assert.deepEqual(d.labels,['▶ 시범 보기','바로 해보기']);
+ let html=elements.get('screen-lesson').innerHTML;assert.match(html,/lesson-side[\s\S]*우리 = 흰색/);assert.match(html,/↺ 처음부터/);assert.match(html,/lesson-next[^"]*" onclick="lessonDemoPlay\(\)/,'처음 누를 버튼은 시범 보기');
+ assert.equal((html.match(/lesson-owner mine/g)||[]).length,2);assert.equal((html.match(/lesson-owner theirs/g)||[]).length,2);
+ run('lessonClick(4,3)');assert.equal(run('state.lesson.notice'),'demoTap');assert.match(run('lessonMessage(lessonView()).html'),/시범 단계라[\s\S]*직접 해보기/);
+ run("dialogs.at(-1).actions[1].action()");assert.equal(run('state.lesson.sceneRole'),'guided');assert.equal(run('state.lesson.notice'),null);
+ assert.match(run('lessonMessage(lessonView()).html'),/① 파란 테두리의 <b>우리 비숍<\/b>을 눌러요/);
+ run('lessonClick(5,7)');assert.match(run('lessonMessage(lessonView()).html'),/② 점이 찍힌 칸 중/);
+ run('lessonClick(0,2)');flush(timers);assert.match(run('lessonMessage(lessonView()).html'),/✗ 빨간 화살표처럼 상대 룩이 와서 우리 비숍을 잡았어요[\s\S]*다른 방법으로<\/span>를 누르고/);
+ html=elements.get('screen-lesson').innerHTML;assert.match(html,/lesson-next[^"]*" onclick="lessonPrimary\(\)" >다른 방법으로/,'결과 뒤 다음 버튼 강조');
+ // 수업 안에서 처음부터: 확인 뒤 시범부터, 해본 기록과 다른 수업 저장은 그대로.
+ run("globalThis.choice=null;showChoice=(m,c)=>{choice={m,c};};restartLesson('protect-escape-v1')");assert.match(run('choice.m'),/처음부터 다시/);run('choice.c[0].action()');
+ assert.deepEqual(J(run,'[state.lesson.sceneRole,state.lesson.phase,state.lesson.attempts,state.actionHistory.length]'),['demo','demoReady',0,0]);
+ // 목록의 진행 중 카드는 처음부터 다시(왼쪽)·이어하기(오른쪽) 버튼을 보여준다.
+ run("lessonGoScene(1);goLessons()");html=elements.get('screen-lesson').innerHTML;assert.match(html,/lesson-card-actions[\s\S]*restartLesson\('protect-escape-v1'\)[\s\S]*↺ 처음부터 다시[\s\S]*openLesson\('protect-escape-v1'\)[\s\S]*▶ 이어하기/);
+ assert.match(html,/우리는 <b>흰색\(판 아래쪽\)<\/b>/);
 });
