@@ -1,12 +1,14 @@
 // 두 기기 대전 (docs/TWO_DEVICE_PLAY.md): 브라우저 두 개를 두 기기로 쓴다.
 // 같은 방: 가짜 카메라 영상(y4m)에 상대 화면의 QR을 비춰 실제로 찍는다. 한쪽은 브라우저 QR 인식, 한쪽은 jsQR(아이폰 사파리와 같은 경로).
-// 수는 판을 탭해서 둔다. 잠깐 끊김(메시지 버림) → 저절로 복구, 연결 객체 닫힘 → 끊긴 동안 둔 수 → QR로 다시 연결,
-// 새로고침 → 코드로 다시 연결, 비기기·한 판 더·기권, 멀리서(보호자 확인) → 연결 없이 편지로 이어 두기 · 링크로 연 새 탭의 코드 넘기기.
+// 수는 판을 탭해서 둔다. 잠깐 끊김(메시지 버림) → 저절로 복구, 연결 객체 닫힘·새로고침 → 만남 장소(가짜 Nostr 릴레이)로 QR 없이 다시 연결,
+// '저절로' 끔 → 끊긴 동안 둔 수 → QR로 다시 연결, 새로고침 → 코드로 다시 연결, 비기기·한 판 더·기권,
+// 멀리서(보호자 확인) → 연결 없이 편지로 이어 두기 · 링크로 연 새 탭의 코드 넘기기.
 // 360×640(A)·1280×900(B): 가로 넘침 없음, 연결 상태가 바뀌어도 판 위치 그대로, 주요 버튼 44px 이상.
 const { chromium } = require(process.env.CHESS_PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), qrcode = require('../js/vendor/qrcode.js');
 const output = process.env.CHESS_NET_QA_OUTPUT || '/tmp/chess-net-qa'; fs.mkdirSync(output, { recursive: true });
 const URL = process.env.CHESS_TEST_URL || 'http://127.0.0.1:8765/';
+const fakeRelay = require('./fake-relay.cjs'), REAL_RELAYS = process.env.CHESS_NET_REAL_RELAYS === '1';
 
 function writeQR(file, text) {
   const qr = qrcode(0, 'M'); qr.addData(text, 'Byte'); qr.make();
@@ -18,14 +20,15 @@ function writeQR(file, text) {
 }
 
 (async () => {
-  const errors = [], browsers = [];
+  const errors = [], browsers = [], relay = await fakeRelay.start();
   const device = async (tag, viewport, { detector, name, icon }) => {
     const cam = path.join(output, `cam-${tag}.y4m`); writeQR(cam, 'CK1o.waiting-for-a-real-code');
     const browser = await chromium.launch({ headless: true, ...(process.env.CHESS_BROWSER_EXECUTABLE ? { executablePath: process.env.CHESS_BROWSER_EXECUTABLE } : {}), args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--use-file-for-fake-video-capture=' + cam] });
     browsers.push(browser);
     const context = await browser.newContext({ viewport, serviceWorkers: 'block', permissions: ['camera', 'clipboard-read', 'clipboard-write'] });
-    // 검사는 한 컴퓨터 안이라 공개 STUN이 필요 없다. 아이폰처럼 브라우저 QR 인식이 없는 경우도 흉내 낸다.
-    await context.addInitScript(d => { window.NET_ICE_SERVERS = []; if (!d) delete window.BarcodeDetector; }, detector);
+    // 검사는 한 컴퓨터 안이라 공개 STUN이 필요 없고, 만남 장소는 가짜 릴레이를 쓴다. 아이폰처럼 브라우저 QR 인식이 없는 경우도 흉내 낸다.
+    // CHESS_NET_REAL_RELAYS=1이면 앱에 적힌 진짜 공개 릴레이를 쓴다(인터넷 필요).
+    await context.addInitScript(d => { window.NET_ICE_SERVERS = []; if (d.relays) window.NET_RELAYS = d.relays; if (!d.detector) delete window.BarcodeDetector; }, { detector, relays: REAL_RELAYS ? null : [relay.url] });
     const open = async () => {
       const page = await context.newPage();
       page.on('pageerror', e => errors.push(`${tag}: ${e.message}`)); await page.route('https://fonts.googleapis.com/**', r => r.abort());
@@ -81,6 +84,10 @@ function writeQR(file, text) {
     assert.equal(await ev(B, () => document.querySelector('#screen-play .chess-board').classList.contains('flipped')), true, '검은색은 판을 돌려 봐요');
     await until(A, () => /서연/.test(document.querySelector('#captured-top')?.textContent || '')); await until(B, () => /민준/.test(document.querySelector('#captured-top')?.textContent || ''));
     assert.equal(await pill(A), 'open'); await check(A, '연결됨'); await check(B, '연결됨');
+    // 처음 연결에서 짝 열쇠를 나눠 가진다(저절로 다시 연결에 쓴다).
+    await until(B, () => netPairValid(net.record.pair));
+    assert.equal(await ev(A, () => net.record.pair), await ev(B, () => net.record.pair), '두 기기의 짝 열쇠가 같아야 해요');
+    const autoOff = async on => { for (const d of [A, B]) await ev(d, v => { savePlaySettings({ ...getPlaySettings(), netAuto: v }); netAutoUpdate(); }, on); };
 
     // 2. 탭으로 두기 · 받았다는 알림 · 표정
     await move(A, [6, 4, 4, 4], B); await until(B, () => net.record.moves.length === 1 && state.game.board[4][4] === 'wP'); await until(A, () => net.record.acked === 1);
@@ -95,27 +102,44 @@ function writeQR(file, text) {
     await check(B, '약함'); await shot(B, 'weak');
     await until(B, () => net.link.state === 'open' && net.record.moves.length === 3, null, 20000);
     await until(A, () => net.record.acked === 3); await same(); await check(B, '복구'); assert.equal(await pill(B), 'open');
-    // 오래 끊김(30초): 양쪽 모두 '끊김'이 된 뒤에도 인터넷이 돌아오면 다시 연결 없이 되살아난다.
+    // 오래 끊김(30초): 양쪽 모두 '끊김'이 된 뒤에도 인터넷이 돌아오면 다시 연결 없이 같은 연결이 되살아난다(이 장면만 '저절로'를 끈다).
+    await autoOff(false);
     await ev(A, () => net.link.debugMute(30000));
     for (const d of [A, B]) await until(d, () => net.link.state === 'lost', null, 40000);
     await check(A, '오래 끊김'); assert.equal(await pill(A), 'lost');
     for (const d of [A, B]) await until(d, () => net.link.state === 'open', null, 20000);
-    await same();
+    await same(); await autoOff(true);
 
-    // 4. 연결 객체가 닫힘(앱이 죽은 것과 같다) → 끊긴 동안 B가 둔 수 → QR로 다시 연결하면 A에게 전해진다.
+    // 4. 저절로 다시 연결: B의 연결 객체가 닫힘(앱이 죽은 것과 같다) → 끊긴 동안 B가 둔 수 → QR 없이 만남 장소로 다시 이어져 A에게 전해진다.
+    await ev(B, () => net.link.pc.close());
+    await until(B, () => netAutoState() === 'search', null, 15000);
+    assert.match(await B.page.locator('#screen-play .play-state').innerText(), /친구를 찾는 중/);
+    assert.equal(await pill(B), 'search', '오른쪽 위 표시도 찾는 중');
+    await check(B, '친구 찾는 중'); await shot(B, 'auto-search');
+    await move(B, [0, 1, 2, 2], A);
+    for (const d of [A, B]) await until(d, () => state.screen === 'play' && net.link?.state === 'open' && net.link.viaAuto && net.record.moves.length === 4, null, 30000);
+    await same(); await check(A, '저절로 다시 연결'); await check(B, '저절로 다시 연결'); await shot(A, 'auto-back');
+    assert.ok(/저절로 다시 연결/.test(await ev(A, () => state.play.notice)) || /저절로 다시 연결/.test(await ev(B, () => state.play.notice)), '저절로 다시 연결됐다는 안내');
+
+    // 5. B 새로고침(만남 장소 연결도 한 번 모두 끊김) → 홈 화면에서 이미 저절로 이어지고, 하던 대국 카드로 들어가면 바로 연결돼 있다.
+    relay.drop(); await B.page.reload({ waitUntil: 'domcontentloaded' });
+    await until(B, () => net.link?.state === 'open' && net.link.viaAuto, null, 30000);
+    await ev(B, () => goPlay()); await B.page.locator('.net-saved-card').click(); await until(B, () => state.play?.mode === 'net');
+    assert.equal(await pill(B), 'open'); await same(); await check(B, '새로고침 뒤 저절로');
+
+    // 6. '저절로'를 끄면: 연결 객체 닫힘 → 끊긴 동안 A가 둔 수 → QR로 다시 연결 · B 새로고침 → 하던 대국 카드 → 코드로 다시 연결(멀리서 방식)
+    await autoOff(false);
     await ev(B, () => net.link.pc.close());
     for (const d of [A, B]) await until(d, () => ['lost', 'none'].includes(netConnState()), null, 15000);
     await check(A, '끊김'); await check(B, '끊김'); await shot(A, 'lost');
-    await move(B, [0, 1, 2, 2], A); assert.equal(await ev(B, () => net.record.moves.length), 4); assert.equal(await ev(A, () => net.record.moves.length), 3);
+    await move(A, [7, 5, 4, 2], B); assert.equal(await ev(A, () => net.record.moves.length), 5); assert.equal(await ev(B, () => net.record.moves.length), 4);
     await A.page.locator('.net-fix .action-btn', { hasText: '다시 연결' }).click(); await A.page.locator('#net-reconnect-overlay .action-btn', { hasText: '새 QR' }).click();
     const again = await codeOf(A, '.net-qr'); writeQR(B.cam, again);
     await B.page.locator('.net-fix .action-btn', { hasText: '다시 연결' }).click(); await B.page.locator('#net-reconnect-overlay .action-btn', { hasText: '친구 QR 찍기' }).click();
     const againAnswer = await codeOf(B, '.net-qr'); writeQR(A.cam, againAnswer);
     await A.page.locator('.net-big').click();
-    for (const d of [A, B]) await until(d, () => state.screen === 'play' && net.link?.state === 'open' && net.record.moves.length === 4);
+    for (const d of [A, B]) await until(d, () => state.screen === 'play' && net.link?.state === 'open' && net.record.moves.length === 5);
     await same(); await check(A, '다시 연결'); await check(B, '다시 연결');
-
-    // 5. B 새로고침 → 하던 대국 카드 → 코드로 다시 연결(멀리서 방식)
     await B.page.reload({ waitUntil: 'domcontentloaded' }); await until(A, () => ['lost', 'none'].includes(netConnState()), null, 15000);
     await ev(B, () => goPlay()); await B.page.locator('.net-saved-card').click(); await until(B, () => state.play?.mode === 'net');
     assert.equal(await pill(B), 'none'); await check(B, '새로고침 뒤');
@@ -129,8 +153,8 @@ function writeQR(file, text) {
     for (const d of [A, B]) await until(d, () => state.screen === 'play' && net.link?.state === 'open');
     await same(); assert.equal(await ev(A, () => net.record.method), 'remote');
 
-    // 6. 비기기 → 한 판 더(색 바꿈) → 기권
-    await move(A, [7, 5, 4, 2], B); await until(B, () => net.record.moves.length === 5);
+    // 7. 비기기 → 한 판 더(색 바꿈) → 기권
+    await move(B, [0, 6, 2, 5], A); await until(A, () => net.record.moves.length === 6);
     await B.page.locator('.mission-actions .icon-btn', { hasText: '비기기 제안' }).click();
     await A.page.waitForSelector('#choice-overlay'); await A.page.locator('#choice-overlay .action-btn', { hasText: '비기기 좋아요' }).click();
     for (const d of [A, B]) { await until(d, () => net.record.end?.type === 'draw'); await closeResult(d); }
@@ -139,6 +163,7 @@ function writeQR(file, text) {
     await B.page.waitForSelector('#choice-overlay'); await B.page.locator('#choice-overlay .action-btn', { hasText: '좋아요' }).click();
     for (const d of [A, B]) await until(d, () => net.record.moves.length === 0 && !net.record.end && state.play.net.gid === net.record.gid);
     assert.equal(await ev(A, () => state.play.net.color), 'b'); assert.equal(await ev(B, () => state.play.net.color), 'w');
+    assert.equal(await ev(A, () => net.record.pair), await ev(B, () => net.record.pair), '한 판 더도 같은 짝 열쇠');
     assert.equal(await ev(A, () => document.querySelector('#screen-play .chess-board').classList.contains('flipped')), true);
     base.A = null; base.B = null; await check(A, '한 판 더(검은색)'); await check(B, '한 판 더(흰색)'); await shot(A, 'rematch-black');
     await move(B, [6, 3, 4, 3], A); await until(A, () => net.record.moves.length === 1);
@@ -147,7 +172,7 @@ function writeQR(file, text) {
     assert.match(await B.page.locator('#screen-play .play-state').innerText(), /내가 이겼어요/);
     await closeResult(A);
 
-    // 7. 멀리서 새 대국(보호자 확인) → 연결이 모두 끊김 → 편지로 이어 두기 · 링크로 연 새 탭은 열려 있던 화면에 넘긴다.
+    // 8. 멀리서 새 대국(보호자 확인) → 연결이 모두 끊김 → 편지로 이어 두기 · 링크로 연 새 탭은 열려 있던 화면에 넘긴다.
     await ev(A, () => { goPlay(); playSetOption('netMethod', 'remote'); });
     await A.page.locator('.play-start', { hasText: '초대장 만들기' }).click(); await gate(A);
     const invite = await codeOf(A, '.net-code-text');
@@ -176,7 +201,9 @@ function writeQR(file, text) {
     await A.page.fill('#net-paste-overlay textarea', back); await A.page.locator('#net-paste-overlay button[type=submit]').click();
     await until(A, () => net.record.moves.length === 2 && state.game.board[3][4] === 'bP'); await same();
     await check(A, '편지 뒤'); await shot(A, 'after-letter');
-    console.log(JSON.stringify({ passed: ['같은 방 QR(카메라)', '탭으로 두기·표정', '잠깐 끊김 복구', '오래 끊김(양쪽 끊김) 뒤 저절로 복구', '닫힘 → QR 다시 연결', '새로고침 → 코드 다시 연결', '비기기·한 판 더·기권', '멀리서·보호자 확인·편지·새 탭 넘기기'], screenshots: output }));
-  } finally { for (const b of browsers) await b.close(); }
+    // 가짜 릴레이가 받은 메시지는 모두 서명 검사를 통과해야 한다(진짜 릴레이도 같은 검사를 한다).
+    if (!REAL_RELAYS) { assert.ok(relay.stats.events > 0 && relay.stats.delivered > 0, '만남 장소로 메시지가 오갔어요'); assert.equal(relay.stats.bad, 0, '서명이 틀린 메시지'); }
+    console.log(JSON.stringify({ passed: ['QR 연결(카메라)·짝 열쇠', '탭으로 두기·표정', '잠깐 끊김 복구', '오래 끊김(양쪽 끊김) 뒤 같은 연결 복구', '닫힘 → QR 없이 저절로 다시 연결', '새로고침·만남 장소 끊김 → 저절로 다시 연결', '저절로 끔 → QR·코드 다시 연결', '비기기·한 판 더·기권', '멀리서·보호자 확인·편지·새 탭 넘기기'], relay: REAL_RELAYS ? '공개 릴레이' : { events: relay.stats.events, delivered: relay.stats.delivered, keys: relay.stats.pubkeys.size }, screenshots: output }));
+  } finally { for (const b of browsers) await b.close(); await relay.close(); }
   if (errors.length) throw Error(errors.join('\n'));
 })().catch(e => { console.error(e); process.exit(1); });
