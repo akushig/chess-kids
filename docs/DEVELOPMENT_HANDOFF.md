@@ -320,5 +320,6 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 - 저절로 다시 연결: 처음 연결에서 짝 열쇠를 나누고, 끊기면 공개 Nostr 릴레이 6곳에 AES-GCM으로 봉한 노크·초대·답장을 올려 다시 잇는다. 새 파일 `js/net-meet.js`(secp256k1 BIP-340 서명 직접 구현). 설정 `끊기면`(기본: 저절로)으로 끌 수 있다.
 - 저장: `net_game_v1.pair`, `play_settings.netAuto` 추가(가져오기 검사 포함). 형식 번호는 그대로다.
 - 검증: 단위 175/175(새 5개), 브라우저 17종(`net-browser` 9장면, 가짜 릴레이 `tests/fake-relay.cjs`가 서명을 따로 검사). `CHESS_NET_REAL_RELAYS=1`로 진짜 공개 릴레이에서도 9장면 통과.
+- 배포: `296c7e3`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42483577709) 성공, 공개 사이트 `2026.11.08.5` 확인. 공개 주소로 `net-browser`(가짜 릴레이 9장면 · 진짜 공개 릴레이 9장면)·`browser-final`(오프라인 포함)을 다시 돌려 통과.
 - 남은 일: 사용자가 휴대폰 두 대로 LTE 진단 결과(IPv6·바뀌는 형)를 보내 주면, 중계(TURN)가 필요한지 판단한다. 필요하면 Cloudflare 단계(`docs/SERVER_FEATURES_PLAN.md` 맨 위 메모).
 
