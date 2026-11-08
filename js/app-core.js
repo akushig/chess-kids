@@ -141,6 +141,8 @@ function animateCapture(boardEl, toR, toC, capturedPieceKey, targetId) {
   const targetEl = document.getElementById(targetId);
   if (!targetEl) return;
   const targetRect = targetEl.getBoundingClientRect();
+  // 돌린 판(두 기기 대전의 검은색)에서는 화면 위치가 반대다.
+  if (boardEl.classList.contains('flipped')) { toR = 7 - toR; toC = 7 - toC; }
 
   const ghost = document.createElement('div');
   ghost.className = 'capture-anim';

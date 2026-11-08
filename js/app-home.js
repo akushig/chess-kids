@@ -16,6 +16,7 @@ function renderHome() {
     <div class="home-hero"><div class="app-title">${t('appName')}</div><button class="home-title-chip" onclick="goWorkshop('title')" aria-label="내 칭호 ${title.name} · 공방에서 바꾸기"><span aria-hidden="true">${title.icon}</span> ${title.name}</button></div>
     ${showCard?`<button class="resume-card" onclick="${resume?'resumeActivity()':recommendation.action}"><span class="resume-icon" aria-hidden="true">${resume?'▶':'🚩'}</span><span class="resume-text"><strong>${resume?'이어서 놀기':recommendation.title}</strong><small>${resume?ACTIVITY_NAMES[saved.kind]+' · 하던 판이 기다리고 있어요.':recommendation.description}</small></span><span class="menu-arrow" aria-hidden="true">›</span></button>`:''}
     ${ongoingActivities().length?'<button class="text-button home-saved-all" onclick="openSavedActivities()">📚 하던 놀이 모두 보기</button>':''}
+    ${netHomeCardHTML()}
     <section class="home-primary" aria-labelledby="home-primary-title"><h2 id="home-primary-title" class="home-section-title">무엇을 할까요?</h2><div class="menu-grid">
       ${entry('goPlay()',getPieceSVG('wK',44),'체스 대전',play.desc,'menu-play',play.saved)}
       ${entry("enterActivity('knight')",getPieceSVG('wN',44),'기사의 여행',knight.desc,'menu-knight',knight.saved)}

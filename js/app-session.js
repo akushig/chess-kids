@@ -45,6 +45,8 @@ function activityComplete() {
 }
 function saveActiveSession() {
   if(!state.activeKind || !SESSION_KEYS[state.activeKind])return;
+  // 두 기기 대전은 친구와 함께 쓰는 판이라 놀이 저장(sessions)이 아니라 대국 기록(net_game_v1)에 둔다.
+  if(state.activeKind==='play'&&state.play?.mode==='net'){netSave();return;}
   const snapshot=activitySnapshot();
   // 수업 응수 도중이면 방금 쌓은 시도 시작 기록은 현재 저장 상태와 같으므로 빼고 저장한다.
   const history=state.activeKind==='lesson'&&state.lesson?.phase==='response'?(state.actionHistory||[]).slice(0,-1):state.actionHistory||[];

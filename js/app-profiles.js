@@ -156,6 +156,8 @@ function parseProfileBackup(text){
    if(key==='challenge_design'&&(!parsed||![5,6,7].includes(parsed.size)||!Array.isArray(parsed.blocked)||!Array.isArray(parsed.start)||![parsed.start,...parsed.blocked].every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isInteger(n)&&n>=0&&n<parsed.size))||!['block','start'].includes(parsed.tool)))throw Error('판 설계를 읽지 못했어요.');
    if(key==='progress_v3'&&(!profilePlainObject(parsed)||parsed.version!==3||!['missions','puzzles','mini'].every(k=>profilePlainObject(parsed[k])&&Object.values(parsed[k]).every(n=>Number.isInteger(n)&&n>=0&&n<=3))))throw Error('놀이 기록이 올바르지 않아요.');
    if(['preferences','play_settings','knight_tour_settings','mission_progress_v2','puzzle_stars','minigame_stars'].includes(key)&&!profilePlainObject(parsed))throw Error('설정이나 기록 형식이 올바르지 않아요.');
+   if(key==='net_game_v1'&&parsed!==null&&!(netRecordValid(parsed)&&netReplay(parsed.small,parsed.moves)))throw Error('두 기기 대국 기록을 읽지 못했어요.');
+   if(key==='play_settings'&&(![undefined,null,'net'].includes(parsed.view)||![undefined,'room','remote'].includes(parsed.netMethod)||![undefined,'w','b','random'].includes(parsed.netColor)))throw Error('대전 설정이 올바르지 않아요.');
    if(key==='play_settings'&&(![undefined,'ai','friend'].includes(parsed.mode)||parsed.level!==undefined&&(!Number.isInteger(parsed.level)||parsed.level<0||parsed.level>9)||parsed.timer!==undefined&&![0,15,30,60].includes(parsed.timer)))throw Error('대전 설정이 올바르지 않아요.');
    if(key==='pending_skin'&&parsed!==null&&!SKIN_ORDER.includes(parsed))throw Error('알 수 없는 꾸미기 정보예요.');
    if(key==='knight_last_mode'&&!['walk','explore','tour'].includes(parsed))throw Error('나이트 설정이 올바르지 않아요.');
