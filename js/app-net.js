@@ -1,11 +1,14 @@
 // ===== 두 기기 대전 (docs/TWO_DEVICE_PLAY.md) =====
-// 같은 방: QR을 서로 한 번씩 찍어 연결. 멀리서: 초대장·답장 코드를 메신저로 주고받아 연결. 우리 서버는 없다.
-// 대국 기록(net_game_v1)은 각 기기에 저장한다. 연결이 끊겨도 수 목록을 서로 비교해 다시 맞추고,
-// 다시 연결이 안 되면 '편지'(지금까지의 수 목록 코드)를 메신저로 보내 이어 둔다.
+// QR로 연결: 와이파이든 휴대폰 데이터(LTE)든 QR을 서로 한 번씩 찍는다(코드 안에서는 method 'room').
+// 초대장으로 연결: 초대장·답장 코드를 메신저로 주고받는다(method 'remote'). 우리 서버는 없다.
+// 처음 연결되면 두 기기가 짝 열쇠를 나눠 갖고, 그 뒤로 끊기면 만남 장소(js/net-meet.js, 공개 Nostr 릴레이)로 새 연결 정보를
+// 주고받아 QR 없이 저절로 다시 잇는다. 대국 기록(net_game_v1)은 각 기기에 저장하고, 다시 이으면 수 목록을 비교해 맞춘다.
+// 그래도 안 되면 '다시 연결'(QR·코드) → '편지'(지금까지의 수 목록 코드)로 이어 둔다.
 
 const NET_RECORD_KEY = 'net_game_v1';
 const NET_EMOJIS = ['👍', '😮', '🙂', '😅'];
-const net = { link: null, wiz: null, record: null, recordProfile: null, present: false, drawOffered: false, rematchOffer: null, lastEmojiAt: 0, emojiIn: [], handoff: null };
+const net = { link: null, wiz: null, record: null, recordProfile: null, present: false, drawOffered: false, rematchOffer: null, lastEmojiAt: 0, emojiIn: [], handoff: null,
+  auto: { meet: null, key: '', timer: null, since: 0, lastKnock: 0, link: null, linkAt: 0, making: false, madeAt: 0, answered: [] } };
 
 // --- 대국 기록 ---
 function netOpposite(c) { return c === 'w' ? 'b' : 'w'; }
@@ -13,7 +16,8 @@ function netEndValid(e, length) { return e && typeof e === 'object' && Number.is
 function netRecordValid(r) {
   return !!r && r.v === 1 && /^[A-Za-z0-9]{8}$/.test(r.gid) && ['w', 'b'].includes(r.color) && ['room', 'remote'].includes(r.method) && typeof r.small === 'boolean' && typeof r.inviter === 'boolean'
     && Array.isArray(r.moves) && r.moves.length <= NET_LIMITS.moves && r.moves.every(netMoveCodeValid) && (r.end === null || netEndValid(r.end, r.moves.length))
-    && Number.isInteger(r.acked) && r.acked >= 0 && r.acked <= r.moves.length && r.peer && typeof r.peer.name === 'string' && typeof r.peer.icon === 'string';
+    && Number.isInteger(r.acked) && r.acked >= 0 && r.acked <= r.moves.length && r.peer && typeof r.peer.name === 'string' && typeof r.peer.icon === 'string'
+    && (r.pair === undefined || netPairValid(r.pair));
 }
 function netMoveParse(code) {
   if (!netMoveCodeValid(code)) return null;
@@ -66,9 +70,16 @@ function netHandlers() {
 }
 function netNewLink() { const link = new NetLink(netHandlers()); link.profile = activeProfile; return link; }
 function netOnOpen(link) {
-  if (link !== net.wiz?.link && link !== net.link) return link.close();
+  const auto = link === net.auto.link;
+  if (link !== net.wiz?.link && link !== net.link && !auto) return link.close();
   if (net.link && net.link !== link) net.link.close();
   net.link = link; net.present = false;
+  if (auto) {
+    net.auto.link = null; link.viaAuto = true;
+    // 다시 연결 화면(QR)을 열어 두었는데 저절로 먼저 이어졌으면 그 화면을 닫고 대국으로 돌아간다.
+    if (net.wiz?.purpose === 'continue') { netWizardClose(); netOpenGame(); }
+  }
+  link.route().then(rt => { link.routeInfo = rt; netPaint(); });
   netSendHello(false);
 }
 function netOnState(link) {
@@ -84,9 +95,11 @@ function netConnState() {
   return l.state;
 }
 function netSend(msg) { return !!net.link && net.link.state !== 'closed' && net.link.send(msg); }
+// 짝 열쇠(pair): 처음 초대한 쪽이 만들어 hello로 보낸다(데이터 채널은 DTLS로 암호화돼 있다). 끊기면 이 열쇠로 만남 장소에서 서로 찾는다.
 function netHello(reply) {
   const r = net.record, p = allProfiles().find(x => x.id === activeProfile);
-  return { t: 'hello', v: 1, reply, gid: r.gid, color: r.color, small: r.small, inviter: r.inviter, moves: r.moves, end: r.end, name: (p?.name || '친구').slice(0, 24), icon: p?.icon || '🙂' };
+  if (r.inviter && !netPairValid(r.pair)) { r.pair = netPairKey(); netSave(r); }
+  return { t: 'hello', v: 1, reply, gid: r.gid, color: r.color, small: r.small, inviter: r.inviter, moves: r.moves, end: r.end, name: (p?.name || '친구').slice(0, 24), icon: p?.icon || '🙂', pair: netPairValid(r.pair) ? r.pair : null };
 }
 // 새 대국 연결이면 이 연결의 대국 기록을 만든다(이전 기록은 이때 바뀐다). 이어 두기는 있던 기록을 쓴다.
 function netEnsureRecord() {
@@ -98,7 +111,7 @@ function netSendHello(reply) { if (netEnsureRecord()) netSend(netHello(reply)); 
 function netCreateRecordFromWizard() {
   const w = net.wiz, i = w.invite;
   const color = w.kind === 'host' ? i.hostColor : netOpposite(i.hostColor);
-  netSave({ v: 1, gid: i.gid, method: w.method, inviter: w.kind === 'host', color, small: i.small, moves: [], end: null, acked: 0, peer: { name: '친구', icon: '🙂' }, startedAt: Date.now() });
+  netSave({ v: 1, gid: i.gid, method: w.method, inviter: w.kind === 'host', color, small: i.small, moves: [], end: null, acked: 0, peer: { name: '친구', icon: '🙂' }, startedAt: Date.now(), ...(w.kind === 'host' ? { pair: netPairKey() } : {}) });
 }
 
 // --- 메시지 ---
@@ -124,7 +137,8 @@ function netOnMessage(msg) {
 }
 function netHelloValid(m) {
   return m.v === 1 && /^[A-Za-z0-9]{8}$/.test(m.gid) && ['w', 'b'].includes(m.color) && typeof m.small === 'boolean' && typeof m.inviter === 'boolean'
-    && Array.isArray(m.moves) && m.moves.length <= NET_LIMITS.moves && m.moves.every(netMoveCodeValid) && (m.end === null || netEndValid(m.end, m.moves.length)) && typeof m.name === 'string' && typeof m.icon === 'string';
+    && Array.isArray(m.moves) && m.moves.length <= NET_LIMITS.moves && m.moves.every(netMoveCodeValid) && (m.end === null || netEndValid(m.end, m.moves.length)) && typeof m.name === 'string' && typeof m.icon === 'string'
+    && (m.pair === undefined || m.pair === null || netPairValid(m.pair));
 }
 // 두 기기의 수 목록 맞추기: 한쪽이 다른 쪽의 앞부분이면 긴 쪽을 쓴다. 서로 다르면(있으면 안 되는 일) 처음 초대한 쪽 목록을 쓴다.
 function netMergeMoves(mine, theirs, myInviter, theirInviter) {
@@ -149,9 +163,12 @@ function netOnHello(m) {
   r.acked = Math.min(r.moves.length, Math.max(prefixOf ? m.moves.length : 0, r.acked));
   if (net.wiz) r.method = net.wiz.method;
   r.peer = { name: m.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 12) || '친구', icon: PROFILE_ICONS.includes(m.icon) ? m.icon : '🙂' };
+  // 짝 열쇠: 내게 없거나, 서로 다르면 처음 초대한 쪽 열쇠를 쓴다.
+  if (netPairValid(m.pair) && r.pair !== m.pair && (!netPairValid(r.pair) || m.inviter && !r.inviter)) r.pair = m.pair;
   netSave(r);
   netSend({ t: 'ack', n: r.moves.length });
   if (m.reply) netSend(netHello(false));
+  netAutoUpdate();
   if (net.wiz) {
     const wasReconnect = net.wiz.purpose === 'continue';
     netWizardDone();
@@ -159,8 +176,10 @@ function netOnHello(m) {
     netToast(wasReconnect ? `🟢 다시 연결됐어요! ${netPeerName()}와 판을 맞췄어요.` : `🟢 연결됐어요! ${netPeerName()}와 대국을 시작해요.`);
     return;
   }
+  const autoBack = net.link?.viaAuto && !net.link.greeted; if (net.link) net.link.greeted = true;
   if (r.moves.length !== before || merged.conflict) netAfterRemoteChange(merged.conflict ? '판이 서로 달라서 처음 초대한 쪽 판으로 맞췄어요.' : '');
   else netPaint();
+  if (autoBack) netToast('🟢 저절로 다시 연결됐어요. 판을 다시 맞췄어요.');
 }
 function netOnMove(msg) {
   const r = net.record;
@@ -210,9 +229,9 @@ function netOpenGame() {
   state.play = { mode: 'net', help: s.help, autoMove: false, face: false, small: r.small, preset: null, notice: '', level: 0, levelVersion: AI_DIFFICULTY_VERSION, timer: 0, deadline: 0, pausedLeft: null, buzzed: null, timeoutSide: null, net: { gid: r.gid, color: r.color, method: r.method } };
   if (playIsOver()) state.play.moveEvent = { kind: 'result', key: playStateKey(), acknowledged: true };
   net.drawOffered = false; net.rematchOffer = null;
-  showScreen('play'); renderPlay(); netPresence();
+  showScreen('play'); renderPlay(); netPresence(); netAutoUpdate();
 }
-function netLeaveGame() { leaveActivity(); netPresence(); goPlay(); }
+function netLeaveGame() { leaveActivity(); netPresence(); goPlay(); netAutoUpdate(); }
 // 내가 이 대국 화면을 보고 있는지 친구에게 알린다(앱을 내리거나 다른 화면에 가면 '잠깐 자리 비움').
 function netPresence() {
   const present = !document.hidden && state.screen === 'play' && netIsCurrentGame();
@@ -220,7 +239,7 @@ function netPresence() {
   net.present = present;
   if (present) { net.link?.wake(); netSend({ t: 'back' }); netSend(netHello(true)); } else netSend({ t: 'away' });
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) net.link?.wake(); netPresence(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) net.link?.wake(); netPresence(); netAutoUpdate(); });
 
 function netStatusCopy() {
   const g = state.game, p = state.play, me = p.net.color, r = net.record, peer = netPeerName(), ga = netJosa(peer, '이', '가');
@@ -228,7 +247,9 @@ function netStatusCopy() {
   if (r?.end?.type === 'draw') return { tone: 'draw', icon: '🤝', title: '비기기로 했어요', detail: '둘 다 비기기에 동의했어요.' };
   if (g.status === 'checkmate') { const won = g.turn !== me; return { tone: won ? 'success' : 'fail', icon: won ? '🏆' : '🏁', title: won ? '체크메이트! 내가 이겼어요' : `${peer}${ga} 이겼어요`, detail: t('playMateExplained') }; }
   if (g.status === 'draw') return { tone: 'draw', icon: '🤝', title: t('playDrawTitle'), detail: g.drawReason === 'stalemate' ? t('playStalemateExplained') : t(PLAY_DRAW_KEYS[g.drawReason]) };
-  const conn = netConnState();
+  const conn = netConnState(), auto = conn === 'lost' || conn === 'none' ? netAutoState() : 'off';
+  if (auto === 'search') return { tone: 'warn', icon: '🔎', title: '끊겼어요 · 친구를 찾는 중', detail: `${g.turn === me ? '그래도 내 수를 둘 수 있어요. ' : ''}친구 화면이 켜져 있으면 저절로 다시 이어져요.` };
+  if (auto === 'norelay') return { tone: 'warn', icon: '🔌', title: '연결이 끊겼어요', detail: '만남 장소(공개 중계)에 닿지 않아요. 아래 ‘다시 연결’로 QR을 찍어요.' };
   if (conn === 'lost' || conn === 'none') return { tone: 'warn', icon: '🔌', title: '연결이 끊겼어요', detail: g.turn === me ? `그래도 내 수를 둘 수 있어요. 아래 ‘다시 연결’${r?.method === 'remote' ? '이나 ‘편지로 보내기’' : ''}로 친구에게 전해요.` : '아래 ‘다시 연결’을 눌러 친구와 다시 이어요.' };
   if (conn === 'weak') return { tone: 'warn', icon: '📶', title: '연결이 약해요 · 다시 잇는 중', detail: `${Math.round((Date.now() - net.link.weakSince) / 1000) ? Math.round((Date.now() - net.link.weakSince) / 1000) + '초째 · ' : ''}둔 수는 연결되면 친구에게 전해져요.` };
   if (g.status === 'check') return { tone: 'warn', icon: '⚠️', title: g.turn === me ? t('playMyKingCheck') : t('playOpponentKingCheck'), detail: t('playCheckRestriction') };
@@ -237,7 +258,8 @@ function netStatusCopy() {
   return { tone: 'dim', icon: sending ? '📨' : '⏳', title: `${peer} 차례예요`, detail: sending ? '내 수를 친구에게 보내는 중이에요.' : conn === 'away' ? '친구가 잠깐 다른 화면에 있어요. 돌아오면 이어서 둬요.' : p.notice || '친구가 두면 바로 보여요.' };
 }
 function netPillHTML() {
-  const s = netConnState(), label = { open: '연결됨', away: '자리 비움', weak: '약함', lost: '끊김', none: '끊김' }[s];
+  const c = netConnState(), s = (c === 'lost' || c === 'none') && netAutoState() === 'search' ? 'search' : c;
+  const label = { open: '연결됨', away: '자리 비움', weak: '약함', lost: '끊김', none: '끊김', search: '찾는 중' }[s];
   return `<span class="net-pill net-pill--${s}" role="status" aria-label="연결 상태 ${label}"><i aria-hidden="true"></i>${label}</span>`;
 }
 function renderPlayNet() {
@@ -258,7 +280,8 @@ function netPaint() {
   if (state.screen === 'net' && net.wiz) return;
   if (!netIsCurrentGame() || state.screen !== 'play') return;
   const screen = document.getElementById('screen-play'); if (!screen?.dataset) return;
-  const conn = netConnState(), key = conn + '|' + (net.record?.acked ?? '') + '|' + !!net.rematchOffer + '|' + !!net.drawOffered;
+  // 만남 장소 연결 수는 찾는 중일 때만 화면에 보이므로 그때만 다시 그린다(연결돼 있는 동안 릴레이가 붙고 끊길 때마다 판을 다시 그리지 않게).
+  const conn = netConnState(), auto = netAutoState(), key = conn + '|' + (net.record?.acked ?? '') + '|' + !!net.rematchOffer + '|' + !!net.drawOffered + '|' + auto + '|' + (auto === 'search' ? net.auto.meet?.relays() || 0 : '') + '|' + (net.link?.routeInfo?.kind || '');
   // 연결 상태가 바뀌면 지난 연결 안내('연결이 돌아왔어요' 등)는 지운다.
   if (screen.dataset.netConn !== conn) { screen.dataset.netConn = conn; if (state.play.notice && state.play.notice === state.play.netNotice) state.play.notice = ''; }
   const pill = screen.querySelector('.net-pill'), status = screen.querySelector('.play-state');
@@ -269,10 +292,33 @@ function netPaint() {
 function netActionsHTML() {
   const g = state.game, p = state.play, r = net.record, over = playIsOver(), conn = netConnState(), connected = conn === 'open' || conn === 'away' || conn === 'weak';
   const mine = g.turn === p.net.color;
-  const fix = !connected ? `<div class="net-fix"><button class="action-btn green" onclick="netReconnect()">🔄 다시 연결</button>${r?.method === 'remote' ? '<button class="action-btn secondary" onclick="netSendLetter()">💌 편지로 보내기</button>' : ''}<button class="action-btn secondary" onclick="netPasteDialog()">📥 받은 코드 넣기</button></div>` : '';
+  const auto = !connected ? netAutoState() : 'off';
+  const fix = !connected ? `${auto === 'search' ? `<p class="net-auto-line" role="status"><span class="net-spinner small" aria-hidden="true"></span>저절로 다시 잇는 중 · 만남 장소 ${net.auto.meet.relays()}곳</p>` : ''}<div class="net-fix"><button class="action-btn green" onclick="netReconnect()">🔄 다시 연결</button>${r?.method === 'remote' ? '<button class="action-btn secondary" onclick="netSendLetter()">💌 편지로 보내기</button>' : ''}<button class="action-btn secondary" onclick="netPasteDialog()">📥 받은 코드 넣기</button></div>` : '';
   const emoji = connected && conn !== 'weak' ? `<div class="net-emoji-row" role="group" aria-label="친구에게 표정 보내기">${NET_EMOJIS.map((e, i) => `<button class="play-chip net-emoji-btn" onclick="netEmojiSend(${i})" aria-label="표정 ${e} 보내기">${e}</button>`).join('')}</div>` : '';
-  if (over) return `${fix}${emoji}<button class="play-chip" onclick="playPresentEvent(true)">🏁 ${t('playReviewResult')}</button><div class="finish-actions"><button class="action-btn" onclick="netRematchRequest()" ${connected && conn !== 'weak' && !net.rematchOffer ? '' : 'disabled'}>${net.rematchOffer ? '친구의 대답을 기다려요' : '🔁 한 판 더 하자고 하기'}</button><button class="action-btn secondary" onclick="netLeaveGame()">여기까지</button></div>`;
-  return `${fix}${emoji}${p.moveEvent?.special && p.moveEvent.acknowledged ? '<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>' : ''}${g.selected && g.board[g.selected[0]][g.selected[1]]?.[1] === 'K' ? '<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>' : ''}${playGuideChipHTML()}${g.status === 'check' ? '<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>' : ''}<div class="mission-actions">${mine ? '<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button>' : ''}<button class="icon-btn" onclick="netDrawOffer()" ${connected && conn !== 'weak' && !net.drawOffered ? '' : 'disabled'}>🤝 ${net.drawOffered ? '대답 기다리는 중' : '비기기 제안'}</button><button class="icon-btn" onclick="netResignAsk()">🏳 기권</button></div><div class="finish-actions"><button class="action-btn secondary" onclick="netLeaveGame()">나가기 (나중에 이어 두기)</button></div>`;
+  if (over) return `${fix}${emoji}<button class="play-chip" onclick="playPresentEvent(true)">🏁 ${t('playReviewResult')}</button><div class="finish-actions"><button class="action-btn" onclick="netRematchRequest()" ${connected && conn !== 'weak' && !net.rematchOffer ? '' : 'disabled'}>${net.rematchOffer ? '친구의 대답을 기다려요' : '🔁 한 판 더 하자고 하기'}</button><button class="action-btn secondary" onclick="netLeaveGame()">여기까지</button></div>${netInfoHTML()}`;
+  return `${fix}${emoji}${p.moveEvent?.special && p.moveEvent.acknowledged ? '<button class="play-chip" onclick="playPresentEvent(true)">방금 특수 수 다시 보기</button>' : ''}${g.selected && g.board[g.selected[0]][g.selected[1]]?.[1] === 'K' ? '<button class="play-chip" onclick="playCastlingHelp()">🏰 캐슬링 안내</button>' : ''}${playGuideChipHTML()}${g.status === 'check' ? '<button class="play-chip" onclick="showGameToast(playGuideHTML(), \'\', true)">🛡 왕 구하기 안내</button>' : ''}<div class="mission-actions">${mine ? '<button class="icon-btn hint-btn" onclick="playHint()">💡 한 수 보기</button>' : ''}<button class="icon-btn" onclick="netDrawOffer()" ${connected && conn !== 'weak' && !net.drawOffered ? '' : 'disabled'}>🤝 ${net.drawOffered ? '대답 기다리는 중' : '비기기 제안'}</button><button class="icon-btn" onclick="netResignAsk()">🏳 기권</button></div><div class="finish-actions"><button class="action-btn secondary" onclick="netLeaveGame()">나가기 (나중에 이어 두기)</button></div>${netInfoHTML()}`;
+}
+// 연결 정보(접어 둠): 지금 쓰는 길 · 끊겼을 때 · 이 기기가 가진 길
+function netInfoHTML() {
+  const l = net.link, live = l && (l.state === 'open' || l.state === 'weak'), rt = live ? l.routeInfo : null, d = l?.diag?.().me;
+  const route = !live ? '연결 안 됨' : rt ? { lan: '같은 와이파이(가까운 길)', net: `인터넷 직접(${rt.v6 ? 'IPv6' : 'IPv4'})`, relay: '중계' }[rt.kind] : '확인하는 중';
+  const auto = !getPlaySettings().netAuto ? 'QR로만 다시 연결(꺼 둠)' : !netPairValid(net.record?.pair) ? '연결된 뒤부터 저절로 다시 연결' : `저절로 다시 연결 · 만남 장소 ${net.auto.meet?.relays() || 0}곳`;
+  return `<details class="net-info"><summary>연결 정보</summary><p>지금 길: ${route}</p><p>끊기면: ${auto}</p>${d ? `<p>이 기기: ${netDiagLine(d)}</p>` : ''}</details>`;
+}
+function netDiagLine(d) { return `와이파이 안 ${d.lan ? '✓' : '✗'} · 인터넷 IPv4 ${d.v4 ? (d.sym ? '✓(바뀌는 형)' : '✓') : '✗'} · IPv6 ${d.v6 ? '✓' : '✗'}`; }
+// 연결 진단 한 줄: 휴대폰 데이터로 이어질지 미리 알려 준다.
+function netDiagVerdict(me, peer) {
+  if (!me) return '';
+  if (peer && me.v6 && peer.v6) return '두 기기 모두 IPv6 길이 있어 휴대폰 데이터로도 이어질 수 있어요.';
+  if (!me.v4 && !me.v6) return '이 기기는 인터넷 길을 찾지 못했어요. 같은 와이파이나 핫스팟에서만 연결돼요.';
+  if (peer && !peer.v4 && !peer.v6) return '친구 기기가 인터넷 길을 찾지 못했어요. 같은 와이파이나 핫스팟에서만 연결돼요.';
+  if (me.sym || peer?.sym) return `${me.sym ? '이 기기' : '친구 기기'}의 망(통신사·회사)이 바깥 주소를 바꾸는 형이라 서로 직접 잇기 어려워요. 같은 와이파이나 핫스팟에서 연결해요.`;
+  return peer ? '인터넷 길로 이어질 수 있어요.' : '';
+}
+function netDiagHTML(link) {
+  const d = link?.diag?.(); if (!d?.me) return '';
+  const v = netDiagVerdict(d.me, d.peer);
+  return `<details class="net-diag"><summary>연결 길 살펴보기</summary><p>이 기기: ${netDiagLine(d.me)}</p>${d.peer ? `<p>친구 기기: ${netDiagLine(d.peer)}</p>` : ''}${v ? `<p>${v}</p>` : ''}</details>`;
 }
 function netResultActions() {
   const conn = netConnState(), ok = conn === 'open' || conn === 'away';
@@ -316,7 +362,7 @@ function netRematchAsk(gid, myColor) {
 }
 function netStartRematch(gid, myColor, inviter) {
   const old = net.record;
-  netSave({ v: 1, gid, method: old.method, inviter, color: myColor, small: old.small, moves: [], end: null, acked: 0, peer: old.peer, startedAt: Date.now() });
+  netSave({ v: 1, gid, method: old.method, inviter, color: myColor, small: old.small, moves: [], end: null, acked: 0, peer: old.peer, startedAt: Date.now(), ...(netPairValid(old.pair) ? { pair: old.pair } : {}) });
   netOpenGame(); netToast(`🔁 새 대국! 이번엔 내가 ${myColor === 'w' ? '흰색이라 먼저 둬요' : '검은색이에요. 친구가 먼저 둬요'}.`);
 }
 function netEmojiSend(i) {
@@ -345,6 +391,7 @@ function netToast(text) {
 // --- 연결 화면 (screen-net) ---
 // wiz: {kind: host(초대·QR 보여 주기) | guest(받기), method: room | remote, purpose: new | continue, step, link, code, invite, error}
 function netSetupStartCopy(method) { return method === 'room' ? '📷 내 QR 보여 주기' : '💌 초대장 만들기'; }
+function netSetAuto(on) { playSetOption('netAuto', !!on); netAutoUpdate(); }
 function netHostRequest() {
   const s = getPlaySettings(), method = s.netMethod === 'remote' ? 'remote' : 'room', start = () => method === 'remote' ? storeParentGate(() => netHostStart(method, 'new'), '멀리 있는 친구와 대전') : netHostStart(method, 'new');
   const on = netOngoing();
@@ -356,8 +403,11 @@ async function netHostStart(method, purpose) {
   if (purpose === 'continue' && !r) return goPlay();
   const pick = s.netColor === 'b' ? 'b' : s.netColor === 'random' ? (Math.random() < .5 ? 'w' : 'b') : 'w';
   const invite = r ? { gid: r.gid, hostColor: r.color, small: r.small } : { gid: netRandom(8), hostColor: pick, small: !!s.small };
-  netWizardOpen({ kind: 'host', method, purpose, step: 'preparing', invite });
-  const link = net.wiz.link = netNewLink(), wiz = net.wiz;
+  netWizardOpen({ kind: 'host', method, purpose, step: 'preparing', invite, camera: method === 'room' });
+  const wiz = net.wiz;
+  // QR로 연결: 답장 QR을 찍을 카메라를 먼저 켰다 끈다. 카메라를 허락받은 화면에는 브라우저가 실제 주소(핫스팟·IPv6)를 알려 준다.
+  if (method === 'room') { await netCameraWarm(); if (net.wiz !== wiz) return; wiz.camera = false; renderNetWizard(); }
+  const link = wiz.link = netNewLink();
   try {
     wiz.code = await link.createOffer(invite.gid, netInfoText(method, invite.hostColor, invite.small, purpose), method);
     if (net.wiz !== wiz) return link.close();
@@ -369,7 +419,7 @@ function netWizardOpen(w) {
   netWizardClose();
   // 새 대국 연결을 시작하면 예전 대국의 연결은 닫는다(늦게 살아나 새 대국과 섞이지 않게).
   if (w.purpose === 'new' && net.link) { net.link.close(); net.link = null; }
-  net.wiz = w; leaveActivity(); showScreen('net'); renderNetWizard();
+  net.wiz = w; leaveActivity(); showScreen('net'); renderNetWizard(); netAutoUpdate();
 }
 // 연결 화면을 닫는다. 아직 대국 연결이 되지 않은 새 연결은 닫는다.
 function netWizardClose() {
@@ -381,7 +431,7 @@ function netWizardDone() { netScanStop(); net.wiz = null; }
 function netWizardBack() {
   const r = netLoad();
   netWizardClose();
-  if (r && state.play?.mode === 'net' && state.play.net?.gid === r.gid) netOpenGame(); else goPlay();
+  if (r && state.play?.mode === 'net' && state.play.net?.gid === r.gid) netOpenGame(); else { goPlay(); netAutoUpdate(); }
 }
 function netWizardError(text) {
   if (!net.wiz) { netToast('⚠️ ' + text); return; }
@@ -398,15 +448,15 @@ function netCodeBlock(code, kind) {
 function renderNetWizard() {
   const w = net.wiz, el = document.getElementById('screen-net'); if (!w || !el) return;
   const reconnect = w.purpose === 'continue';
-  const title = reconnect ? '다시 연결하기' : w.kind === 'host' ? (w.method === 'room' ? '같은 방에서 연결' : '멀리 있는 친구 초대') : '친구 초대 받기';
+  const title = reconnect ? '다시 연결하기' : w.kind === 'host' ? (w.method === 'room' ? 'QR로 연결' : '멀리 있는 친구 초대') : '친구 초대 받기';
   const conn = w.link?.state, stalled = w.link?.stalled;
   let body = '';
-  if (w.step === 'preparing') body = `<div class="net-card net-wait"><span class="net-spinner" aria-hidden="true"></span><p>연결 정보를 만드는 중이에요…</p></div>`;
+  if (w.step === 'preparing') body = `<div class="net-card net-wait"><span class="net-spinner" aria-hidden="true"></span><p>${w.camera ? '친구의 답장 QR을 찍을 카메라를 먼저 준비해요…' : '연결 정보를 만드는 중이에요…'}</p></div>`;
   else if (w.step === 'scan') body = `<div class="net-card"><p class="net-step"><b class="net-num">${w.kind === 'host' ? '②' : '①'}</b> 친구 화면의 QR을 네모 안에 맞춰요.</p><div class="net-camera"><video id="net-video" playsinline muted aria-label="카메라 화면"></video><span class="net-camera-frame" aria-hidden="true"></span></div><p class="net-scan-status" role="status">카메라를 켜는 중이에요…</p></div><div class="net-actions"><button class="action-btn secondary" onclick="netPasteDialog()">⌨️ 코드로 넣기</button>${w.returnStep ? `<button class="action-btn secondary" onclick="net.wiz.step=net.wiz.returnStep;net.wiz.returnStep=null;netScanStop();renderNetWizard()">← 내 QR 보기</button>` : ''}</div>`;
-  else if (w.step === 'show-offer' && w.method === 'room') body = `<div class="net-card"><p class="net-step"><b class="net-num">①</b> 친구 휴대폰으로 이 QR을 찍어요. <small>(친구: 대전 → 두 기기로 → 친구 QR 찍기)</small></p><div class="net-qr" data-code="${w.code}">${netQrSvg(w.code)}</div></div><div class="net-card"><p class="net-step"><b class="net-num">②</b> 친구 화면에 QR이 나오면 그 QR을 찍어요.</p>${conn === 'connecting' ? netConnectingHTML(stalled) : `<button class="action-btn green net-big" onclick="netWizardScan()">📷 친구 QR 찍기</button>`}</div>${netCodeDetails(w.code)}`;
-  else if (w.step === 'show-offer') body = `<div class="net-card"><p class="net-step"><b class="net-num">①</b> 초대장을 친구에게 보내요. <small>카톡 같은 메신저로 보내면 돼요.</small></p>${netCodeBlock(w.code, 'o')}</div><div class="net-card"><p class="net-step"><b class="net-num">②</b> 친구가 보낸 <strong>답장 코드</strong>를 붙여 넣어요.</p>${conn === 'connecting' ? netConnectingHTML(stalled) : netPasteFormHTML('답장 코드를 여기에 붙여 넣어요')}</div><p class="net-note">초대장에는 이 기기의 인터넷 주소가 들어 있어요. 아는 친구에게만 보내요. 대국 내용은 어떤 서버에도 저장되지 않아요. 답장은 5분 안에 주고받는 게 좋아요.</p>`;
-  else if (w.step === 'show-answer' && w.method === 'room') body = `<div class="net-card"><p class="net-step"><b class="net-num">②</b> 이제 친구가 이 QR을 찍으면 연결돼요.</p><div class="net-qr" data-code="${w.code}">${netQrSvg(w.code)}</div>${netWaitingHTML()}</div>${netCodeDetails(w.code)}`;
-  else if (w.step === 'show-answer') body = `<div class="net-card"><p class="net-step"><b class="net-num">②</b> 답장을 친구에게 보내요.</p>${netCodeBlock(w.code, 'a')}</div><div class="net-card"><p class="net-step"><b class="net-num">③</b> 친구가 답장을 넣으면 바로 시작해요.</p>${netWaitingHTML()}</div><p class="net-note">답장에는 이 기기의 인터넷 주소가 들어 있어요. 초대한 친구에게만 보내요.</p>`;
+  else if (w.step === 'show-offer' && w.method === 'room') body = `<div class="net-card"><p class="net-step"><b class="net-num">①</b> 친구 휴대폰으로 이 QR을 찍어요. <small>(친구: 대전 → 두 기기로 → 친구 QR 찍기)</small></p><div class="net-qr" data-code="${w.code}">${netQrSvg(w.code)}</div></div><div class="net-card"><p class="net-step"><b class="net-num">②</b> 친구 화면에 QR이 나오면 그 QR을 찍어요.</p>${conn === 'connecting' ? netConnectingHTML(stalled) : `<button class="action-btn green net-big" onclick="netWizardScan()">📷 친구 QR 찍기</button>`}</div>${netCodeDetails(w.code)}${netDiagHTML(w.link)}`;
+  else if (w.step === 'show-offer') body = `<div class="net-card"><p class="net-step"><b class="net-num">①</b> 초대장을 친구에게 보내요. <small>카톡 같은 메신저로 보내면 돼요.</small></p>${netCodeBlock(w.code, 'o')}</div><div class="net-card"><p class="net-step"><b class="net-num">②</b> 친구가 보낸 <strong>답장 코드</strong>를 붙여 넣어요.</p>${conn === 'connecting' ? netConnectingHTML(stalled) : netPasteFormHTML('답장 코드를 여기에 붙여 넣어요')}</div><p class="net-note">초대장에는 이 기기의 인터넷 주소가 들어 있어요. 아는 친구에게만 보내요. 대국 내용은 어떤 서버에도 저장되지 않아요. 답장은 5분 안에 주고받는 게 좋아요.</p>${netDiagHTML(w.link)}`;
+  else if (w.step === 'show-answer' && w.method === 'room') body = `<div class="net-card"><p class="net-step"><b class="net-num">②</b> 이제 친구가 이 QR을 찍으면 연결돼요.</p><div class="net-qr" data-code="${w.code}">${netQrSvg(w.code)}</div>${netWaitingHTML()}</div>${netCodeDetails(w.code)}${netDiagHTML(w.link)}`;
+  else if (w.step === 'show-answer') body = `<div class="net-card"><p class="net-step"><b class="net-num">②</b> 답장을 친구에게 보내요.</p>${netCodeBlock(w.code, 'a')}</div><div class="net-card"><p class="net-step"><b class="net-num">③</b> 친구가 답장을 넣으면 바로 시작해요.</p>${netWaitingHTML()}</div><p class="net-note">답장에는 이 기기의 인터넷 주소가 들어 있어요. 초대한 친구에게만 보내요.</p>${netDiagHTML(w.link)}`;
   else if (w.step === 'error') body = `<div class="net-card net-error" role="alert"><p>⚠️ ${w.error}</p></div><div class="net-actions"><button class="action-btn green" onclick="netWizardRetry()">처음부터 다시</button><button class="action-btn secondary" onclick="netWizardBack()">돌아가기</button></div>`;
   el.innerHTML = `<div class="screen-wrap net-screen"><div class="screen-header"><button class="back-btn" onclick="netWizardBack()">← ${t('btnBack')}</button><h2>${title}</h2></div>${reconnect && net.record ? `<p class="net-game-line">${netPeerName()}와 두던 대국 · ${net.record.moves.length}수째 · 이어서 둘 수 있어요</p>` : ''}${body}</div>`;
   if (w.step === 'scan') {
@@ -416,12 +466,18 @@ function renderNetWizard() {
   }
 }
 function netCodeDetails(code) { return `<details class="net-code-details"><summary>카메라가 없으면: 코드로 보내기</summary><div class="net-share"><button class="action-btn secondary" onclick="netCopy('${net.wiz?.step === 'show-answer' ? 'a' : 'o'}')">📋 코드 복사</button><button class="action-btn secondary" onclick="netPasteDialog()">⌨️ 받은 코드 넣기</button></div><textarea class="net-code-text" readonly rows="3" aria-label="연결 코드" data-code="${code}">${code}</textarea></details>`; }
+// 연결이 안 될 때 안내: 진단 한 줄 + 방법별 다음 할 일
+function netStallAdvice(link, remote) {
+  const d = link?.diag?.(), v = d ? netDiagVerdict(d.me, d.peer) : '';
+  return (v ? v + ' ' : '') + (remote ? '와이파이로 바꿔 새 초대장으로 다시 하거나, 연결 없이 편지로 둘 수 있어요.' : '두 기기를 같은 와이파이에 연결하거나, 한 휴대폰의 핫스팟에 다른 휴대폰을 연결하면 가장 잘 돼요.');
+}
 function netWaitingHTML() {
   const l = net.wiz?.link, remote = net.wiz?.method === 'remote';
-  return `<p class="net-wait-line" role="status"><span class="net-spinner small" aria-hidden="true"></span>친구를 기다리는 중이에요…</p>${l?.stalled ? `<div class="net-stall"><p>${remote ? '친구가 답장을 넣었는데도 연결되지 않으면, 통신사 망이나 학교·회사 인터넷이 직접 연결을 막고 있을 수 있어요. 와이파이로 바꿔 새 초대장으로 다시 하거나 편지로 둘 수 있어요.' : '친구가 QR을 찍었는데도 연결되지 않으면 두 기기가 같은 와이파이에 있는지 확인해요. 한 휴대폰의 핫스팟에 다른 휴대폰을 연결해도 돼요.'}</p><div class="net-actions">${remote ? '<button class="action-btn secondary" onclick="netLetterStart()">💌 편지로 두기</button>' : ''}<button class="action-btn secondary" onclick="netWizardBack()">처음으로</button></div></div>` : ''}`;
+  return `<p class="net-wait-line" role="status"><span class="net-spinner small" aria-hidden="true"></span>친구를 기다리는 중이에요…</p>${l?.stalled ? `<div class="net-stall"><p>${remote ? '친구가 답장을 넣었는데도 연결되지 않나요?' : '친구가 QR을 찍었는데도 연결되지 않나요?'} ${netStallAdvice(l, remote)}</p><div class="net-actions">${remote ? '<button class="action-btn secondary" onclick="netLetterStart()">💌 편지로 두기</button>' : ''}<button class="action-btn secondary" onclick="netWizardBack()">처음으로</button></div></div>` : ''}`;
 }
 function netConnectingHTML(stalled) {
-  return `<p class="net-wait-line" role="status"><span class="net-spinner small" aria-hidden="true"></span>연결하는 중이에요…</p>${stalled ? `<div class="net-stall"><p>아직 연결되지 않았어요. ${net.wiz.method === 'room' ? '두 기기가 같은 와이파이에 있는지 확인해요. 손님용 와이파이에서는 막힐 수 있어요. 한 휴대폰의 핫스팟에 다른 휴대폰을 연결해 봐요.' : '통신사 망이나 회사·학교 인터넷에서는 직접 연결이 막힐 수 있어요. 와이파이로 바꿔 보거나, 연결 없이 편지로 둘 수 있어요.'}</p><div class="net-actions"><button class="action-btn secondary" onclick="netWizardRetry()">새 코드로 다시</button>${net.wiz.method === 'remote' ? '<button class="action-btn secondary" onclick="netLetterStart()">💌 편지로 두기</button>' : ''}</div></div>` : ''}`;
+  const l = net.wiz?.link;
+  return `<p class="net-wait-line" role="status"><span class="net-spinner small" aria-hidden="true"></span>연결하는 중이에요…</p>${stalled ? `<div class="net-stall"><p>${l?.iceFailed ? '두 기기 사이의 직접 길을 찾지 못했어요.' : '아직 연결되지 않았어요.'} ${netStallAdvice(l, net.wiz.method === 'remote')}</p><div class="net-actions"><button class="action-btn secondary" onclick="netWizardRetry()">새 코드로 다시</button>${net.wiz.method === 'remote' ? '<button class="action-btn secondary" onclick="netLetterStart()">💌 편지로 두기</button>' : ''}</div></div>` : ''}`;
 }
 function netPasteFormHTML(placeholder) {
   return `<form class="net-paste" onsubmit="event.preventDefault();netPasteSubmit(this)"><textarea name="code" rows="3" placeholder="${placeholder}" aria-label="${placeholder}" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><p class="net-paste-error" role="alert"></p><div class="net-actions"><button type="button" class="action-btn secondary" onclick="netPasteFromClipboard(this.form)">📋 붙여넣기</button><button type="submit" class="action-btn green">연결하기</button></div></form>`;
@@ -494,14 +550,104 @@ async function netGuestStart(parsed) {
   } catch { if (net.wiz === wiz) netWizardError('초대장으로 연결 정보를 만들지 못했어요. 와이파이나 인터넷에 연결되어 있는지 확인해 주세요.'); }
 }
 
+// --- 저절로 다시 연결 (만남 장소: js/net-meet.js) ---
+// 짝 열쇠가 있는 대국이 진행 중이면(앱이 보이는 동안) 만남 장소를 듣는다. 내 연결이 끊기면 '노크'를 보낸다.
+// 처음 초대했던 쪽이 노크를 받으면 새 초대 코드를, 받았던 쪽은 그 답장 코드를 만남 장소로 보낸다. 연결되면 hello로 판을 맞춘다.
+// 연결돼 있는 동안에도 듣는 이유: 친구가 앱을 껐다 켜면 내 쪽은 아직 끊긴 줄 모른다. 친구의 노크로 바로 알아챈다.
+const NET_AUTO = { knockFast: 3000, knockSlow: 8000, knockIdle: 30000, fastFor: 60000, slowFor: 600000, retry: 20000, gap: 5000, fresh: 10000, noRelay: 8000 };
+function netAutoEnabled() { return getPlaySettings().netAuto && typeof WebSocket === 'function' && !!netCrypto()?.subtle && netRelayUrls().length > 0; }
+// 대국 화면을 보고 있거나, 끝나지 않은 대국을 하루 안에 두었을 때만 듣는다(오래 둔 대국 때문에 앱을 열 때마다 찾지 않게).
+function netAutoWanted() {
+  if (document.hidden || net.wiz?.purpose === 'new' || !netAutoEnabled()) return null;
+  const r = netLoad();
+  if (!r || !netPairValid(r.pair)) return null;
+  return netIsCurrentGame() || !netRecordOver(r) && Date.now() - (r.updatedAt || 0) < 864e5 ? r : null;
+}
+// 끝난 대국인지(1초마다 묻기 때문에 수 목록이 바뀔 때만 다시 둬 본다)
+function netRecordOver(r) {
+  const k = r.gid + '|' + r.moves.length + '|' + !!r.end;
+  if (net.overKey !== k) { net.overKey = k; net.overVal = !!r.end || netGameOver(netReplay(r.small, r.moves)); }
+  return net.overVal;
+}
+function netLinkAlive() { const l = net.link; return !!l && l.profile === activeProfile && (l.state === 'open' || l.state === 'weak'); }
+function netAutoUpdate() {
+  const a = net.auto, r = netAutoWanted(), key = r ? activeProfile + '|' + r.pair : '';
+  if (key !== a.key) {
+    netAutoStop();
+    if (!r) return;
+    a.key = key; a.meet = new NetMeet(r.pair, { onMessage: m => netAutoOnMessage(m), onStatus: () => netPaint() });
+    a.timer = setInterval(netAutoTick, 1000); a.timer?.unref?.();
+  }
+  netAutoTick();
+}
+function netAutoStop() {
+  const a = net.auto; clearInterval(a.timer); a.timer = null;
+  a.meet?.close(); a.meet = null; a.key = ''; a.since = 0;
+  if (a.link && a.link !== net.link) a.link.close();
+  a.link = null;
+}
+// search: 친구를 찾는 중 · norelay: 만남 장소에 닿지 않음 · off: 연결돼 있거나 저절로 다시 연결을 쓰지 않음
+function netAutoState() {
+  const a = net.auto; if (!a.meet || netLinkAlive()) return 'off';
+  return a.meet.relays() || !a.since || Date.now() - a.since < NET_AUTO.noRelay ? 'search' : 'norelay';
+}
+function netAutoTick() {
+  const a = net.auto; if (!a.meet) return;
+  const r = netAutoWanted();
+  if (!r || activeProfile + '|' + r.pair !== a.key) return netAutoUpdate();
+  if (netLinkAlive()) { if (a.since) { a.since = 0; netPaint(); } return; }
+  const now = Date.now();
+  if (!a.since) { a.since = now; a.lastKnock = 0; netPaint(); }
+  if (a.link && a.link.state !== 'open' && now - a.linkAt > NET_AUTO.retry * 3) { a.link.close(); a.link = null; }
+  const t = now - a.since, gap = t < NET_AUTO.fastFor ? NET_AUTO.knockFast : t < NET_AUTO.slowFor ? NET_AUTO.knockSlow : NET_AUTO.knockIdle;
+  if (now - a.lastKnock >= gap) { a.lastKnock = now; a.meet.send({ k: 'knock', g: r.gid }); }
+  if (t >= NET_AUTO.noRelay && t < NET_AUTO.noRelay + 1000) netPaint();
+}
+function netAutoOnMessage(m) {
+  const r = netLoad(); if (!r || m.g !== r.gid || !net.auto.meet) return;
+  if (m.k === 'knock') netAutoOnKnock(r);
+  else if (m.k === 'offer' && !r.inviter && typeof m.c === 'string') netAutoOnOffer(r, m.c);
+  else if (m.k === 'answer' && r.inviter && typeof m.c === 'string') netAutoOnAnswer(m.c);
+}
+// 노크 = 친구 쪽 연결이 끊겼다. 초대했던 쪽은 새 초대 코드를 보내고(방금 만든 게 있으면 다시 보낸다), 받았던 쪽은 노크로 답한다.
+async function netAutoOnKnock(r) {
+  const a = net.auto, now = Date.now();
+  if (netLinkAlive() && now - net.link.openedAt < NET_AUTO.fresh) return;   // 방금 이어졌으면 늦게 도착한 노크다
+  if (!r.inviter) { if (now - a.lastKnock > 1500) { a.lastKnock = now; a.meet.send({ k: 'knock', g: r.gid }); } return; }
+  const l = a.link;
+  if (l && l.state !== 'closed' && now - a.linkAt < NET_AUTO.retry) { if (l.state === 'new' && l.code) a.meet.send({ k: 'offer', g: r.gid, c: l.code }); return; }
+  if (a.making || now - a.madeAt < NET_AUTO.gap) return;
+  a.making = true; a.madeAt = now;
+  if (l && l !== net.link) l.close();
+  const link = a.link = netNewLink(); a.linkAt = now;
+  try { const code = await link.createOffer(r.gid, netInfoText(r.method, r.color, r.small, 'continue'), r.method); if (a.link === link && a.meet) a.meet.send({ k: 'offer', g: r.gid, c: code }); }
+  catch { if (a.link === link) { link.close(); a.link = null; } }
+  finally { a.making = false; }
+}
+async function netAutoOnOffer(r, code) {
+  const a = net.auto, p = netParseCode(code);
+  if (!p || p.kind !== 'o' || p.gid !== r.gid || p.info.purpose !== 'continue' || netOpposite(p.info.hostColor) !== r.color || p.info.small !== r.small) return;
+  if (a.answered.includes(p.nonce)) { if (a.link?.nonce === p.nonce && a.link.code) a.meet.send({ k: 'answer', g: r.gid, c: a.link.code }); return; }
+  a.answered = [...a.answered.slice(-20), p.nonce];
+  if (a.link && a.link !== net.link) a.link.close();
+  const link = a.link = netNewLink(); a.linkAt = Date.now();
+  try { const answer = await link.acceptOffer(p, r.method); if (a.link === link && a.meet) a.meet.send({ k: 'answer', g: r.gid, c: answer }); }
+  catch { if (a.link === link) { link.close(); a.link = null; } }
+}
+async function netAutoOnAnswer(code) {
+  const l = net.auto.link, p = netParseCode(code);
+  if (!p || p.kind !== 'a' || !l || l.kind !== 'o' || l.nonce !== p.nonce || l.state !== 'new' || l.pc?.signalingState !== 'have-local-offer') return;
+  try { await l.acceptAnswer(p); } catch {}
+}
+
 // --- 하던 대국 · 다시 연결 ---
 function netResume() { if (netLoad()) netOpenGame(); else goPlay(); }
 function netReconnect() {
   const r = netLoad(); if (!r) return goPlay();
-  showActivityDialog('다시 연결하기', `<p>${netPeerName(r)}와 두던 대국을 그대로 이어요. 한 사람만 ‘새 연결 만들기’를 눌러요.</p><p class="section-note">같은 방이면 QR을, 멀리 있으면 코드를 메신저로 주고받아요.</p>`, [
+  showActivityDialog('다시 연결하기', `<p>${netPeerName(r)}와 두던 대국을 그대로 이어요. 한 사람만 ‘새 연결 만들기’를 눌러요.</p><p class="section-note">가까이 있으면 QR을, 멀리 있으면 코드를 메신저로 주고받아요.${netAutoState() === 'search' ? ' 그사이에도 저절로 다시 잇기를 계속해요.' : ''}</p>`, [
     { label: r.method === 'room' ? '📷 내가 새 QR 보여 주기' : '💌 내가 새 초대장 보내기', action: () => netHostStart(r.method, 'continue') },
     { label: r.method === 'room' ? '📥 친구 QR 찍기' : '📥 친구가 보낸 코드 넣기', action: () => r.method === 'room' ? netWizardOpen({ kind: 'guest', method: 'room', purpose: 'continue', step: 'scan' }) : netPasteDialog() },
-    { label: r.method === 'room' ? '멀리서 코드로 연결' : '같은 방이면 QR로 연결', action: () => netHostStart(r.method === 'room' ? 'remote' : 'room', 'continue') },
+    { label: r.method === 'room' ? '멀리서 코드로 연결' : '가까이 있으면 QR로 연결', action: () => netHostStart(r.method === 'room' ? 'remote' : 'room', 'continue') },
   ], 'net-reconnect-overlay');
 }
 
@@ -540,18 +686,19 @@ function netApplyLetter(p) {
 // --- 대전 설정 화면의 '두 기기로' ---
 function netSetupHTML(s) {
   const method = s.netMethod === 'remote' ? 'remote' : 'room', color = ['w', 'b', 'random'].includes(s.netColor) ? s.netColor : 'w';
-  const methods = [['room', '📷', '같은 방에서', 'QR을 서로 찍어요'], ['remote', '💌', '멀리 있는 친구', '메신저로 초대장']].map(([m, icon, title, sub]) => `<button class="play-mode net-method ${method === m ? 'active' : ''}" aria-pressed="${method === m}" onclick="playSetOption('netMethod','${m}')"><span class="play-mode-icon" aria-hidden="true">${icon}</span><span class="play-mode-text"><strong>${title}</strong><small>${sub}</small></span></button>`).join('');
+  const methods = [['room', '📷', 'QR로 연결', '가까이 · 와이파이·LTE 모두'], ['remote', '💌', '초대장으로 연결', '멀리 · 메신저로 코드']].map(([m, icon, title, sub]) => `<button class="play-mode net-method ${method === m ? 'active' : ''}" aria-pressed="${method === m}" onclick="playSetOption('netMethod','${m}')"><span class="play-mode-icon" aria-hidden="true">${icon}</span><span class="play-mode-text"><strong>${title}</strong><small>${sub}</small></span></button>`).join('');
   const colors = [['w', '흰색 (먼저)'], ['b', '검은색'], ['random', '무작위']].map(([c, label]) => `<button class="play-chip ${color === c ? 'active' : ''}" aria-pressed="${color === c}" onclick="playSetOption('netColor','${c}')">${label}</button>`).join('');
-  return `<div class="play-section-title">연결 방법</div><div class="play-modes net-methods">${methods}</div><div class="play-section-title">내 색 <small class="net-hint">초대하는 사람이 정해요</small></div><div class="play-timers">${colors}</div>`;
+  const auto = s.netAuto, autoChips = [[true, '저절로 다시 연결'], [false, 'QR로만 다시 연결']].map(([on, label]) => `<button class="play-chip ${auto === on ? 'active' : ''}" aria-pressed="${auto === on}" onclick="netSetAuto(${on})">${label}</button>`).join('');
+  return `<div class="play-section-title">연결 방법</div><div class="play-modes net-methods">${methods}</div><div class="play-section-title">내 색 <small class="net-hint">초대하는 사람이 정해요</small></div><div class="play-timers">${colors}</div><div class="play-section-title">끊기면 <small class="net-hint">처음 한 번 연결한 뒤부터</small></div><div class="play-timers net-auto-chips">${autoChips}</div>`;
 }
 function netSetupCtaHTML(s) {
   const method = s.netMethod === 'remote' ? 'remote' : 'room';
-  return `<div class="play-cta"><button class="action-btn play-start" onclick="netHostRequest()">${netSetupStartCopy(method)}</button><button class="action-btn secondary" onclick="${method === 'room' ? 'netGuestScan()' : 'netPasteDialog()'}">${method === 'room' ? '📥 친구 QR 찍기 (초대 받기)' : '📥 받은 코드 넣기'}</button><p class="play-entry-note">${method === 'room' ? '두 기기가 같은 와이파이에 있어야 해요. 와이파이가 없으면 한 휴대폰의 핫스팟에 다른 휴대폰을 연결해요.' : '초대장에는 이 기기의 인터넷 주소가 들어 있어요. 아는 친구에게만 보내요. 대국 내용은 어떤 서버에도 저장되지 않아요.'}</p></div>`;
+  return `<div class="play-cta"><button class="action-btn play-start" onclick="netHostRequest()">${netSetupStartCopy(method)}</button><button class="action-btn secondary" onclick="${method === 'room' ? 'netGuestScan()' : 'netPasteDialog()'}">${method === 'room' ? '📥 친구 QR 찍기 (초대 받기)' : '📥 받은 코드 넣기'}</button><p class="play-entry-note">${method === 'room' ? '와이파이든 휴대폰 데이터(LTE)든 QR을 서로 찍으면 돼요. 휴대폰 데이터에서 잘 안 되면 한 휴대폰의 핫스팟에 다른 휴대폰을 연결해요.' : '초대장에는 이 기기의 인터넷 주소가 들어 있어요. 아는 친구에게만 보내요. 대국 내용은 어떤 서버에도 저장되지 않아요.'}${s.netAuto ? ' 끊기면 공개 중계(Nostr)에 암호화한 연결 정보를 잠깐 올려 저절로 다시 이어요.' : ''}</p></div>`;
 }
 function netSavedCardHTML() {
   const r = netOngoing(); if (!r) return '';
   const g = netReplay(r.small, r.moves), mine = g && g.turn === r.color, conn = net.link?.profile === activeProfile ? netConnState() : 'none';
-  return `<button class="content-card choice-card net-saved-card" onclick="netResume()"><span class="choice-icon" aria-hidden="true">📡</span><span class="choice-text"><strong>${netPeerName(r)}와 두던 대국 이어 두기</strong><span>${r.moves.length}수째 · ${mine ? '내 차례예요' : '친구 차례예요'} · ${conn === 'open' || conn === 'away' ? '🟢 연결됨' : '연결 끊김'}</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`;
+  return `<button class="content-card choice-card net-saved-card" onclick="netResume()"><span class="choice-icon" aria-hidden="true">📡</span><span class="choice-text"><strong>${netPeerName(r)}와 두던 대국 이어 두기</strong><span>${r.moves.length}수째 · ${mine ? '내 차례예요' : '친구 차례예요'} · ${conn === 'open' || conn === 'away' ? '🟢 연결됨' : netAutoState() === 'search' ? '🔎 친구 찾는 중' : '연결 끊김'}</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`;
 }
 
 // 홈: 두 기기 대국이 내 차례이거나 지금 연결돼 있으면 바로 가는 카드
@@ -579,7 +726,7 @@ function netChannelOpen() {
   return netChannel;
 }
 function netBoot() {
-  netChannelOpen();
+  netChannelOpen(); netAutoUpdate();
   const m = /[#&]net=(CK1[oam]\.[A-Za-z0-9_-]+)/.exec(window.location.hash || ''); if (!m) return;
   try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch {}
   const code = m[1];

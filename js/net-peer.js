@@ -1,5 +1,6 @@
 // ===== 두 기기 직접 연결 (docs/TWO_DEVICE_PLAY.md) =====
-// 서버 없이 WebRTC 데이터 채널로 두 기기를 잇는다. 연결 정보는 사람이 옮긴다: 같은 방은 QR, 멀리서는 메신저.
+// 서버 없이 WebRTC 데이터 채널로 두 기기를 잇는다. 처음 연결 정보는 사람이 옮긴다: 가까이는 QR(와이파이·LTE 모두), 멀리서는 메신저.
+// 그 뒤로 끊기면 만남 장소(js/net-meet.js)로 새 연결 정보를 주고받아 저절로 다시 잇는다.
 // 코드: 'CK1' + 종류(o 초대 · a 답장 · m 편지) + '.' + base64url(본문). 본문은 '|'로 나눈 ASCII 글이다.
 // 초대·답장 본문: 1|종류|연결번호|대국번호|정보|ice-ufrag|ice-pwd|지문(sha-256, base64url)|setup|mid|후보들
 const NET_CODE_RE = /CK1([oam])\.([A-Za-z0-9_-]{8,4000})/;
@@ -38,12 +39,51 @@ function netSdpSummary(sdp) {
     if (!type || !(port > 0 && port < 65536) || /^169\.254\./.test(addr) || /^fe80:/i.test(addr)) continue;
     const m = addr.match(NET_MDNS_RE), enc = (m ? 'm' + m.slice(1).join('').toLowerCase() : type + addr) + ',' + port;
     if (seen.has(enc)) continue; seen.add(enc);
-    const v6 = !m && addr.includes(':');
-    found.push({ enc, rank: (type === 'r' ? 30 : v6 ? 20 : type === 's' ? 10 : 0) + found.length });
+    found.push({ enc, cls: type === 'r' ? 'relay' : m ? 'lan' : netAddrClass(addr) });
   }
-  const summary = { ufrag: val('a=ice-ufrag:'), pwd: val('a=ice-pwd:'), fp: netBytesToB64url(Uint8Array.from(hex, h => parseInt(h, 16))), setup: val('a=setup:'), mid: val('a=mid:') || '0', cands: found.sort((a, b) => a.rank - b.rank).slice(0, NET_LIMITS.candidates).map(c => c.enc) };
+  const summary = { ufrag: val('a=ice-ufrag:'), pwd: val('a=ice-pwd:'), fp: netBytesToB64url(Uint8Array.from(hex, h => parseInt(h, 16))), setup: val('a=setup:'), mid: val('a=mid:') || '0', cands: netPickCandidates(found) };
   if (!netSummaryValid(summary)) throw Error('sdp');
   return summary;
+}
+// 후보는 8개까지만 담는다. 같은 와이파이 길(lan) · 인터넷 IPv4(v4) · 인터넷 IPv6(v6) · 중계(relay)를 돌아가며 하나씩 골라
+// 어느 한 종류가 많아도 다른 길이 빠지지 않게 한다(휴대폰 데이터에서는 IPv6 길이 가장 잘 뚫린다).
+function netPickCandidates(found) {
+  const order = ['lan', 'v4', 'v6', 'relay'], queues = order.map(k => found.filter(c => c.cls === k)), out = [];
+  while (out.length < NET_LIMITS.candidates && queues.some(q => q.length)) for (const q of queues) if (q.length && out.length < NET_LIMITS.candidates) out.push(q.shift().enc);
+  return out;
+}
+// 주소 종류: 집·통신사 안쪽 주소(사설·CGNAT·ULA)는 같은 와이파이 길, 나머지는 인터넷 길.
+function netAddrClass(addr) {
+  if (NET_MDNS_RE.test(addr)) return 'lan';
+  if (addr.includes(':')) return /^f[cd]/i.test(addr) ? 'lan' : 'v6';
+  return /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/.test(addr) ? 'lan' : 'v4';
+}
+// 연결 진단: 이 기기(내 SDP)나 친구(받은 코드의 후보)가 가진 길을 센다.
+// sym: 같은 기기 소켓이 STUN 서버마다 다른 바깥 포트를 받으면 '바뀌는 형'(대칭형 NAT) — 서로 직접 잇기 어렵다.
+function netDiagSdp(sdp) {
+  const d = { lan: 0, v4: 0, v6: 0, relay: 0, sym: null }, groups = new Map();
+  for (const line of String(sdp || '').split(/\r?\n/)) {
+    if (!line.startsWith('a=candidate:')) continue;
+    const p = line.slice(12).trim().split(/\s+/);
+    if (p.length < 8 || p[1] !== '1' || p[2].toLowerCase() !== 'udp' || /^169\.254\./.test(p[4]) || /^fe80:/i.test(p[4])) continue;
+    const cls = p[7] === 'relay' ? 'relay' : netAddrClass(p[4]); d[cls]++;
+    if (p[7] === 'srflx' && cls === 'v4') {
+      const ri = p.indexOf('raddr'), pi = p.indexOf('rport'), rel = ri > 0 && pi > 0 && p[ri + 1] !== '0.0.0.0' ? p[ri + 1] + ' ' + p[pi + 1] : '*';
+      if (!groups.has(rel)) groups.set(rel, new Set()); groups.get(rel).add(p[4] + ' ' + p[5]);
+    }
+  }
+  if (groups.size) d.sym = [...groups.values()].some(set => set.size > 1);
+  return d;
+}
+function netDiagCands(cands) {
+  const d = { lan: 0, v4: 0, v6: 0, relay: 0, sym: null }, srflx = [];
+  for (const c of Array.isArray(cands) ? cands : []) {
+    if (!netCandidateValid(c)) continue;
+    const [addr, port] = c.slice(1).split(','), cls = c[0] === 'r' ? 'relay' : c[0] === 'm' ? 'lan' : netAddrClass(addr); d[cls]++;
+    if (c[0] === 's' && cls === 'v4') srflx.push([addr, port]);
+  }
+  if (srflx.length) d.sym = srflx.some(([a, p]) => srflx.some(([b, q]) => a === b && p !== q));
+  return d;
 }
 function netCandidateValid(c) {
   const m = /^([hsrm])([^,]{1,64}),(\d{1,5})$/.exec(c); if (!m || !(Number(m[3]) > 0 && Number(m[3]) < 65536)) return false;
@@ -110,15 +150,17 @@ function netShareURL(code) {
   return base + '#net=' + code;
 }
 
-// ICE 후보를 모은다. 같은 방은 집 안 주소만 있어도 되니 짧게, 멀리서는 공인 주소(srflx)를 조금 더 기다린다.
-function netGather(pc, method) {
+// ICE 후보를 모은다. 와이파이든 휴대폰 데이터든 같은 방식이다: 공인 주소(srflx)가 처음 오면 1.5초 더 기다려
+// 두 번째 STUN 서버의 답(바뀌는 형인지 알 수 있다)과 IPv6 주소까지 담는다. 길어도 5초.
+const NET_GATHER = { afterSrflx: 1500, max: 5000 };
+function netGather(pc) {
   return new Promise(resolve => {
     if (pc.iceGatheringState === 'complete') return resolve();
     let early = null;
     const done = () => { clearTimeout(timer); clearTimeout(early); pc.removeEventListener('icegatheringstatechange', onState); pc.removeEventListener('icecandidate', onCand); resolve(); };
     const onState = () => { if (pc.iceGatheringState === 'complete') done(); };
-    const onCand = e => { if (!e.candidate) return done(); if (/ typ srflx /.test(e.candidate.candidate) && !early) early = setTimeout(done, 500); };
-    const timer = setTimeout(done, method === 'remote' ? 6000 : 2500);
+    const onCand = e => { if (!e.candidate) return done(); if (/ typ srflx /.test(e.candidate.candidate) && !early) early = setTimeout(done, NET_GATHER.afterSrflx); };
+    const timer = setTimeout(done, NET_GATHER.max);
     pc.addEventListener('icegatheringstatechange', onState); pc.addEventListener('icecandidate', onCand);
   });
 }
@@ -128,7 +170,7 @@ function netGather(pc, method) {
 // 데이터 채널이 살아 있으면 SCTP가 메시지를 다시 보내 준다. 끊긴 동안 잃은 수는 앱이 다시 연결할 때 수 목록으로 맞춘다.
 class NetLink {
   constructor(handlers = {}) {
-    Object.assign(this, { h: handlers, state: 'new', pc: null, dc: null, nonce: null, kind: null, code: '', lastHeard: 0, lastPing: 0, weakSince: 0, timer: null, connectAt: 0, stalled: false, peerAway: false, muteUntil: 0, reason: '' });
+    Object.assign(this, { h: handlers, state: 'new', pc: null, dc: null, nonce: null, kind: null, code: '', lastHeard: 0, lastPing: 0, weakSince: 0, timer: null, connectAt: 0, stalled: false, iceFailed: false, peerAway: false, muteUntil: 0, reason: '', peerCands: null, openedAt: 0 });
   }
   _setup() {
     const pc = this.pc = new RTCPeerConnection({ iceServers: netIceServers() });
@@ -137,33 +179,53 @@ class NetLink {
     dc.onclose = () => this._lost('closed');
     dc.onmessage = e => this._receive(e.data);
     pc.onconnectionstatechange = () => { const s = pc.connectionState; if (s === 'failed' || s === 'closed') this._broken(s); else if (s === 'disconnected') this._weak(); };
-    pc.oniceconnectionstatechange = () => { const s = pc.iceConnectionState; if (s === 'failed') this._broken('failed'); else if (s === 'disconnected') this._weak(); };
+    pc.oniceconnectionstatechange = () => {
+      const s = pc.iceConnectionState;
+      // 답장까지 넣은 쪽(초대한 쪽)에서 길 찾기가 실패하면 더 기다려도 소용없다. 바로 안내한다.
+      if (s === 'failed' && this.state === 'connecting' && this.kind === 'o') { this.iceFailed = true; this.stalled = true; this._emit(); }
+      if (s === 'failed') this._broken('failed'); else if (s === 'disconnected') this._weak();
+    };
     this.timer = setInterval(() => this._tick(), 1000);
   }
   async createOffer(gid, info, method) {
     this.kind = 'o'; this.nonce = netRandom(6); this.method = method; this._setup();
     await this.pc.setLocalDescription(await this.pc.createOffer());
-    await netGather(this.pc, method);
+    await netGather(this.pc);
     return this.code = netMakeCode('o', this.nonce, gid, info, this.pc.localDescription.sdp);
   }
   async acceptOffer(parsed, method) {
-    this.kind = 'a'; this.nonce = parsed.nonce; this.method = method; this._setup();
+    this.kind = 'a'; this.nonce = parsed.nonce; this.method = method; this.peerCands = parsed.cands; this._setup();
     await this.pc.setRemoteDescription({ type: 'offer', sdp: netBuildSdp(parsed) });
     await this.pc.setLocalDescription(await this.pc.createAnswer());
-    await netGather(this.pc, method);
+    await netGather(this.pc);
     this._connecting();
     return this.code = netMakeCode('a', this.nonce, parsed.gid, '-', this.pc.localDescription.sdp);
   }
   async acceptAnswer(parsed) {
     if (this.kind !== 'o' || parsed.kind !== 'a' || parsed.nonce !== this.nonce || this.pc?.signalingState !== 'have-local-offer') throw Error('nonce');
+    this.peerCands = parsed.cands;
     await this.pc.setRemoteDescription({ type: 'answer', sdp: netBuildSdp(parsed) });
     this._connecting();
+  }
+  // 지금 쓰는 길: lan(같은 와이파이) · net(인터넷 직접) · relay(중계). 진단 표시용.
+  async route() {
+    try {
+      const stats = await this.pc.getStats(), by = new Map(); let pair = null;
+      stats.forEach(s => by.set(s.id, s));
+      stats.forEach(s => { if (s.type === 'transport' && s.selectedCandidatePairId) pair = by.get(s.selectedCandidatePairId) || pair; });
+      if (!pair) stats.forEach(s => { if (!pair && s.type === 'candidate-pair' && s.state === 'succeeded' && s.nominated) pair = s; });
+      const l = pair && by.get(pair.localCandidateId), r = pair && by.get(pair.remoteCandidateId); if (!l || !r) return null;
+      const la = String(l.address || l.ip || ''), ra = String(r.address || r.ip || ''), v6 = la.includes(':') || ra.includes(':');
+      const near = a => !a || netAddrClass(a) === 'lan';
+      const kind = l.candidateType === 'relay' || r.candidateType === 'relay' ? 'relay' : l.candidateType === 'host' && (r.candidateType === 'host' || near(ra)) && near(la) && near(ra) ? 'lan' : 'net';
+      return { kind, v6 };
+    } catch { return null; }
   }
   _connecting() { if (this.state === 'new') { this.state = 'connecting'; this.connectAt = Date.now(); this._emit(); } }
   _emit() { this.h.onState?.(this); }
   _open() {
     if (this.state === 'closed') return;
-    this.state = 'open'; this.lastHeard = Date.now(); this.stalled = false;
+    this.state = 'open'; this.lastHeard = this.openedAt = Date.now(); this.stalled = false;
     this.h.onOpen?.(this); this._emit();
   }
   _touch() {
@@ -208,6 +270,7 @@ class NetLink {
     if (this.dc?.readyState !== 'open' || Date.now() < this.muteUntil) return false;
     try { this.dc.send(JSON.stringify(obj)); return true; } catch { return false; }
   }
+  diag() { return { me: this.pc?.localDescription ? netDiagSdp(this.pc.localDescription.sdp) : null, peer: this.peerCands ? netDiagCands(this.peerCands) : null }; }
   // 앱이 다시 보일 때: 멈춰 있던 동안의 조용함을 끊김으로 세지 않는다.
   wake() { if (this.state === 'open' || this.state === 'weak') this.lastHeard = Date.now(); }
   close() {
@@ -226,6 +289,16 @@ function netQrSvg(text) {
   const n = qr.getModuleCount(), q = 4; let d = '';
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + q} ${r + q}h1v1h-1z`;
   return `<svg class="net-qr-svg" viewBox="0 0 ${n + q * 2} ${n + q * 2}" role="img" aria-label="연결 QR 코드" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+
+// --- 카메라 미리 켜기 ---
+// 브라우저는 카메라를 허락받은 페이지에만 기기의 실제 주소(핫스팟·IPv6 포함)를 후보로 알려 준다. 그 밖에는 이름만 알려 준다(mDNS).
+// QR로 연결할 때는 어차피 답장 QR을 찍어야 하니, 연결 정보를 만들기 전에 카메라를 한 번 켰다 끈다. 거절해도 연결은 계속한다.
+async function netCameraWarm(wait = 10000) {
+  if (!navigator.mediaDevices?.getUserMedia) return false;
+  try { if ((await navigator.permissions?.query?.({ name: 'camera' }))?.state === 'denied') return false; } catch {}
+  const ask = navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(s => { s.getTracks().forEach(t => t.stop()); return true; }, () => false);
+  return Promise.race([ask, new Promise(r => setTimeout(() => r(false), wait))]);
 }
 
 // --- QR 찍기 ---

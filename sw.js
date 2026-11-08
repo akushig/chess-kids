@@ -54,6 +54,7 @@ const ASSETS = [
   "./js/vendor/qrcode.js",
   "./js/vendor/jsQR.js",
   "./js/net-peer.js",
+  "./js/net-meet.js",
   "./js/app-net.js",
   "./js/app-accessibility.js",
   "./manifest.json",

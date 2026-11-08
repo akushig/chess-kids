@@ -43,7 +43,7 @@ function getPlaySettings() {
     levelVersion: AI_DIFFICULTY_VERSION,
     timer: PLAY_TIMER_OPTIONS.includes(s.timer) ? s.timer : 0,
     help:s.help !== false, autoMove:!!s.autoMove, small:!!s.small, face:s.face !== false,
-    view:s.view==='net'?'net':null, netMethod:s.netMethod==='remote'?'remote':'room', netColor:['w','b','random'].includes(s.netColor)?s.netColor:'w',
+    view:s.view==='net'?'net':null, netMethod:s.netMethod==='remote'?'remote':'room', netColor:['w','b','random'].includes(s.netColor)?s.netColor:'w', netAuto:s.netAuto!==false,
   };
 }
 function savePlaySettings(s) {
@@ -99,7 +99,7 @@ function renderPlaySetup() {
   const s = getPlaySettings();
   // 상대 고르기: 두 카드가 같은 구조(아이콘 + 제목 + 한 줄 설명)라 글 길이와 상관없이 높이가 같다.
   const netView = s.view === 'net', picked = netView ? 'net' : s.mode;
-  const modes = [['ai', '🤖', t('playModeAi'), '10단계 중에서 골라요', t('playModeAi')], ['friend', '👫', '함께 두기', '같은 기기에서 번갈아', t('playModeFriend')], ['net', '📱', '두 기기로', '같은 방은 QR · 멀리 있으면 초대장', '두 기기로 대전']].map(([mode, icon, title, sub, label]) => `
+  const modes = [['ai', '🤖', t('playModeAi'), '10단계 중에서 골라요', t('playModeAi')], ['friend', '👫', '함께 두기', '같은 기기에서 번갈아', t('playModeFriend')], ['net', '📱', '두 기기로', '가까이는 QR · 멀리는 초대장', '두 기기로 대전']].map(([mode, icon, title, sub, label]) => `
     <button class="play-mode ${mode === 'net' ? 'play-mode-net ' : ''}${picked === mode ? 'active' : ''}" aria-pressed="${picked === mode}" aria-label="${label}" onclick="playSetOption('mode', '${mode}')">
       <span class="play-mode-icon" aria-hidden="true">${icon}</span><span class="play-mode-text"><strong>${title}</strong><small>${sub}</small></span>
     </button>
