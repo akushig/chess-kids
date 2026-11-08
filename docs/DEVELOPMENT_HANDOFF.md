@@ -307,5 +307,6 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 - 코드: 연결 `js/net-peer.js`, 대국·화면 `js/app-net.js`, QR `js/vendor/qrcode.js`·`js/vendor/jsQR.js`(필요할 때만 불러옴). 대전 설정에 세 번째 상대 카드 '📱 두 기기로', 새 화면 `screen-net`.
 - 저장: `net_game_v1`(프로필별, 놀이 저장과 분리). 세션 형식·프로필 파일 형식 번호는 바꾸지 않았다(가져올 때 새 키 검사만 추가).
 - 검증: 단위 170/170(새 `tests/net.test.cjs` 10개), 브라우저 17종(새 `tests/net-browser.cjs` 8장면). 스크린숏 `docs/product-review/two-device/`.
+- 배포: `dca12cc`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42469272086) 성공, 공개 사이트 `2026.11.08.4` 확인. 공개 주소로 `net-browser`(8장면)·`browser-final`(오프라인 포함)·`product-completion-browser`를 다시 돌려 통과.
 - 주의: `scripts/fast-load.cjs`는 앱 코드를 Node 실제 전역에서 돌린다. Node 20에도 `BroadcastChannel`이 있으므로 이런 핸들은 불러올 때 만들지 말고 화면 준비(DOMContentLoaded) 뒤에 연다(미리 열면 `course.test.cjs`가 끝나지 않는다).
 
