@@ -296,3 +296,16 @@ A-1 홈 직접 진입 (`js/app-home.js`, `js/app-session.js`, `js/app-play.js`, 
 - 이전 원칙의 변화: 2026-11-04까지 "현재 기능 전부 무료"였다. 이번에도 **기존 기능은 하나도 잠그지 않았다.** 유료는 새로 만든 승급 과정(일부)과 코치(일부)뿐이다. 꾸미기는 계속 무료.
 - 검증: 단위 160/160, 브라우저 16종(새 `tests/premium-browser.cjs` 포함).
 - 배포: `56d586a`까지 푸시, [Pages 실행](https://github.com/akushig/chess-kids/actions/runs/42412607325) 성공, 공개 사이트 `2026.11.08.3` 확인. 공개 주소로 `browser-final`(오프라인 포함)·`premium-browser`·`product-completion-browser`를 다시 돌려 통과.
+
+## 17. 두 기기 대전: 같은 방(QR) · 멀리서(초대장) · 2026-11-08
+
+요청: "같은방, 멀리서 실시간 두가지 방법으로 구현해줘. 먼저 체스 대전에 적용해줘. 잠깐 인터넷이 끊기더라도 재연결 등의 폴백 로직등도 구현해줘."
+
+상태 구분: **구현 완료 · 자동 검증 완료(한 컴퓨터 안 브라우저 두 개, 가짜 카메라) · 실제 휴대폰 두 대 확인 없음 · 서버 없음(공개 STUN만)**. 빌드 `2026.11.08.4`.
+
+- 진입 문서: [두 기기 대전](TWO_DEVICE_PLAY.md) — 쓰는 법, 연결 코드, 폴백 5단계(자동 복구 → 끊김 → 다시 연결 → 새로고침 뒤 이어 두기 → 편지), 수 목록 맞추기 규칙, 아동 보호, 저장, 한계.
+- 코드: 연결 `js/net-peer.js`, 대국·화면 `js/app-net.js`, QR `js/vendor/qrcode.js`·`js/vendor/jsQR.js`(필요할 때만 불러옴). 대전 설정에 세 번째 상대 카드 '📱 두 기기로', 새 화면 `screen-net`.
+- 저장: `net_game_v1`(프로필별, 놀이 저장과 분리). 세션 형식·프로필 파일 형식 번호는 바꾸지 않았다(가져올 때 새 키 검사만 추가).
+- 검증: 단위 170/170(새 `tests/net.test.cjs` 10개), 브라우저 17종(새 `tests/net-browser.cjs` 8장면). 스크린숏 `docs/product-review/two-device/`.
+- 주의: `scripts/fast-load.cjs`는 앱 코드를 Node 실제 전역에서 돌린다. Node 20에도 `BroadcastChannel`이 있으므로 이런 핸들은 불러올 때 만들지 말고 화면 준비(DOMContentLoaded) 뒤에 연다(미리 열면 `course.test.cjs`가 끝나지 않는다).
+
