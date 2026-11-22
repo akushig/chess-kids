@@ -1,0 +1,16 @@
+Use case: stylized-concept
+Asset type: ONE transparent game sprite atlas.
+Create exactly one SQUARE sprite sheet at the largest practical resolution (ideally 2048x2048), arranged as a very precise 6 columns by 6 rows REGULAR grid of 36 isolated chess sculptures, with genuinely transparent alpha background.
+THEME:
+Exquisite folded-paper classic chess sculptures, crisp faceted origami with visible elegant folded edges and soft ambient occlusion, high-end 3D product miniature. WHITE: warm cream paper with subtle gold folded edges and soft peach inner folds. BLACK: deep indigo paper with pale blue silver folded edges. King a folded column with unmistakable cross-shaped finial; queen pointed folded crown; rook a folded square castle tower with crenellations; bishop folded slotted tall mitre; knight an unmistakable folded horse head; pawn folded round-like polygon ball on a short pedestal. Matching folded polygon circular bases, readable silhouettes, no printed patterns or text.
+GRID: six columns in exactly this order: KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN.
+Six rows in exactly this order:
+1 white neutral upright;
+2 black neutral upright;
+3 same white pieces in attack pose, subtle whole-body lean RIGHT up to 10 degrees;
+4 same black pieces in attack pose, subtle lean RIGHT;
+5 same white pieces in recoil pose, subtle whole-body lean LEFT up to 10 degrees;
+6 same black pieces in recoil pose, subtle lean LEFT.
+Every row MUST contain all six kinds, no omissions or duplicate kinds. Exactly 36 pieces. Pose rows must retain precisely the same identities, proportions, ornaments, palette, and bases as neutral rows. Classic pieces are rigid sculptures, attack/recoil means a whole-piece lean, never bending or melting the object.
+Camera: fixed near-front orthographic slight top view, matching camera in every cell, soft studio light upper left, polished crisp mobile-game quality, strong silhouette readable at 40px.
+Layout is a strict technical texture atlas, not a decorative illustration. Each item entirely inside its own equal square cell. Center at each exact cell midpoint horizontally; bottom of base at 85% cell height. ALL poses keep the same base contact height. Maximum king height 76% cell height, queen 70%, bishop and knight 66%, rook 60%, pawn 53%. Maximum sprite width 72% of a cell. Large empty transparent gutters between columns and rows; never touch boundaries. All bases fully visible. A tiny attached contact shadow is okay. No diffuse backdrop, no scene, no floor plane, no board, no labels, no text, no numbers, no grid lines, no watermark, no detached effects or particles. No cropped crowns or bases. Transparent background, not a painted checkerboard.
