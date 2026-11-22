@@ -48,6 +48,8 @@ npm run test:browser
 
 ## 설계와 개발 기록
 
+[Codex CLI 이미지 생성·아틀라스 재사용 가이드](docs/IMAGE_GENERATION_WORKFLOW.md)에는 한 번의 생성 요청에 여러 자산을 담는 방법, 복사용 요청문, 원본 보존·분리·모션·검수 절차를 정리했습니다.
+
 [개발 반영 내역](docs/IMPLEMENTATION.md) · [최초 진단](docs/product-review/README.md) · [경험 설계](docs/product-review/DESIGN.md) · [초기 작업 계획](docs/product-review/BACKLOG.md)
 
 자동 검수와 브라우저 화면 검수는 완료했습니다. 어린이·성인의 실제 재미와 도움 빈도, 실제 iOS/Android 기기와 한국어 음성 품질은 플레이테스트로 확인해야 합니다.

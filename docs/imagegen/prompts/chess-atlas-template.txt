@@ -1,0 +1,36 @@
+Use case: stylized-concept
+Asset type: ONE production game sprite atlas with genuine transparent alpha.
+Primary request: Create exactly 36 isolated chess sprites in ONE square image, arranged as exactly SIX columns by SIX rows. This is a technical sprite sheet for automatic slicing, not a scene or a board.
+
+STYLE (replace this block for a new theme; keep the layout below):
+Elegant classic chess silhouettes as crisp flat 2D cut-paper illustrations. Layered paper shapes, restrained texture, clean readable contours, consistent front three-quarter viewpoint, no photorealistic scene. WHITE team uses warm ivory and coral with ochre accents. BLACK team uses deep navy and teal with pale cyan accents. Keep the two teams clearly distinct on both light and dark board squares.
+
+ROLE MARKERS:
+KING: large cross above a tall royal silhouette.
+QUEEN: clearly pointed crown, distinct from the king's cross.
+ROOK: wide squat tower with square crenellations.
+BISHOP: pointed mitre with a visible diagonal slit.
+KNIGHT: recognizable horse head, no rider.
+PAWN: smallest simple round-headed silhouette.
+Preserve these role markers in every pose. Keep the viewpoint and construction consistent.
+
+EXACT GRID AND ORDER:
+Every row, left to right: KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN.
+Row 1: WHITE team, neutral idle pose.
+Row 2: BLACK team, neutral idle pose.
+Row 3: SAME WHITE pieces, attack pose with a restrained forward lean toward RIGHT.
+Row 4: SAME BLACK pieces, attack pose toward RIGHT.
+Row 5: SAME WHITE pieces, hit/recoil pose with a restrained backwards lean toward LEFT.
+Row 6: SAME BLACK pieces, hit/recoil toward LEFT.
+The same piece must retain its identity, color palette, role marker and design across all three poses. No extra objects, weapons, injuries, lettering, or particles. For rigid materials, tilt the entire piece rather than bending its construction.
+
+FRAMING AND SAFE MARGINS:
+Use a square sheet, ideally around 2048x2048 if supported. Arrange all rows and columns with identical spacing. Center each piece horizontally inside its own cell. Align every piece's feet or base at 84% of cell height.
+Maximum heights within a cell: king 72%, queen 68%, rook 59%, bishop and knight 65%, pawn 52%.
+Maximum width, INCLUDING attack/recoil poses, crowns and glow: 70% of cell width.
+Leave EMPTY transparent gutters on ALL four sides of every cell. Keep crowns, ears, bases, feet and effects entirely inside the cell. No overlap, no cropped extremities, no sprite crossing a cell boundary.
+Make all six roles recognizable at a 40px mobile display size.
+
+BACKGROUND AND EXCLUSIONS:
+Genuine transparent alpha background, NOT a drawn checkerboard. Do not draw the board, floor, scene, background squares, cell borders, grid lines, labels, cell numbers, text, logos, watermark, detached props, or external particles. No drop shadows that cross cell boundaries.
+Exactly 36 complete sprites, all six roles in each of the six rows, ONE output image.

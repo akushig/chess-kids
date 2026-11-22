@@ -1,0 +1,20 @@
+Use case: stylized-concept
+Asset type: ONE transparent icon atlas for automatic slicing.
+Primary request: Create exactly SIXTEEN different fruit icons in ONE square sheet, exactly FOUR equal columns by FOUR equal rows.
+
+STYLE (replace this block for a different project):
+Flat cut-paper illustration, clean solid silhouettes, restrained warm colors, subtle paper texture, consistent viewpoint and lighting. Each icon is recognizable as a small 48px application asset. No text or faces.
+
+CELL CONTENTS (replace the contents, preserving four items per row):
+Row 1, left to right: apple, pear, strawberry, grape bunch.
+Row 2, left to right: banana, orange, lemon, peach.
+Row 3, left to right: cherry pair, pineapple, whole watermelon, kiwi half.
+Row 4, left to right: mango, blueberry cluster, raspberry, plum.
+Each named fruit appears in exactly one cell. Keep clusters and pairs together inside their own cell. Do not add extra fruits between cells.
+
+LAYOUT:
+Each icon is centered in its own cell, with comparable apparent size. The complete silhouette occupies at most 70% of cell width and 70% of cell height. Keep generous EMPTY transparent margins on all four sides. No overlap, clipping, or parts extending across cell boundaries. Use identical row and column spacing.
+
+BACKGROUND AND EXCLUSIONS:
+Genuine transparent alpha, not a drawn checkerboard. No plates, baskets, table, scene, background squares, cell borders, grid lines, labels, numbers, lettering, logo, or watermark. No shadows crossing cell boundaries.
+Exactly sixteen complete icons, ONE output image.
