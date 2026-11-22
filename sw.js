@@ -1,5 +1,5 @@
 importScripts('./js/version.js');
-const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-themes-1';
+const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-playful-2';
 const ASSETS = [
   "./",
   "./index.html",
@@ -13,6 +13,12 @@ const ASSETS = [
   "./js/skin-classic.js",
   "./js/skin-royal.js",
   "./js/skin-themes.js",
+  "./js/skin-playful.js",
+  "./icons/skins/plush/atlas.webp",
+  "./icons/skins/jelly/atlas.webp",
+  "./icons/skins/crayon/atlas.webp",
+  "./icons/skins/motors/atlas.webp",
+  "./icons/skins/clouds/atlas.webp",
   "./icons/skins/cosmic/atlas.webp",
   "./icons/skins/dragon/atlas.webp",
   "./icons/skins/ocean/atlas.webp",

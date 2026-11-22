@@ -1,0 +1,83 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "skin": "plush",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "jelly",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "crayon",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "motors",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "clouds",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "plush",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "jelly",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "crayon",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "motors",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "clouds",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "plush",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "jelly",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "crayon",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "motors",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "clouds",
+      "passed": true
+    }
+  ],
+  "offline": 16,
+  "migration": true,
+  "default": "royal",
+  "errors": []
+}

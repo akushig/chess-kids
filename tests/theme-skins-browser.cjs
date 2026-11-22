@@ -18,8 +18,11 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
      }
     }}).observe(document.body,{childList:true,subtree:true});
    });
-   const themes=await page.evaluate(()=>[{id:'royal',name:'로열 클래식'},...FREE_SPRITE_THEMES.map(({id,name})=>({id,name}))]);
-   await page.evaluate(()=>goWorkshop('skin'));assert.equal(await page.locator('.workshop-card').count(),11);assert.equal(await page.evaluate(()=>getAllStars()),0);
+   const allThemes=await page.evaluate(()=>[{id:'royal',name:'로열 클래식'},...FREE_SPRITE_THEMES.map(({id,name})=>({id,name}))]);
+   const wanted=process.env.CHESS_THEME_IDS?.split(',');
+   const themes=wanted?allThemes.filter(theme=>wanted.includes(theme.id)):allThemes;
+   assert.equal(allThemes.length,16);
+   await page.evaluate(()=>goWorkshop('skin'));assert.equal(await page.locator('.workshop-card').count(),16);assert.equal(await page.evaluate(()=>getAllStars()),0);
    if(width===360){
     await page.evaluate(()=>Promise.all(Object.values(SPRITE_SKINS).map(async theme=>{const im=new Image();im.src=theme.atlas;await im.decode();})));
     await page.screenshot({path:path.join(output,'workshop-mobile.png'),fullPage:true,animations:'disabled'});
@@ -55,16 +58,16 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
     await page.waitForFunction(()=>!state.animating);assert.equal(await page.evaluate(()=>state.game.board[3][3]),'wN');
     assert.equal(await page.locator('.royal-mover,.royal-victim,.royal-impact').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    if(width===360&&['cosmic','animals','elements','origami'].includes(theme.id))await page.screenshot({path:path.join(output,theme.id+'-mobile.png'),fullPage:true,animations:'disabled'});
+    if(width===360&&['plush','jelly','crayon','motors','clouds'].includes(theme.id))await page.screenshot({path:path.join(output,theme.id+'-mobile.png'),fullPage:true,animations:'disabled'});
     results.push({width,skin:theme.id,passed:true});
    }
-   await page.evaluate(()=>{goWorkshop();openSkinSelector();});assert.equal(await page.locator('.skin-card').count(),11);await page.locator('.dialog-close').click();
-   await page.evaluate(()=>goReward());assert.equal(await page.locator('.roadmap-item').count(),11);
+   await page.evaluate(()=>{goWorkshop();openSkinSelector();});assert.equal(await page.locator('.skin-card').count(),16);await page.locator('.dialog-close').click();
+   await page.evaluate(()=>goReward());assert.equal(await page.locator('.roadmap-item').count(),16);
    await page.evaluate(()=>{safeStore.setItem('skin','classic');});await page.reload({waitUntil:'domcontentloaded'});
    assert.equal(await page.evaluate(()=>currentSkin),'royal');
    assert.equal(await page.evaluate(()=>safeStore.getItem('skin')),'royal');
    await page.evaluate(()=>switchProfile(createProfile('새 가족','🐱').id));assert.equal(await page.evaluate(()=>currentSkin),'royal');
-   await context.close();console.log(`Passed ${width}px: 11 skins, selection, motion, migration and hidden lists.`);
+   await context.close();console.log(`Passed ${width}px: ${themes.length} skins, selection, motion, migration and hidden lists.`);
   }
   const context=await browser.newContext(),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://fonts.googleapis.com/**',r=>r.abort());await page.goto(url,{waitUntil:'domcontentloaded'});
@@ -74,7 +77,7 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
    const ids=SKIN_ORDER.filter(workshopSkinVisible);
    for(const id of ids){const im=new Image();im.src=SPRITE_SKINS[id].atlas;await im.decode();if(im.naturalWidth!==1536)throw Error('Missing offline '+id);}
    return ids.length;
-  });assert.equal(decoded,11);await context.close();
+  });assert.equal(decoded,16);await context.close();
   const gallery=await browser.newPage({viewport:{width:1240,height:1500},serviceWorkers:'block'});
   await gallery.goto(new URL('docs/theme-skins/gallery.html',url).href);await gallery.evaluate(()=>Promise.all([...document.images].map(im=>im.decode())));
   await gallery.screenshot({path:path.join(output,'gallery.jpg'),fullPage:true,quality:90});await gallery.close();

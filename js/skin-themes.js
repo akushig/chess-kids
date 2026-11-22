@@ -111,11 +111,14 @@ const FREE_SPRITE_THEMES = [
     "motion": "fold"
   }
 ];
-for (const theme of FREE_SPRITE_THEMES) {
-  SPRITE_SKINS[theme.id]={atlas:'icons/skins/'+theme.id+'/atlas.webp',effect:theme.effect,motion:theme.motion};
-  SKIN_META[theme.id]={nameKey:'skin_'+theme.id};
-  I18N.ko['skin_'+theme.id]=theme.name;I18N.en['skin_'+theme.id]=theme.en;
-  SKIN_UNLOCK[theme.id]=0;
-  SKINS[theme.id]=Object.fromEntries(['w','b'].flatMap(side=>ROYAL_COLUMNS.map(type=>[side+type,size=>royalPieceSVG(side+type,size,'idle',theme.id)])));
+function registerSpriteThemes(themes, at = 1) {
+  for (const theme of themes) {
+    SPRITE_SKINS[theme.id]={atlas:'icons/skins/'+theme.id+'/atlas.webp',effect:theme.effect,motion:theme.motion};
+    SKIN_META[theme.id]={nameKey:'skin_'+theme.id,playful:!!theme.playful,styleLabel:theme.styleLabel};
+    I18N.ko['skin_'+theme.id]=theme.name;I18N.en['skin_'+theme.id]=theme.en;
+    SKIN_UNLOCK[theme.id]=0;
+    SKINS[theme.id]=Object.fromEntries(['w','b'].flatMap(side=>ROYAL_COLUMNS.map(type=>[side+type,size=>royalPieceSVG(side+type,size,'idle',theme.id)])));
+  }
+  SKIN_ORDER.splice(at,0,...themes.map(t=>t.id));
 }
-SKIN_ORDER.splice(1,0,...FREE_SPRITE_THEMES.map(t=>t.id));
+registerSpriteThemes(FREE_SPRITE_THEMES);

@@ -2437,6 +2437,24 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .royal-mover[data-motion=leaf]::after{border-radius:80% 0 80% 0;rotate:-20deg}
 .royal-mover[data-motion=fold]::after{border-radius:0;rotate:45deg;filter:none;opacity:.45}
 @keyframes spriteTrail{from{scale:.5;opacity:.8}to{scale:1.4;opacity:0}}
+/* Character skins use softer, simpler silhouettes and their own movement texture. */
+.royal-piece[data-sprite-skin=crayon],.royal-piece[data-sprite-skin=motors]{filter:drop-shadow(0 1px 0 rgba(40,35,30,.12))}
+.royal-piece[data-sprite-skin=clouds]{filter:drop-shadow(0 2px 3px rgba(137,126,176,.16))}
+.board-cell.selected .royal-piece[data-sprite-skin=plush]{animation:plushSway 1.8s ease-in-out infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=jelly]{animation:jellyWiggle 1.3s ease-in-out infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=crayon]{animation:doodleWiggle 1.4s steps(3,end) infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=motors]{animation:motorIdle .45s ease-in-out infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=clouds]{animation:cloudFloat 2.2s ease-in-out infinite}
+@keyframes plushSway{0%,100%{rotate:-3deg}50%{rotate:3deg;scale:1.03}}
+@keyframes jellyWiggle{0%,100%{scale:1}40%{scale:1.1 .88}70%{scale:.96 1.06}}
+@keyframes doodleWiggle{0%,100%{rotate:-3deg}50%{rotate:3deg;translate:0 -2px}}
+@keyframes motorIdle{0%,100%{translate:0 0}50%{translate:0 -1px}}
+@keyframes cloudFloat{0%,100%{translate:0 0}50%{translate:0 -4px;scale:1.02}}
+.royal-mover[data-motion=plush]::after{background:transparent;content:'♡';height:auto;bottom:5%;color:var(--motion-color);filter:none;box-shadow:none;font-size:1rem}
+.royal-mover[data-motion=jelly]::after{height:12%;width:48%;filter:blur(1px)}
+.royal-mover[data-motion=doodle]::after{background:transparent;content:'〰';height:auto;color:var(--motion-color);filter:none;box-shadow:none;font-size:1.2rem;animation-timing-function:steps(3,end)}
+.royal-mover[data-motion=motor]::after{width:45%;height:5%;bottom:7%;border-radius:3px;background:repeating-linear-gradient(90deg,var(--motion-color) 0 5px,transparent 5px 9px);filter:none}
+.royal-mover[data-motion=cloud]::after{background:transparent;content:'☁';height:auto;bottom:0;color:var(--motion-color);filter:none;box-shadow:none;font-size:1rem}
 @keyframes royalImpact{from{scale:.35;opacity:1}to{scale:1.6;opacity:0}}
 @keyframes royalSpark{from{scale:.7;opacity:1;rotate:0deg}to{scale:1.4;opacity:0;rotate:35deg}}
 @media(prefers-reduced-motion:reduce){.board-cell.selected .royal-piece{animation:none}}

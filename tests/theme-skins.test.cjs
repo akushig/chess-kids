@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),load=require('./harness.cjs');
-const visible=['royal','cosmic','dragon','ocean','forest','animals','sweets','elements','egypt','ghosts','origami'];
-test('Royal is the default and all 11 visible raster skins are free in web and native mode',()=>{
+const visible=['royal','plush','jelly','crayon','motors','clouds','cosmic','dragon','ocean','forest','animals','sweets','elements','egypt','ghosts','origami'];
+test('Royal is the default and all 16 visible raster skins are free in web and native mode',()=>{
  const h=load();assert.equal(h.run('currentSkin'),'royal');assert.equal(h.run('getAllStars()'),0);
  for(const native of [false,true]){
   if(native)h.run('window.ChessKidsStore={purchase(){}}');
