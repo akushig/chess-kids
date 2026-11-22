@@ -1,0 +1,18 @@
+Use case: stylized-concept
+Asset type: ONE production game sprite atlas on genuine transparent alpha background.
+Create a new chess skin with a visual medium fundamentally different from ornate sculpted chess sets and soft cute toy characters.
+STYLE AND ROLES:
+A radically MINIMAL flat 2D luminous circuit-line icon set. Each piece is an elegant angular HOLLOW outline made of thick glowing neon tubes and circuit trace dots, transparent interiors, controlled small halo. Graphic holographic signage, no faces, bodies, cute characters, metallic sculptures, jewels, crowns made of gold, or decorative pedestals. Near-front orthographic SYMBOLS, not product photography. Use bold 8-12px core strokes at approximately 200px sprite height so they remain readable at 40px. Bright saturated outer stroke plus near-white core, tiny dark edge for light-board contrast. No black rectangle backdrop.
+WHITE team: brilliant cyan/ice-blue circuit outlines with white cores. BLACK team: intense hot magenta/fuchsia outlines with warm pale-pink cores, different from cyan at a glance.
+KING symbol: tall angular shield outline with large cross on top and a central circuit node. QUEEN: five-prong crown outline above a wide angular open body. ROOK: sturdy rectangular castle outline with three unmistakable square crenellations. BISHOP: pointed diamond/mitre outline with an obvious diagonal split. KNIGHT: clean angular horse HEAD outline with mane traces. PAWN: simple circular head joined to a short wide open trapezoid body, smallest symbol. All symbols have tiny flat terminal lines as feet, never round plinths. Thick coherent silhouettes, no detached glow particles.
+EXACT TECHNICAL GRID:
+One square sheet, ideally 2048x2048, six equal columns and six equal rows, exactly 36 fully isolated sprites. Every row uses this exact order: KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN.
+Row 1: WHITE/WARM team neutral idle.
+Row 2: BLACK/COOL team neutral idle.
+Row 3: SAME white sprites, attack pose: a subtle forward lean or graphic slant toward RIGHT.
+Row 4: SAME black sprites, attack toward RIGHT.
+Row 5: SAME white sprites, hit/recoil pose: gentle backwards lean LEFT.
+Row 6: SAME black sprites, hit/recoil LEFT.
+Preserve exact identity, role markers, colors, construction and drawing medium in all three poses. Do not bend rigid geometric puzzle pieces; tilt whole motif. No weapons, damage or frightening injury.
+Strictly align six rows and columns with identical spacing. Horizontally center every sprite inside its cell; feet/bottom baseline is 84% cell height in every row. Maximum king height 72%, queen 68%, bishop/knight 65%, rook 59%, pawn 52%. Maximum width including leaning poses and glow is 70% cell width. Keep EMPTY transparent gutters on ALL four sides, especially above crowns and below feet; no sprite ever crosses any cell boundary. No overlaps or clipped extremities. Consistent scale and viewpoint across all 36.
+No scene, board, floor plane, backdrop squares, labels, text, numbers, grid lines, watermark, scattered props, external particles or detached effects. Actual transparency, not a drawn checkerboard. This is a technical atlas to be sliced automatically. Strong clearly different role silhouettes remain readable on a 40px mobile board. Exactly 36 sprites with all six roles in each row.
