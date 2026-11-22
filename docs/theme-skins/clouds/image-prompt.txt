@@ -1,0 +1,17 @@
+Use case: stylized-concept
+Asset type: ONE transparent 6x6 game character sprite atlas, NOT a chess set product photograph.
+Primary request: A radically cute, child-friendly chess CHARACTER skin. The characters themselves are the pieces. DO NOT reuse classical Staunton chess bodies, thin columns, circular plinths, metallic rings or ornate jewel ornamentation.
+STYLE: tender FLAT 2D watercolor and gouache children's bedtime picture-book characters, fluffy scalloped cloud shapes, soft dry-brush edges, tiny round dot eyes, sleepy smiles and pink cheeks, gentle color washes contained INSIDE strong readable silhouettes, handmade storybook atmosphere. No paper square backgrounds, no 3D model, no shiny gold outlines, no ornate sculptures or pedestals.
+WARM/WHITE team: pale butter yellow, peach and blush cloud bodies with softly darker rose outlines. COOL/BLACK team: distinct blueberry lavender and dusky sky-blue cloud bodies with deep indigo outlines and pale face details; darker than the warm team but sweet, not scary. Team palettes must remain clearly distinct on a board.
+Six roles: KING a plump smiling sun nestled in a cloud body with a large simple soft plus/cross crown; QUEEN a fluffy rounded rainbow cloud wearing a five-bump cloud tiara; ROOK a squat box-shaped living cloud castle with three clear crenellations; BISHOP a tall rounded raindrop cloud sprite with a pointed top and an obvious diagonal split near the tip; KNIGHT a tiny friendly cloud pony/unicorn with a pronounced horse-head silhouette and short rainbow mane; PAWN the smallest simple round puffy cloud with two tiny dangling feet, no crown. All float just above an extremely small attached shadow; no plinths, no ornate bases. Make this feel like an illustrated lullaby, not a fantasy chess statue.
+GRID: Exactly 36 isolated full characters in a precise square sheet, 6 equal columns × 6 equal rows. Largest practical square resolution, ideally 2048×2048. Truly transparent alpha background.
+Columns in order: KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN.
+Rows in order:
+1 WARM/WHITE team IDLE, cheerful relaxed pose.
+2 COOL/BLACK team IDLE, same six identities and role markers.
+3 SAME WARM team playful ATTACK pose: a little forward hop/lean to the RIGHT, tiny arms/ears can move, excited happy face.
+4 SAME COOL team ATTACK pose leaning right.
+5 SAME WARM team HIT/RECOIL pose: tilt gently LEFT and squash a little, cute surprised face, no injury.
+6 SAME COOL team HIT/RECOIL pose leaning left.
+Preserve each character's exact species, role hat/marker, colors, proportions and accessories between its three poses. No violence, weapons, damage or frightening expressions. Each side has the same six matching characters in a different team palette.
+Layout: each character wholly inside its equal square cell, centered at the cell's horizontal midpoint, feet/bottom baseline at 85% cell height in ALL rows. Maximum king height 76%, queen 70%, bishop and knight 68%, rook 60%, pawn 54%. Maximum width 74% of cell, including ears and leaning poses. Generous completely empty transparent gutters; no character touches a cell boundary. No clipped crowns, ears, feet or wheels. No detached particles, balloons, sparkles, scattered props or labels. No environment, no floor plane, no board, no text, no grid lines, no watermark, no painted checkerboard. Keep dark outlines and simple readable forms that work at 40px on a phone. Exactly six distinct roles in every row. Exactly 36 sprites.
