@@ -2418,3 +2418,20 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .net-info summary,.net-diag summary{min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
 .net-info p,.net-diag p{margin:0 0 4px;text-align:center}
 .net-auto-chips .play-chip{flex:1 1 auto}
+
+/* Royal Classic: a single raster atlas inside existing SVG viewports. */
+.royal-piece{transform-box:fill-box;transform-origin:center bottom}
+.royal-demo-board{grid-template-columns:repeat(4,1fr);max-width:240px;margin:12px auto}
+.move-anim.royal-mover,.move-anim.royal-victim{transition:none;will-change:transform;overflow:visible}
+.royal-mover{z-index:13}
+.royal-victim{z-index:12}
+.royal-mover .royal-piece{filter:drop-shadow(0 5px 4px rgba(30,25,16,.28))}
+.board-cell.selected .royal-piece{animation:royalReady 1.8s ease-in-out infinite}
+@keyframes royalReady{0%,100%{scale:1}50%{scale:1.04 1.02}}
+.royal-impact{position:absolute;z-index:14;pointer-events:none;display:grid;place-items:center}
+.royal-impact::before{content:'';width:46%;height:46%;border:2px solid #ffe6a1;border-radius:50%;box-shadow:0 0 12px #ffd675,inset 0 0 8px #fff2c8;animation:royalImpact .24s ease-out both}
+.royal-impact::after{content:'✧';position:absolute;color:#fff5d4;font-size:1.6rem;text-shadow:0 0 8px #c09030;animation:royalSpark .24s ease-out both}
+@keyframes royalImpact{from{scale:.35;opacity:1}to{scale:1.6;opacity:0}}
+@keyframes royalSpark{from{scale:.7;opacity:1;rotate:0deg}to{scale:1.4;opacity:0;rotate:35deg}}
+@media(prefers-reduced-motion:reduce){.board-cell.selected .royal-piece{animation:none}}
+.reduced-motion .board-cell.selected .royal-piece{animation:none}

@@ -112,7 +112,7 @@ function openSkinDetail(name) {
     actionBtn = `<button class="detail-equip-btn" onclick="selectSkin('${name}')">${t('skinEquip')}</button>`;
   }
 
-  showActivityDialog(t(meta.nameKey),`<div class="detail-grid">${grid}</div><div class="detail-action">${actionBtn}</div>`,[{label:'다른 꾸미기 보기',action:openSkinSelector}],'skin-detail-overlay');
+  showActivityDialog(t(meta.nameKey),`${name==='royal'?'<p>무료 스킨 · 입체 체스말과 이동·공격·피격 모션을 즐겨요.</p>':''}<div class="detail-grid">${grid}</div><div class="detail-action">${actionBtn}</div>`,[{label:'다른 꾸미기 보기',action:openSkinSelector}],'skin-detail-overlay');
 }
 
 function closeSkinDetail(){closeActivityDialog();openSkinSelector();}

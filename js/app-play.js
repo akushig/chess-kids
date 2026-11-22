@@ -510,7 +510,9 @@ function playClick(r, c) {
 function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
   const game = state.game;
   const piece = game.board[fr][fc];
-  const captured = game.board[tr][tc];
+  const epCapture = piece[1]==='P'&&fc!==tc&&!game.board[tr][tc]&&game.enPassant?.[0]===tr&&game.enPassant?.[1]===tc;
+  const captureRow = epCapture ? fr : tr;
+  const captured = game.board[captureRow][tc];
   const mover = game.turn,wasCheck=game.status==='check';
   const boardEl = document.querySelector('#screen-play .chess-board');
   const token = playToken;
@@ -545,7 +547,7 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
     if (token !== playToken) return;
     state.animating=false;
     if (captured) {
-      animateCapture(boardEl, tr, tc, captured, mover === (netGame ? state.play.net.color : 'w') ? 'captured-bottom' : 'captured-top');
+      animateCapture(boardEl, captureRow, tc, captured, mover === (netGame ? state.play.net.color : 'w') ? 'captured-bottom' : 'captured-top');
     }
     renderPlay();
     playNextTurn();
@@ -554,7 +556,7 @@ function playCommitMove([fr, fc, tr, tc,promotion='Q']) {
     let remaining=2;const complete=()=>{if(--remaining===0)finishMove();else state.animating=true;};
     animateMove(boardEl,fr,fc,tr,tc,piece,complete);
     animateMove(boardEl,fr,tc===6?7:0,fr,tc===6?5:3,mover+'R',complete);
-  }else animateMove(boardEl,fr,fc,tr,tc,piece,finishMove);
+  }else animateMove(boardEl,fr,fc,tr,tc,piece,finishMove,8,{capture:captured?{row:captureRow,col:tc}:false});
 }
 
 function playNextTurn() {

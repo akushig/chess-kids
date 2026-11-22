@@ -1,0 +1,14 @@
+Use case: stylized-concept
+Asset type: ONE production-ready transparent chess animation sprite atlas for a small mobile chess game.
+Primary request: Create exactly ONE square sprite sheet, ideally 2048x2048 pixels, with a mathematically regular 6 columns x 6 rows grid containing exactly 36 isolated full-body classic Staunton chess pieces. Background MUST be genuinely transparent alpha, no checkerboard painted into the image. No board, no scene, no text, no labels, no grid lines.
+Style: exquisite premium sculpted 3D chess miniatures, elegant classic Staunton silhouettes, softly beveled polished ceramic and obsidian, restrained precious-metal trim, clean studio rendering, readable strong silhouettes at 40px display. No faces, arms, weapons, fantasy monsters or extra props. Identical camera, orthographic near-front with slight top view, light upper left, consistent scale and sharp clear edges.
+White side: warm ivory porcelain with brushed gold rings and gold crown details. Black side: deep charcoal obsidian with bright silver rings and silver crown details, enough rim lighting to remain readable on a dark board. Both sets use exactly the same recognizable silhouettes.
+EXACT GRID:
+All rows have six columns in this order, left to right: KING (cross finial), QUEEN (open pointed crown), ROOK (crenellated castle tower), BISHOP (slotted mitre), KNIGHT (elegant horse head facing right), PAWN (simple round ball head).
+Row 1: white set, neutral upright resting pose.
+Row 2: black set, neutral upright resting pose.
+Row 3: SAME white pieces, attack anticipation/strike pose: a subtle whole-piece forward lean to the right, maximum 10 degrees, lifted very slightly at the back; keep original identity, proportions, materials.
+Row 4: SAME black pieces, attack pose leaning right, identical to row 3.
+Row 5: SAME white pieces, recoil/hit pose: slight whole-piece backward lean to the left, maximum 10 degrees; no sparks, no added effects; unchanged identity.
+Row 6: SAME black pieces, recoil/hit pose leaning left, identical to row 5.
+Composition constraints: 36 equal cells, six rows and six columns occupying entire canvas. Each piece entirely inside its own cell, horizontally centered at the exact cell center, base contact aligned at 84% of each cell height. Every piece, including leaning poses, inside central 78% of cell width and 78% of cell height. Empty transparent gutters between all sprites. No overlaps, no clipped bases or crowns, no extra pieces. Kings and queens slightly taller than rooks/bishops/knights; pawns about 70% king height. Baselines aligned for all rows. Only a tiny soft contact shadow directly under each base, no large floor shadows. Do not decorate the sheet. This is a technical texture atlas to be sliced automatically; grid accuracy and consistent identity are essential.

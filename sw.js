@@ -1,5 +1,5 @@
 importScripts('./js/version.js');
-const CACHE_NAME = 'chess-kids-' + CHESS_BUILD;
+const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-royal-1';
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,8 @@ const ASSETS = [
   "./js/chess-ai.js",
   "./js/pieces.js",
   "./js/skin-classic.js",
+  "./js/skin-royal.js",
+  "./icons/skins/royal-classic/atlas.webp",
   "./js/skin-hellocarbot.js",
   "./js/skin-dino.js",
   "./js/skin-tiniping.js",

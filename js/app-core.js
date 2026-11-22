@@ -73,12 +73,12 @@ function renderGameScreen(id, html) {
   if (previous && window.scrollTo) window.scrollTo({top: scrollY, behavior: 'instant'});
 }
 function laterInScreen(callback,delay) { const epoch=screenEpoch; return setTimeout(()=>{if(epoch===screenEpoch)callback();},delay); }
-function cancelActivityCallbacks() { closeActivityDialog(false); if(typeof playCloseDialog==='function')playCloseDialog(false);hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
+function cancelActivityCallbacks() { cancelRoyalAnimations(); closeActivityDialog(false); if(typeof playCloseDialog==='function')playCloseDialog(false);hideGameToast(); gameToastKey=''; screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
 function showScreen(name) {
   if(state.screen!==name)closeActivityDialog(false);
   if(state.screen!==name&&typeof playCloseDialog==='function')playCloseDialog(false);
   hideGameToast(); gameToastKey='';
-  if (state.screen !== name) { screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
+  if (state.screen !== name) { cancelRoyalAnimations(); screenEpoch++; state.animating=false; document.querySelectorAll('.hint-arrow,.hint-path-overlay,.clear-overlay').forEach(el=>el.remove()); }
   if (state.screen !== name) saveActiveSession?.();
   state.screen = name;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -87,7 +87,7 @@ function showScreen(name) {
 }
 
 // ===== 이동 애니메이션 =====
-function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSize) {
+function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSize, options) {
   const epoch = screenEpoch;
   if(!boardEl||readData('preferences',{}).motion===false||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){state.animating=false;callback();return;}
   state.animating = true;
@@ -99,6 +99,8 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
     callback();
     return;
   }
+
+  if(currentSkin==='royal'&&typeof boardEl.animate==='function')return animateRoyalMove(boardEl,fromR,fromC,toR,toC,pieceKey,callback,cols,options);
 
   const ghost = document.createElement('div');
   ghost.className = 'move-anim pc-' + pieceKey[0];
