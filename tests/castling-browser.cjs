@@ -40,7 +40,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
     await setup(fen);const position=await board();await cells().nth(60).click();await cells().nth(62).click();
     assert.ok((await page.locator('#game-toast').innerText()).includes(message),message);same(position,await board());
    }
-   await page.evaluate(()=>{savePlaySettings({...getPlaySettings(),small:true});goPlay();});assert.match(await page.locator('#screen-play').innerText(),/짧은 판.*캐슬링을 하지/);
+   await page.evaluate(()=>{savePlaySettings({...getPlaySettings(),small:true});goPlay();});await page.locator('#play-board-settings>summary').click();assert.match(await page.locator('#screen-play').innerText(),/짧은 판.*캐슬링을 하지/);
    await page.getByRole('button',{name:'🚀 시작!',exact:true}).count().then(async n=>{if(n)await page.getByRole('button',{name:'🚀 시작!',exact:true}).click();else await page.evaluate(()=>playStart());});
    await cells().nth(60).click();await cells().nth(62).click();assert.match(await page.locator('#game-toast').innerText(),/짧은 판에서는 캐슬링/);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

@@ -105,12 +105,24 @@ function lessonCardHTML(lesson) {
   return `<div class="lesson-card-item"><button class="lesson-card" aria-label="${lesson.number}번 ${go} · ${lesson.title} · ${status.label}" onclick="openLesson('${lesson.id}')"><span class="lesson-number" aria-hidden="true">${lesson.number}</span><span class="lesson-card-text"><strong>${lesson.title}</strong><small>${lesson.skill}</small><span class="lesson-status lesson-status-${status.key}">${status.label}</span></span><span class="lesson-go" aria-hidden="true">▶ ${go}</span></button>
     <div class="lesson-card-actions"><button class="lesson-sub-btn" aria-label="${lesson.number}번 판 고르기" onclick="lessonPicker('${lesson.id}')">☰ 판 고르기 <b>${cleared}/${total}</b></button><button class="lesson-sub-btn lesson-drill-btn" aria-label="${lesson.number}번 무한 연습" onclick="lessonDrillDialog('${lesson.id}')">∞ 무한 연습</button></div></div>`;
 }
+let lessonUnitTab = null, lessonListProfileId = null;
+function lessonSetUnit(id) {
+  if (!LESSON_UNITS.some(unit=>unit.id===id)) return;
+  lessonUnitTab=id; renderLessonList();
+  document.querySelector('.lesson-unit-tabs [aria-pressed="true"]')?.focus?.({preventScroll:true});
+}
 function renderLessonList() {
   const fromPlay = lessonOrigin === 'play', total = LESSONS.reduce((n, l) => n + l.levels.length, 0);
   const units = LESSON_UNITS.map(unit => ({ unit, lessons: LESSONS.filter(l => l.unit === unit.id) })).filter(u => u.lessons.length);
-  document.getElementById('screen-lesson').innerHTML = `<div class="screen-wrap lesson-list"><div class="screen-header"><button class="back-btn" onclick="${fromPlay ? 'goPlay()' : "showScreen('home');renderHome()"}">← ${fromPlay ? '체스 대전' : '홈'}</button><h2>체스 수업</h2></div>
+  if(lessonListProfileId!==activeProfile){lessonUnitTab=null;lessonListProfileId=activeProfile;}
+  if(!units.some(({unit})=>unit.id===lessonUnitTab)) {
+    const recent=LESSONS.map(lesson=>({unit:lesson.unit,saved:lessonSavedSession(lesson.id)})).filter(row=>row.saved).sort((a,b)=>b.saved.updatedAt-a.saved.updatedAt)[0];
+    lessonUnitTab=recent?.unit||units.find(({lessons})=>lessons.some(l=>!lessonProgressAll()[l.id]?.completed))?.unit.id||units[0].unit.id;
+  }
+  document.getElementById('screen-lesson').innerHTML = `<div class="screen-wrap lesson-list"><div class="screen-header"><button class="back-btn" onclick="${fromPlay ? 'goPlay()' : (lessonOrigin === 'study' ? 'goStudy()' : "showScreen('home');renderHome()")}">← ${fromPlay ? '체스 대전' : lessonOrigin === 'study' ? '배우기' : '홈'}</button><h2>체스 수업</h2></div>
     <section class="lesson-course"><h3>${units.length}단원 · ${LESSONS.length}개 주제 · ${total}판</h3><p>나는 <b>흰색</b>이에요. 판마다 목표를 보고 <b>직접 한 수</b>를 두면, 무슨 일이 일어났는지 바로 알려줘요. 수업마다 ${LESSON_TIER_NAMES.join(' → ')} 순서로 조금씩 어려워져요. <b>∞ 무한 연습</b>은 컴퓨터가 매번 새 판을 만들어 줘요.</p></section>
-    ${units.map(({ unit, lessons }) => `<section class="lesson-unit"><h3 class="lesson-unit-title">${unit.title}</h3><div class="lesson-cards">${lessons.map(lessonCardHTML).join('')}</div></section>`).join('')}
+    <div class="collection-tabs lesson-unit-tabs" role="group" aria-label="수업 단원">${units.map(({unit})=>`<button aria-pressed="${lessonUnitTab===unit.id}" onclick="lessonSetUnit('${unit.id}')">${unit.title}</button>`).join('')}</div>
+    ${units.map(({ unit, lessons }) => `<section class="lesson-unit" ${unit.id===lessonUnitTab?'':'hidden'}><h3 class="lesson-unit-title">${unit.title}</h3><div class="lesson-cards">${lessons.map(lessonCardHTML).join('')}</div></section>`).join('')}
     <p class="section-note">순서는 추천이에요. 어느 수업, 어느 판부터 시작해도 돼요. 잘하는 사람은 판 고르기에서 어려운 판으로 바로 가요.</p></div>`;
 }
 function openLesson(id) {

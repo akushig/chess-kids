@@ -4,8 +4,8 @@
   "description": "어린이와 가족이 함께 배우고 즐기는 체스",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#FFF8E7",
-  "theme_color": "#4ECDC4",
+  "background_color": "#f6f7f2",
+  "theme_color": "#214d40",
   "orientation": "any",
   "icons": [
     {

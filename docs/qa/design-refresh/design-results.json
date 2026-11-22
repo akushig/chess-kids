@@ -1,0 +1,445 @@
+{
+  "checks": [
+    {
+      "width": 320,
+      "label": "home"
+    },
+    {
+      "width": 320,
+      "label": "study"
+    },
+    {
+      "width": 320,
+      "label": "lessons 내 말 지키기"
+    },
+    {
+      "width": 320,
+      "label": "lessons 말의 가치"
+    },
+    {
+      "width": 320,
+      "label": "lessons 체크와 체크메이트"
+    },
+    {
+      "width": 320,
+      "label": "lessons 전술"
+    },
+    {
+      "width": 320,
+      "label": "lessons 특별한 수"
+    },
+    {
+      "width": 320,
+      "label": "course"
+    },
+    {
+      "width": 320,
+      "label": "playground 탐험과 발견"
+    },
+    {
+      "width": 320,
+      "label": "playground 새로운 도전"
+    },
+    {
+      "width": 320,
+      "label": "playground 길찾기"
+    },
+    {
+      "width": 320,
+      "label": "playground 잡기와 안전"
+    },
+    {
+      "width": 320,
+      "label": "playground 대전 놀이"
+    },
+    {
+      "width": 320,
+      "label": "knight board"
+    },
+    {
+      "width": 320,
+      "label": "play setup"
+    },
+    {
+      "width": 320,
+      "label": "expanded board options"
+    },
+    {
+      "width": 320,
+      "label": "all play options"
+    },
+    {
+      "width": 320,
+      "label": "study with 150 percent text"
+    },
+    {
+      "width": 320,
+      "label": "games with 150 percent text"
+    },
+    {
+      "width": 320,
+      "label": "long profile name"
+    },
+    {
+      "width": 320,
+      "label": "workshop"
+    },
+    {
+      "width": 320,
+      "label": "records"
+    },
+    {
+      "width": 360,
+      "label": "home"
+    },
+    {
+      "width": 360,
+      "label": "study"
+    },
+    {
+      "width": 360,
+      "label": "lessons 내 말 지키기"
+    },
+    {
+      "width": 360,
+      "label": "lessons 말의 가치"
+    },
+    {
+      "width": 360,
+      "label": "lessons 체크와 체크메이트"
+    },
+    {
+      "width": 360,
+      "label": "lessons 전술"
+    },
+    {
+      "width": 360,
+      "label": "lessons 특별한 수"
+    },
+    {
+      "width": 360,
+      "label": "course"
+    },
+    {
+      "width": 360,
+      "label": "playground 탐험과 발견"
+    },
+    {
+      "width": 360,
+      "label": "playground 새로운 도전"
+    },
+    {
+      "width": 360,
+      "label": "playground 길찾기"
+    },
+    {
+      "width": 360,
+      "label": "playground 잡기와 안전"
+    },
+    {
+      "width": 360,
+      "label": "playground 대전 놀이"
+    },
+    {
+      "width": 360,
+      "label": "knight board"
+    },
+    {
+      "width": 360,
+      "label": "play setup"
+    },
+    {
+      "width": 360,
+      "label": "expanded board options"
+    },
+    {
+      "width": 360,
+      "label": "all play options"
+    },
+    {
+      "width": 360,
+      "label": "study with 150 percent text"
+    },
+    {
+      "width": 360,
+      "label": "games with 150 percent text"
+    },
+    {
+      "width": 360,
+      "label": "long profile name"
+    },
+    {
+      "width": 360,
+      "label": "workshop"
+    },
+    {
+      "width": 360,
+      "label": "records"
+    },
+    {
+      "width": 390,
+      "label": "home"
+    },
+    {
+      "width": 390,
+      "label": "study"
+    },
+    {
+      "width": 390,
+      "label": "lessons 내 말 지키기"
+    },
+    {
+      "width": 390,
+      "label": "lessons 말의 가치"
+    },
+    {
+      "width": 390,
+      "label": "lessons 체크와 체크메이트"
+    },
+    {
+      "width": 390,
+      "label": "lessons 전술"
+    },
+    {
+      "width": 390,
+      "label": "lessons 특별한 수"
+    },
+    {
+      "width": 390,
+      "label": "course"
+    },
+    {
+      "width": 390,
+      "label": "playground 탐험과 발견"
+    },
+    {
+      "width": 390,
+      "label": "playground 새로운 도전"
+    },
+    {
+      "width": 390,
+      "label": "playground 길찾기"
+    },
+    {
+      "width": 390,
+      "label": "playground 잡기와 안전"
+    },
+    {
+      "width": 390,
+      "label": "playground 대전 놀이"
+    },
+    {
+      "width": 390,
+      "label": "knight board"
+    },
+    {
+      "width": 390,
+      "label": "play setup"
+    },
+    {
+      "width": 390,
+      "label": "expanded board options"
+    },
+    {
+      "width": 390,
+      "label": "all play options"
+    },
+    {
+      "width": 390,
+      "label": "study with 150 percent text"
+    },
+    {
+      "width": 390,
+      "label": "games with 150 percent text"
+    },
+    {
+      "width": 390,
+      "label": "long profile name"
+    },
+    {
+      "width": 390,
+      "label": "workshop"
+    },
+    {
+      "width": 390,
+      "label": "records"
+    },
+    {
+      "width": 768,
+      "label": "home"
+    },
+    {
+      "width": 768,
+      "label": "study"
+    },
+    {
+      "width": 768,
+      "label": "lessons 내 말 지키기"
+    },
+    {
+      "width": 768,
+      "label": "lessons 말의 가치"
+    },
+    {
+      "width": 768,
+      "label": "lessons 체크와 체크메이트"
+    },
+    {
+      "width": 768,
+      "label": "lessons 전술"
+    },
+    {
+      "width": 768,
+      "label": "lessons 특별한 수"
+    },
+    {
+      "width": 768,
+      "label": "course"
+    },
+    {
+      "width": 768,
+      "label": "playground 탐험과 발견"
+    },
+    {
+      "width": 768,
+      "label": "playground 새로운 도전"
+    },
+    {
+      "width": 768,
+      "label": "playground 길찾기"
+    },
+    {
+      "width": 768,
+      "label": "playground 잡기와 안전"
+    },
+    {
+      "width": 768,
+      "label": "playground 대전 놀이"
+    },
+    {
+      "width": 768,
+      "label": "knight board"
+    },
+    {
+      "width": 768,
+      "label": "play setup"
+    },
+    {
+      "width": 768,
+      "label": "expanded board options"
+    },
+    {
+      "width": 768,
+      "label": "all play options"
+    },
+    {
+      "width": 768,
+      "label": "study with 150 percent text"
+    },
+    {
+      "width": 768,
+      "label": "games with 150 percent text"
+    },
+    {
+      "width": 768,
+      "label": "long profile name"
+    },
+    {
+      "width": 768,
+      "label": "workshop"
+    },
+    {
+      "width": 768,
+      "label": "records"
+    },
+    {
+      "width": 1280,
+      "label": "home"
+    },
+    {
+      "width": 1280,
+      "label": "study"
+    },
+    {
+      "width": 1280,
+      "label": "lessons 내 말 지키기"
+    },
+    {
+      "width": 1280,
+      "label": "lessons 말의 가치"
+    },
+    {
+      "width": 1280,
+      "label": "lessons 체크와 체크메이트"
+    },
+    {
+      "width": 1280,
+      "label": "lessons 전술"
+    },
+    {
+      "width": 1280,
+      "label": "lessons 특별한 수"
+    },
+    {
+      "width": 1280,
+      "label": "course"
+    },
+    {
+      "width": 1280,
+      "label": "playground 탐험과 발견"
+    },
+    {
+      "width": 1280,
+      "label": "playground 새로운 도전"
+    },
+    {
+      "width": 1280,
+      "label": "playground 길찾기"
+    },
+    {
+      "width": 1280,
+      "label": "playground 잡기와 안전"
+    },
+    {
+      "width": 1280,
+      "label": "playground 대전 놀이"
+    },
+    {
+      "width": 1280,
+      "label": "knight board"
+    },
+    {
+      "width": 1280,
+      "label": "play setup"
+    },
+    {
+      "width": 1280,
+      "label": "expanded board options"
+    },
+    {
+      "width": 1280,
+      "label": "all play options"
+    },
+    {
+      "width": 1280,
+      "label": "study with 150 percent text"
+    },
+    {
+      "width": 1280,
+      "label": "games with 150 percent text"
+    },
+    {
+      "width": 1280,
+      "label": "long profile name"
+    },
+    {
+      "width": 1280,
+      "label": "workshop"
+    },
+    {
+      "width": 1280,
+      "label": "records"
+    }
+  ],
+  "errors": []
+}

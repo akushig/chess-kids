@@ -16,11 +16,11 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   const noScroll=async label=>assert.equal(await ev(()=>document.documentElement.scrollWidth>innerWidth),false,`${tag} ${label} 가로 넘침`);
   // 홈: 보조 타일 네 칸(체스 수업·승급 과정·놀이터·모험 지도), 칭호 칩, 공방 칩
   await ev(()=>{showScreen('home');renderHome();});
-  assert.deepEqual(await page.locator('.home-more strong').allInnerTexts(),['체스 수업','승급 과정','놀이터','모험 지도']);
-  for(const b of await page.locator('.home-more').all())assert.ok((await b.boundingBox()).height>=44);
+  assert.deepEqual(await page.locator('.home-destinations strong').allInnerTexts(),['차근차근 배우기','마음껏 놀기']);
+  for(const b of await page.locator('.destination-card').all())assert.ok((await b.boundingBox()).height>=44);
   await noScroll('홈');await page.screenshot({path:`${output}/${tag}-home.png`,fullPage:true});
   // 승급 과정: 홈 타일을 눌러 들어가 단계 탭을 바꾼다
-  await page.locator('.home-more',{hasText:'승급 과정'}).click();assert.equal(await ev(()=>state.screen),'course');
+  await page.locator('.destination-study').click();await page.locator('.study-card',{hasText:'승급 과정'}).click();assert.equal(await ev(()=>state.screen),'course');
   assert.equal(await page.locator('.course-tabs [role=tab][aria-selected=true]').innerText(),'1단계');
   await page.locator('.course-tabs [role=tab]',{hasText:'2단계'}).click();assert.match(await page.locator('.course-stage h3').innerText(),/2단계/);
   await page.locator('.course-tabs [role=tab]',{hasText:'1단계'}).click();await noScroll('과정 목록');
@@ -65,7 +65,7 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   await page.waitForFunction(()=>state.screen==='coach'&&state.coach?.analysis,null,{timeout:10000});
   assert.match(await page.locator('#screen-coach').innerText(),/잘한 수|큰 실수 없이/);await noScroll('코치');await page.screenshot({path:`${output}/${tag}-coach.png`,fullPage:true});
   // 공방: 탭과 고르기, 잠긴 판 안내
-  await ev(()=>{showScreen('home');renderHome();});await page.locator('.home-chip',{hasText:'꾸미기'}).click();assert.equal(await ev(()=>state.screen),'workshop');
+  await ev(()=>{showScreen('home');renderHome();});await page.locator('.home-personal button',{hasText:'공방'}).click();assert.equal(await ev(()=>state.screen),'workshop');
   await page.locator('.workshop-tab',{hasText:'판'}).click();await page.locator('.workshop-card',{hasText:'대리석'}).click();await page.waitForSelector('.activity-dialog');assert.match(await page.locator('.activity-dialog').innerText(),/별 80개/);
   await page.locator('.activity-dialog .dialog-close').click();await page.locator('.workshop-tab',{hasText:'칭호'}).click();
   await page.locator('.workshop-card',{hasText:'두 수 박사'}).click();assert.equal(await ev(()=>workshopTitle().name),'두 수 박사');

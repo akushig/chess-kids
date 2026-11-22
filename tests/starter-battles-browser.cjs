@@ -18,7 +18,7 @@ const WIN='7k/8/5KQ1/8/8/8/8/8 w - - 0 1';
   const clearHints=async()=>{await acknowledgePlayEvent(page);if(await page.locator('#game-toast .toast-close').count())await page.locator('#game-toast .toast-close').click();};
 
   // 대전 입구에서 첫 대전 4판을 찾고 비숍 첫 대전을 시작한다.
-  await page.locator('#screen-home .home-primary .menu-btn').filter({hasText:'체스 대전'}).click();
+  await page.locator('#screen-home .hero-play').click();await play.locator('.play-variants>summary').click();
   assert.equal(await play.locator('.play-starter').count(),4);await play.locator('.play-starters').scrollIntoViewIfNeeded();await noOverflow('대전 입구');
   if(w===360)await page.screenshot({path:`${output}/starters-${w}.png`,fullPage:true,animations:'disabled'});
   await play.locator('.play-starter').filter({hasText:'비숍 첫 대전'}).click();

@@ -97,11 +97,12 @@ function goPlay() {
 
 function renderPlaySetup() {
   const s = getPlaySettings();
+  const boardOptionsOpen = document.querySelector('#play-board-settings')?.open || false;
   // 상대 고르기: 두 카드가 같은 구조(아이콘 + 제목 + 한 줄 설명)라 글 길이와 상관없이 높이가 같다.
   const netView = s.view === 'net', picked = netView ? 'net' : s.mode;
   const modes = [['ai', '🤖', t('playModeAi'), '10단계 중에서 골라요', t('playModeAi')], ['friend', '👫', '함께 두기', '같은 기기에서 번갈아', t('playModeFriend')], ['net', '📱', '두 기기로', '가까이는 QR · 멀리는 초대장', '두 기기로 대전']].map(([mode, icon, title, sub, label]) => `
     <button class="play-mode ${mode === 'net' ? 'play-mode-net ' : ''}${picked === mode ? 'active' : ''}" aria-pressed="${picked === mode}" aria-label="${label}" onclick="playSetOption('mode', '${mode}')">
-      <span class="play-mode-icon" aria-hidden="true">${icon}</span><span class="play-mode-text"><strong>${title}</strong><small>${sub}</small></span>
+      <span class="play-mode-icon" aria-hidden="true">${uiIcon({ai:'computer',friend:'people',net:'phone'}[mode],28)}</span><span class="play-mode-text"><strong>${title}</strong><small>${sub}</small></span>
     </button>
   `).join('');
 
@@ -138,21 +139,23 @@ function renderPlaySetup() {
         <div class="play-section-title">상대</div>
         <div class="play-modes">${modes}</div>
         ${options}
-        <div class="play-section-title">판 설정</div>
+        <details id="play-board-settings" class="setup-disclosure" ${boardOptionsOpen?'open':''}><summary>판 설정<small>${s.small?'짧은 판':'모든 말'} · 도움 ${s.help?'켜짐':'꺼짐'}</small></summary>
         <div class="play-options">
-          <button class="play-chip ${s.help?'active':''}" aria-pressed="${!!s.help}" onclick="playSetOption('help',${!s.help})">🛟 왕 구하기 도움 ${s.help?'켜짐':'꺼짐'}</button>
-          <button class="play-chip ${s.small?'active':''}" aria-pressed="${!!s.small}" onclick="playSetOption('small',${!s.small})">♟ ${s.small?'말이 적은 짧은 판':'모든 말로 한 판'}</button>
+          <button class="play-chip ${s.help?'active':''}" aria-pressed="${!!s.help}" onclick="playSetOption('help',${!s.help})">왕 구하기 도움 ${s.help?'켜짐':'꺼짐'}</button>
+          <button class="play-chip ${s.small?'active':''}" aria-pressed="${!!s.small}" onclick="playSetOption('small',${!s.small})">${s.small?'말이 적은 짧은 판':'모든 말로 한 판'}</button>
           ${!netView&&s.mode==='friend'?`<button class="play-chip ${s.face?'active':''}" aria-pressed="${!!s.face}" onclick="playSetOption('face',${!s.face})">${s.face?'마주 보고 두기':'나란히 두기'}</button><button class="play-chip ${s.autoMove?'active':''}" aria-pressed="${!!s.autoMove}" onclick="playSetOption('autoMove',${!s.autoMove})">시간이 끝나면 ${s.autoMove?'도우미가 두기':'천천히 계속하기'}</button>`:''}
         </div>
         <p class="play-note play-board-note">${s.small?'이 짧은 판은 왕과 룩의 시작 배치가 달라 캐슬링을 하지 않아요.':'캐슬링은 왕을 고른 뒤 ‘캐슬링’ 표시 칸을 눌러요. 왕과 룩을 차례로 눌러도 돼요.'}</p>
+        </details>
         ${netView?netSetupCtaHTML(s):`<div class="play-cta">
-          <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
-          ${recommend?'<button class="action-btn secondary play-recommend" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">🌱 처음엔 말이 적은 짧은 판 추천</button>':''}
+          <button class="action-btn play-start" onclick="requestNewActivity('play',playStart)">${uiIcon('play',20)} ${t(s.mode==='ai'?'playStartAi':'playStartFriend')}</button>
+          ${recommend?'<button class="action-btn secondary play-recommend" onclick="const s=getPlaySettings();savePlaySettings({...s,small:true,help:true});requestNewActivity(\'play\',playStart)">처음엔 말이 적은 짧은 판 추천</button>':''}
           <p class="play-entry-note">${t('playEntryNote')}</p>
         </div>`}
       </div>
-      <section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter choice-card" onclick="playStarterBattle('${key}')"><span class="choice-icon" aria-hidden="true">${getPieceSVG('w'+key,34)}</span><span class="choice-text"><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span><span class="choice-arrow" aria-hidden="true">›</span></button>`).join('')}</div></section>
-      ${playContentMenuHTML(`<button class="content-card choice-card play-coach-card" onclick="goCoach()"><span class="choice-icon" aria-hidden="true">🔍</span><span class="choice-text"><strong>내 대국 코치</strong><span>${coachRecords().length?'지난 대국에서 살펴볼 장면 찾기':'컴퓨터와 한 판을 끝까지 두면 열려요'}</span></span><span class="choice-arrow" aria-hidden="true">›</span></button><button class="content-card choice-card play-lesson-link" onclick="goLessons('play')"><span class="choice-icon" aria-hidden="true">📘</span><span class="choice-text"><strong>체스 수업</strong><span>${LESSONS.length}개 주제와 무한 연습</span></span><span class="choice-arrow" aria-hidden="true">›</span></button><button class="content-card choice-card play-course-link" onclick="goCourse('play')"><span class="choice-icon" aria-hidden="true">🏅</span><span class="choice-text"><strong>승급 과정</strong><span>두 수 메이트·끝내기·초반 원칙</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`)}
+      <details class="setup-disclosure play-variants"><summary>배운 말로 첫 대전<small>말 한 종류만 더해서 가볍게</small></summary><section class="play-starters" aria-labelledby="play-starters-title"><h3 id="play-starters-title">배운 말로 첫 대전</h3><p class="play-note">왕과 폰에 한 종류의 말만 더한 판이에요. 상대: 컴퓨터 ${playLevelLabel(s.level)}</p><div class="play-starter-list">${Object.entries(PLAY_PRESETS).map(([key,p])=>`<button class="play-starter choice-card" onclick="playStarterBattle('${key}')"><span class="choice-icon" aria-hidden="true">${getPieceSVG('w'+key,34)}</span><span class="choice-text"><strong>${playPresetTitle(key)}</strong><small>${p.desc}${progressLedger().achievements?.[p.id]?' · ✓ 해봤어요':''}</small></span><span class="choice-arrow" aria-hidden="true">›</span></button>`).join('')}</div></section></details>
+      <details class="setup-disclosure play-extras"><summary>다른 방식으로 두기<small>원정대 · 팀 체스 · 코치</small></summary>${playContentMenuHTML(`<button class="content-card choice-card play-coach-card" onclick="goCoach()"><span class="choice-icon" aria-hidden="true">${uiIcon('search')}</span><span class="choice-text"><strong>내 대국 코치</strong><span>${coachRecords().length?'지난 대국에서 살펴볼 장면 찾기':'컴퓨터와 한 판을 끝까지 두면 열려요'}</span></span><span class="choice-arrow" aria-hidden="true">›</span></button><button class="content-card choice-card play-lesson-link" onclick="goLessons('play')"><span class="choice-icon" aria-hidden="true">${uiIcon('book')}</span><span class="choice-text"><strong>체스 수업</strong><span>${LESSONS.length}개 주제와 무한 연습</span></span><span class="choice-arrow" aria-hidden="true">›</span></button><button class="content-card choice-card play-course-link" onclick="goCourse('play')"><span class="choice-icon" aria-hidden="true">${uiIcon('medal')}</span><span class="choice-text"><strong>승급 과정</strong><span>두 수 메이트·끝내기·초반 원칙</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>`)}
+      </details>
     </div>
   `;
 }

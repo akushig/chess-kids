@@ -1,9 +1,11 @@
 importScripts('./js/version.js');
-const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-workshop-sticky-1';
+const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-club-design-2';
 const ASSETS = [
   "./",
   "./index.html",
   "./css/style.css",
+  "./css/design.css",
+  "./js/app-design.js",
   "./js/version.js",
   "./js/i18n.js",
   "./js/app-storage.js",

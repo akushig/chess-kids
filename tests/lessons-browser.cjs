@@ -42,8 +42,8 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   // 다른 놀이를 하던 중이어도 수업 목록에는 수업 이어하기가 없다.
   await ev(()=>{playStart();playCommitMove([6,4,4,4]);leaveActivity();showScreen('home');renderHome();});
   const versionColor=await ev(()=>getComputedStyle(document.querySelector('.app-version')).color.match(/\d+/g).slice(0,3).map(Number));assert.ok(versionColor.every(v=>v<120),`버전 글자색 ${versionColor}`);
-  await page.locator('#screen-home .home-lesson').click();assert.equal(await L.locator('.lesson-status-new').count(),15);assert.match(await L.locator('.lesson-course').innerText(),/5단원 · 15개 주제 · 225판/);assert.equal(await L.locator('.lesson-unit-title').count(),5);
-  for(const b of await L.locator('.lesson-card-actions .lesson-sub-btn').evaluateAll(list=>list.map(e=>{const r=e.getBoundingClientRect();return [e.textContent,r.height,r.right,e.scrollWidth-e.clientWidth];})))assert.ok(b[1]>=44&&b[2]<=viewport.width+.5&&b[3]<=1,`${tag} 카드 버튼 ${JSON.stringify(b)}`);
+  await page.locator('#screen-home .destination-study').click();await page.locator('#screen-study .study-card').filter({hasText:'체스 수업'}).click();assert.equal(await L.locator('.lesson-status-new').count(),15);assert.match(await L.locator('.lesson-course').innerText(),/5단원 · 15개 주제 · 225판/);assert.equal(await L.locator('.lesson-unit-title').count(),5);
+  for(const b of await L.locator('.lesson-card-actions .lesson-sub-btn:visible').evaluateAll(list=>list.map(e=>{const r=e.getBoundingClientRect();return [e.textContent,r.height,r.right,e.scrollWidth-e.clientWidth];})))assert.ok(b[1]>=44&&b[2]<=viewport.width+.5&&b[3]<=1,`${tag} 카드 버튼 ${JSON.stringify(b)}`);
   if(full)await page.screenshot({path:`${output}/list-${tag}.png`,fullPage:true,animations:'disabled'});
 
   // ===== 수업 1 첫 판: 목표·살펴보기·실패 표시·다시·성공 표시 =====
@@ -81,7 +81,7 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
     await settle();await right().click();assert.match(await headline(),/🏆 15판 모두 성공!/);}
    await page.screenshot({path:`${output}/complete-${tag}.png`,animations:'disabled'});
   }else{
-   await ev(()=>{leaveActivity();goLessons('home');});await L.locator('.lesson-card').nth(2).click();for(let i=0;i<15;i++){if(i){await settle();await right().click();}await playLevel(i===8,`수업3-${i+1}`);}await settle();await right().click();
+   await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});await L.locator('.lesson-card').nth(2).click();for(let i=0;i<15;i++){if(i){await settle();await right().click();}await playLevel(i===8,`수업3-${i+1}`);}await settle();await right().click();
   }
   assert.equal((await right().innerText()).trim(),'다음 수업 ▶','셋째 수업 다음은 새 단원');await check('수업 3 끝');
 
@@ -93,7 +93,7 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   {const m=await ev(()=>state.game.allMoves()[0]);await page.locator('#screen-play .board-cell').nth(m[0]*8+m[1]).click();await page.locator('#screen-play .board-cell').nth(m[2]*8+m[3]).click();assert.equal(await ev(m=>state.game.board[m[2]][m[3]]?.[0],m),'w','실제 수');}
 
   // ===== 판 고르기: 목록에서 도전 단계로 바로 가고, 수업 안에서 ✓와 지금 판을 확인한다 =====
-  await ev(()=>{leaveActivity();goLessons('home');});await L.getByRole('button',{name:'2번 판 고르기',exact:true}).click();const picker=page.getByRole('dialog');await picker.waitFor();
+  await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});await L.getByRole('button',{name:'2번 판 고르기',exact:true}).click();const picker=page.getByRole('dialog');await picker.waitFor();
   assert.equal(await picker.locator('.lesson-pick').count(),15);assert.match(await picker.innerText(),/첫걸음[\s\S]*쉬움[\s\S]*보통[\s\S]*어려움[\s\S]*도전/);
   for(const b of await picker.locator('.lesson-pick').evaluateAll(list=>list.map(e=>{const r=e.getBoundingClientRect();return [r.height,r.bottom];})))assert.ok(b[0]>=44,`${tag} 판 버튼 높이 ${b[0]}`);
   if(full)await page.screenshot({path:`${output}/picker-${tag}.png`,animations:'disabled'});
@@ -103,19 +103,19 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   await picker.getByRole('button',{name:/^판 4 · 쉬움/}).click();assert.equal(await ev(()=>state.lesson.levelIndex),3);await check('수업 안에서 판 고르기');
 
   // ===== 응수 중 목록·새로고침·프로필 전환: 유령 잡기 없음, 처음부터 다시 =====
-  await ev(()=>{leaveActivity();goLessons('home');});assert.equal(await L.getByRole('button',{name:/^1번 이어하기/}).count(),0,'끝난 수업은 이어하기 없음');
+  await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});assert.equal(await L.getByRole('button',{name:/^1번 이어하기/}).count(),0,'끝난 수업은 이어하기 없음');
   await L.locator('.lesson-card').first().click();const trap=(await level()).trap;
-  const interrupted=async label=>{await page.waitForTimeout(900);await ev(()=>{leaveActivity();goLessons('home');});assert.match(await L.locator('.lesson-card').first().innerText(),/이어하기 · 판 1\/15/,label);assert.equal(await L.getByRole('button',{name:/^1번 이어하기/}).count(),1,label);
+  const interrupted=async label=>{await page.waitForTimeout(900);await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});assert.match(await L.locator('.lesson-card').first().innerText(),/이어하기 · 판 1\/15/,label);assert.equal(await L.getByRole('button',{name:/^1번 이어하기/}).count(),1,label);
    await L.locator('.lesson-card').first().click();assert.deepEqual(await ev(()=>[state.lesson.phase,state.lesson.move,state.lesson.attempts,lessonBoardKey(state.lesson.game)===lessonBoardKey(lessonLevelGame(lessonContext().level))]),['choose',null,0,true],label);await page.waitForTimeout(900);assert.equal(await ev(()=>state.lesson.phase),'choose',label+' 복원 뒤 자동 이동 없음');};
   await tap(trap[0],trap[1]);await tap(trap[2],trap[3]);assert.equal(await ev(()=>state.lesson.phase),'response');await L.getByRole('button',{name:'← 목록'}).click();await interrupted('목록');
   await tap(trap[0],trap[1]);await tap(trap[2],trap[3]);await page.reload({waitUntil:'domcontentloaded'});await interrupted('새로고침');
   await tap(trap[0],trap[1]);await tap(trap[2],trap[3]);await ev(()=>switchProfile(createProfile('둘째','🐱').id));await page.waitForTimeout(900);await ev(()=>{closeActivityDialog(false);switchProfile(allProfiles()[0].id);closeActivityDialog(false);});await interrupted('프로필 전환');
-  await ev(()=>{leaveActivity();goLessons('home');});await L.getByRole('button',{name:'1번 판 고르기',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'↺ 1판부터 다시',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'처음부터 시작',exact:true}).click();
+  await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});await L.getByRole('button',{name:'1번 판 고르기',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'↺ 1판부터 다시',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'처음부터 시작',exact:true}).click();
   assert.deepEqual(await ev(()=>[state.lesson.lessonId,state.lesson.levelIndex,state.lesson.phase]),['protect-escape-v3',0,'choose']);
   assert.equal(await ev(()=>learningSummary().filter(r=>r.label.startsWith('체스 수업')).length),full?3:2,'완료 기록 중복 없음');
 
   // ===== 무한 연습: 목록 → 단계 고르기 → 새 판(실제 탭) · 힌트 자유 · 다른 판 =====
-  {await ev(()=>{leaveActivity();goLessons('home');});await L.getByRole('button',{name:'11번 무한 연습',exact:true}).click();const dlg=page.getByRole('dialog');await dlg.waitFor();
+  {await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});await L.locator('.lesson-unit-tabs').getByRole('button',{name:'전술',exact:true}).click();await L.getByRole('button',{name:'11번 무한 연습',exact:true}).click();const dlg=page.getByRole('dialog');await dlg.waitFor();
    assert.equal(await dlg.locator('.lesson-drill-tier').count(),5);for(const h of await dlg.locator('.lesson-drill-tier').evaluateAll(l=>l.map(e=>e.getBoundingClientRect().height)))assert.ok(h>=44);
    await dlg.locator('.lesson-drill-tier').first().click();await page.waitForFunction(()=>state.lesson?.mode==='drill'&&state.lesson.phase==='choose',null,{timeout:15000});
    assert.match(await L.locator('.lesson-progress').innerText(),/∞ 첫걸음 · 연속 0[\s\S]*판 #/);assert.match(await L.locator('.lesson-header h2').innerText(),/무한 연습/);await check('무한 연습 판');
@@ -139,13 +139,13 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
   }
 
   // ===== 실제 파일 내보내기 → 다른 브라우저에서 가져오기 =====
-  await ev(()=>{leaveActivity();goLessons('home');});await L.locator('.lesson-card').first().click();assert.deepEqual(await ev(()=>[state.lesson.lessonId,state.lesson.levelIndex]),['protect-escape-v3',0]);
+  await ev(()=>{leaveActivity();goLessons('home');lessonSetUnit('protect');});await L.locator('.lesson-card').first().click();assert.deepEqual(await ev(()=>[state.lesson.lessonId,state.lesson.levelIndex]),['protect-escape-v3',0]);
   assert.equal(await move((await level()).witness),'success');await settle();await right().click();assert.equal(await move((await level()).trap),'fail');
   await ev(()=>{leaveActivity();showScreen('home');renderHome();});await page.getByRole('button',{name:/^프로필 · 설정/}).click();
   const downloaded=page.waitForEvent('download');await page.getByRole('button',{name:'플레이어 1 내보내기',exact:true}).click();const file=`${output}/lesson-profile-${tag}.json`;await (await downloaded).saveAs(file);
   assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).version,6,'💡 기록이 있으면 v6');
   const target=await open(viewport),p=target.page;await p.getByRole('button',{name:/^프로필 · 설정/}).click();await p.locator('#profile-import-file').setInputFiles(file);await p.getByRole('button',{name:'새 프로필로 불러오기',exact:true}).click();await p.keyboard.press('Escape');
-  await p.locator('#screen-home .home-lesson').click();const statuses=await p.locator('#screen-lesson .lesson-status').allInnerTexts();assert.match(statuses[0],/이어하기 · 판 2\/15/);assert.match(statuses[2],/해봤어요/);
+  await p.locator('#screen-home .destination-study').click();await p.locator('#screen-study .study-card').filter({hasText:'체스 수업'}).click();const statuses=await p.locator('#screen-lesson .lesson-status').allInnerTexts();assert.match(statuses[0],/이어하기 · 판 2\/15/);assert.match(statuses[2],/해봤어요/);
   await p.locator('#screen-lesson .lesson-card').first().click();assert.deepEqual(await p.evaluate(()=>[state.lesson.levelIndex,state.lesson.result]),[1,'fail']);assert.match(await p.locator('#screen-lesson .lesson-goal').innerText(),/잡혔어요/);
   await p.waitForTimeout(480);await p.locator('#screen-lesson .lesson-actions .action-btn').nth(1).click();assert.equal(await p.evaluate(()=>state.lesson.phase),'choose');await target.context.close();
 
@@ -160,7 +160,7 @@ const URL=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/';
  // 오프라인: 새로 설치한 서비스 워커가 수업 파일(판 데이터 포함)을 보관한다.
  {const offline=await browser.newContext(),page=await offline.newPage();page.on('pageerror',e=>errors.push('offline: '+e.message));await page.route('https://fonts.googleapis.com/**',r=>r.abort());
   await page.goto(URL,{waitUntil:'domcontentloaded'});await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
-  await offline.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.locator('#screen-home .home-lesson').click();await page.locator('#screen-lesson .lesson-card').first().click();
+  await offline.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.locator('#screen-home .destination-study').click();await page.locator('#screen-study .study-card').filter({hasText:'체스 수업'}).click();await page.locator('#screen-lesson .lesson-card').first().click();
   assert.equal(await page.evaluate(()=>LESSONS.reduce((n,l)=>n+l.levels.length,0)),225);assert.equal(await page.locator('#screen-lesson .board-cell').count(),64);
   await page.evaluate(()=>startLessonDrill('fork-v1',0,31));await page.waitForFunction(()=>state.lesson.phase==='choose',null,{timeout:15000});results.push({offline:true});await offline.close();}
  }finally{await browser.close();}

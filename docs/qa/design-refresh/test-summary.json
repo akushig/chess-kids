@@ -1,0 +1,106 @@
+{
+  "date": "2026-11-22",
+  "unit_tests": {
+    "passed": 185,
+    "failed": 0
+  },
+  "browser_routines": [
+    {
+      "test": "browser-smoke",
+      "passed": true
+    },
+    {
+      "test": "browser-final",
+      "passed": true
+    },
+    {
+      "test": "knight-browser",
+      "passed": true
+    },
+    {
+      "test": "layout-browser",
+      "passed": true,
+      "final_rerun": true
+    },
+    {
+      "test": "castling-browser",
+      "passed": true,
+      "final_rerun": true
+    },
+    {
+      "test": "ai-difficulty-browser",
+      "passed": true
+    },
+    {
+      "test": "play-feedback-browser",
+      "passed": true
+    },
+    {
+      "test": "product-completion-browser",
+      "passed": true,
+      "final_rerun": true
+    },
+    {
+      "test": "profiles-browser",
+      "passed": true
+    },
+    {
+      "test": "entry-rematch-browser",
+      "passed": true,
+      "final_rerun": true
+    },
+    {
+      "test": "knight-puzzles-browser",
+      "passed": true
+    },
+    {
+      "test": "starter-battles-browser",
+      "passed": true
+    },
+    {
+      "test": "new-core-browser",
+      "passed": true
+    },
+    {
+      "test": "ux-feedback-browser",
+      "passed": true,
+      "final_rerun": true
+    },
+    {
+      "test": "lessons-browser",
+      "passed": true,
+      "final_rerun": true
+    },
+    {
+      "test": "premium-browser",
+      "passed": true
+    },
+    {
+      "test": "net-browser",
+      "passed": true
+    },
+    {
+      "test": "royal-browser",
+      "passed": true
+    },
+    {
+      "test": "theme-skins-browser",
+      "passed": true
+    },
+    {
+      "test": "design-browser",
+      "passed": true,
+      "final_rerun": true
+    }
+  ],
+  "design_checks": 110,
+  "board_layout_checks": 156,
+  "viewports": [
+    320,
+    360,
+    390,
+    768,
+    1280
+  ],
+  "text_scale": 1.5
+}

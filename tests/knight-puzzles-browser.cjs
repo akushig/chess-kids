@@ -20,7 +20,7 @@ const output=process.env.CHESS_PUZZLE_QA_OUTPUT||'/tmp/chess-knight-puzzle-qa';f
   const solution=id=>ev(id=>KNIGHT_PUZZLES.find(p=>p.id===id).solution,id);
 
   // Home → knight → rule puzzles, without lessons first.
-  await page.locator('#screen-home .home-primary .menu-btn').filter({hasText:'기사의 여행'}).click();await mini.getByRole('button',{name:'규칙 문제',exact:true}).click();
+  await page.locator('#screen-home .knight-spotlight').filter({hasText:'기사의 여행'}).click();await mini.getByRole('button',{name:'규칙 문제',exact:true}).click();
   assert.equal(await mini.locator('.kp-card').count(),10);assert.equal(await ev(()=>state.activeKind),null,'opening the list starts nothing');await noOverflow('puzzle list');
   if(w===360)await page.screenshot({path:`${output}/puzzle-list-${w}.png`,fullPage:true,animations:'disabled'});
   await mini.locator('.kp-card').first().focus();await page.keyboard.press('Enter');assert.equal(await ev(()=>state.kt.puzzle.id),'knight-shape-hole-5-v1');
@@ -44,7 +44,7 @@ const output=process.env.CHESS_PUZZLE_QA_OUTPUT||'/tmp/chess-knight-puzzle-qa';f
   await mini.getByRole('button',{name:'← 규칙 문제',exact:true}).click();await mini.getByRole('button',{name:'← 홈',exact:true}).click();assert.equal(await ev(()=>state.screen),'home');
 
   // Reload and continue from the home entry, with undo.
-  await page.reload({waitUntil:'domcontentloaded'});const entry=page.locator('#screen-home .home-primary .menu-btn').filter({hasText:'기사의 여행'});
+  await page.reload({waitUntil:'domcontentloaded'});const entry=page.locator('#screen-home .knight-spotlight').filter({hasText:'기사의 여행'});
   assert.match(await entry.innerText(),/▶ 이어하기.*규칙 문제 · 십자 모양 · 1번 점프/s);await entry.click();assert.deepEqual(await ev(()=>[state.kt.puzzle.id,state.kt.moveCount,state.actionHistory.length]),['knight-shape-plus-6-v1',1,1]);
   await mini.getByRole('button',{name:/되돌리기/}).click();assert.equal(await ev(()=>state.kt.moveCount),0);await tap(...s2[1]);
 

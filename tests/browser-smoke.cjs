@@ -8,7 +8,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://fonts.googleapis.com/**',r=>r.abort());
  await page.goto(process.env.CHESS_TEST_URL||'http://127.0.0.1:8765',{waitUntil:'domcontentloaded'});
- await page.getByRole('button',{name:/모험/}).first().waitFor();
+ await page.locator('#screen-home .hero-play').waitFor();
  await page.evaluate(()=>goMissionPlay('R',0));await page.locator('#screen-learn .board-cell').nth(15).click();
  await page.waitForFunction(()=>state.missionSolved);
  await page.evaluate(()=>{goMissionPlay('K',3);});await page.locator('#screen-learn .board-cell').nth(9).click();await page.waitForFunction(()=>state.missionFailed);

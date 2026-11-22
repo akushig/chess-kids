@@ -1,18 +1,17 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./harness.cjs');
 const home=(run,elements)=>{run('renderHome()');return elements.get('screen-home').innerHTML;};
 
-test('home offers play, knight tour and first lessons as the three primary entries with every other game still reachable',()=>{
+test('home groups all activities into play, study and playground while keeping a direct knight entry',()=>{
  const {run,elements}=load();const html=home(run,elements);
- const primary=html.slice(html.indexOf('home-primary'),html.indexOf('home-secondary'));
- const order=['체스 대전','기사의 여행','체스 처음 배우기'].map(label=>primary.indexOf(label));
- assert.ok(order.every(i=>i>0)&&order[0]<order[1]&&order[1]<order[2],JSON.stringify(order));assert.match(primary,/나이트 투어/);
- assert.equal((primary.match(/class="menu-btn /g)||[]).length,3);
- for(const action of ['goPlay()',"enterActivity('knight')","enterActivity('mission')"])assert.ok(primary.includes(`onclick="${action}"`),action);
- const secondary=html.slice(html.indexOf('home-secondary'));assert.ok(secondary.includes('onclick="goMiniMenu()"'));assert.ok(secondary.includes('onclick="goAdventure()"'));
- // A first visit is not asked to choose twice and is not pushed into a lesson first.
- assert.doesNotMatch(html,/experience-picker|어디서 시작할까요|resume-card/);assert.doesNotMatch(html,/온라인/);
+ for(const action of ['goPlay()','goStudy()','goMiniMenu()',"enterActivity('knight')",'goWorkshop()','goReward()'])assert.ok(html.includes(`onclick="${action}"`),action);
+ assert.equal((html.match(/class="destination-card /g)||[]).length,2);
+ assert.doesNotMatch(html,/experience-picker|어디서 시작할까요|resume-card/);
+ run('goStudy()');const study=elements.get('screen-study').innerHTML;
+ for(const action of ["enterActivity('mission')",'goAdventure()',"goLessons('study')","goCourse('study')",'goCoach()'])assert.ok(study.includes(`onclick="${action}"`),action);
+ assert.match(study,/체스 처음 배우기/);assert.match(study,/체스 수업/);assert.match(study,/승급 과정/);
  run('renderMiniMenu()');const mini=elements.get('screen-mini').innerHTML;
- for(const kind of ['knight','puzzle','collector','bomb','defense','survival'])assert.ok(mini.includes(`enterActivity('${kind}')`),kind);
+ for(const kind of ['knight','puzzle','collector','bomb','defense','survival','solo','challenge'])assert.ok(mini.includes(`enterActivity('${kind}')`),kind);
+ for(const category of ['explore','challenge','path','safety','match'])assert.ok(mini.includes(`renderMiniMenu('${category}')`),category);
 });
 
 test('the knight entry opens the existing goal and controls screen without lessons and resumes its own board exactly',()=>{
@@ -59,4 +58,12 @@ test('the global continue card and next-step suggestions remain while generic su
  const b=load();b.run("goPuzzleLevel(2);const m=puzzleWinningMoves(state.puzzleGame,PUZZLES[state.puzzleIndex])[0];puzzleClick(m[0],m[1]);puzzleClick(m[2],m[3]);goMiniMenu()");
  const html=home(b.run,b.elements);assert.match(html,/resume-card/);assert.match(html,/같은 기술, 새로운 장면/);
  const c=load();c.run("writeData('experience','challenge')");assert.doesNotMatch(home(c.run,c.elements),/resume-card/);
+});
+
+test('lesson collections initially show a saved replay even when that unit was already completed',()=>{
+ const a=load();
+ a.run("LESSONS.filter(l=>l.unit==='protect').forEach(l=>lessonProgressUpdate(l.id,p=>({completed:true,solved:l.levels.map(v=>v.id)})));startLesson('protect-escape-v3');leaveActivity()");
+ const b=load(Object.fromEntries(a.storage));b.run("goLessons('study')");
+ assert.equal(b.run('lessonUnitTab'),'protect');
+ assert.equal(b.run("lessonSavedSession('protect-escape-v3').snapshot.values.lesson.levelIndex"),0);
 });

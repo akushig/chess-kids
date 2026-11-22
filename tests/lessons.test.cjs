@@ -104,10 +104,10 @@ test('수업 목록: 5단원 15개 주제, 다른 놀이의 저장판을 섞지 
  assert.ok(run("!!activitySaved('play')&&!!activitySaved('solo')"),'다른 놀이 저장판 보존');
 });
 
-test('진입: 홈 보조 진입과 대전 설정에 체스 수업이 있고, 주 진입 3개와 진행 중 대전은 그대로다',()=>{
+test('진입: 배우기에서 수업으로 이동하고 대전 설정의 연결과 진행 중 대전은 보존한다',()=>{
  const {run,elements}=load();run('renderHome()');const home=elements.get('screen-home').innerHTML;
- assert.match(home.slice(home.indexOf('home-secondary')),/goLessons\('home'\)[\s\S]*체스 수업/);
- const primary=home.slice(home.indexOf('home-primary'),home.indexOf('home-secondary'));assert.equal((primary.match(/class="menu-btn /g)||[]).length,3);
+ assert.match(home,/onclick="goStudy\(\)"/);run('goStudy()');assert.match(elements.get('screen-study').innerHTML,/goLessons\('study'\)[\s\S]*체스 수업/);
+ run("goLessons('study')");assert.match(elements.get('screen-lesson').innerHTML,/goStudy\(\)">← 배우기/);
  run("playStart();playCommitMove([6,4,4,4]);goPlay()");assert.match(elements.get('screen-play').innerHTML,/goLessons\('play'\)/);
  run("goLessons('play')");assert.match(elements.get('screen-lesson').innerHTML,/goPlay\(\)">← 체스 대전/);assert.ok(run("!!activitySaved('play')"));
 });

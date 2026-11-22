@@ -140,7 +140,7 @@ function renderCourseHome() {
   if (!courseStage(courseStageTab)) courseStageTab = courseDefaultStage();
   const note = mode === 'preview' ? `<p class="course-preview-note">🌐 웹 미리보기: 모든 판을 써 볼 수 있어요. 앱에서는 단계마다 첫 주제와 주제마다 처음 ${COURSE_FREE_LEVELS}판이 무료예요.</p>`
     : mode === 'locked' ? '<p class="course-preview-note">🔒 앱 잠금 미리보기 중이에요. 보호자 화면에서 끌 수 있어요.</p>' : '';
-  document.getElementById('screen-course').innerHTML = `<div class="screen-wrap lesson-list course-list"><div class="screen-header"><button class="back-btn" onclick="${courseOrigin === 'play' ? 'goPlay()' : "showScreen('home');renderHome()"}">← ${courseOrigin === 'play' ? '체스 대전' : '홈'}</button><h2>승급 과정</h2></div>
+  document.getElementById('screen-course').innerHTML = `<div class="screen-wrap lesson-list course-list"><div class="screen-header"><button class="back-btn" onclick="${courseOrigin === 'play' ? 'goPlay()' : (courseOrigin === 'study' ? 'goStudy()' : "showScreen('home');renderHome()")}">← ${courseOrigin === 'play' ? '체스 대전' : courseOrigin === 'study' ? '배우기' : '홈'}</button><h2>승급 과정</h2></div>
     <section class="lesson-course course-intro"><h3>3단계 · ${COURSE_TOPICS.length}개 주제 · ${total}판</h3><p>체스 수업 다음 단계예요. 이번에는 <b>두 수 이상</b> 내다봐요. 단계마다 <b>승급 시험</b>을 통과하면 수료증을 받아요. 나는 <b>흰색</b>이에요.</p>${note}</section>
     <div class="workshop-tabs course-tabs" role="tablist" aria-label="단계">${COURSE_STAGES.map(s => { const sum = courseStageSummary(s.id); return `<button role="tab" aria-selected="${courseStageTab === s.id}" class="workshop-tab${courseStageTab === s.id ? ' active' : ''}" onclick="courseSetStage('${s.id}')">${s.number}단계${sum.test?.passed ? ' 🏅' : ''}</button>`; }).join('')}</div>
     ${courseStageHTML(courseStage(courseStageTab))}
