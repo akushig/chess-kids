@@ -1,6 +1,15 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),load=require('./harness.cjs');
-const visible=['royal','plush','jelly','crayon','motors','clouds','cosmic','dragon','ocean','forest','animals','sweets','elements','egypt','ghosts','origami'];
-test('Royal is the default and all 16 visible raster skins are free in web and native mode',()=>{
+const visible=['royal','pixel','neon','ink','tangram','comic','plush','jelly','crayon','motors','clouds','cosmic','dragon','ocean','forest','animals','sweets','elements','egypt','ghosts','origami'];
+test('Workshop preview shows all six piece kinds on both sides for every visible skin',()=>{
+ const h=load(),expected=['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP'].sort();
+ for(const id of visible){
+  h.run(`setSkin('${id}')`);
+  const html=h.run('workshopPreviewHTML()');
+  const pieces=[...html.matchAll(/data-piece="([wb][KQRBNP])"/g)].map(m=>m[1]);
+  assert.deepEqual(pieces.sort(),expected,id+' must preview all 12 pieces');
+ }
+});
+test('Royal is the default and all 21 visible raster skins are free in web and native mode',()=>{
  const h=load();assert.equal(h.run('currentSkin'),'royal');assert.equal(h.run('getAllStars()'),0);
  for(const native of [false,true]){
   if(native)h.run('window.ChessKidsStore={purchase(){}}');

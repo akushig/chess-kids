@@ -1,0 +1,98 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "skin": "pixel",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "neon",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "ink",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "tangram",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "comic",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "clouds",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "pixel",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "neon",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "ink",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "tangram",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "comic",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "clouds",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "pixel",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "neon",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "ink",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "tangram",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "comic",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "clouds",
+      "passed": true
+    }
+  ],
+  "offline": 21,
+  "migration": true,
+  "default": "royal",
+  "errors": []
+}

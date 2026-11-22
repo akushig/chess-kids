@@ -77,7 +77,7 @@ function openSkinSelector() {
 }
 
 // ===== 스킨 상세보기 모달 =====
-function openSkinDetail(name) {
+function openSkinDetail(name, fromWorkshop = false) {
   if (!workshopSkinVisible(name)) return;
   closeSkinSelector();
   const meta = SKIN_META[name];
@@ -113,7 +113,7 @@ function openSkinDetail(name) {
     actionBtn = `<button class="detail-equip-btn" onclick="selectSkin('${name}')">${t('skinEquip')}</button>`;
   }
 
-  showActivityDialog(t(meta.nameKey),`${SPRITE_SKINS[name]?'<p>무료 스킨 · 입체 체스말과 이동·공격·피격 모션을 즐겨요.</p>':''}<div class="detail-grid">${grid}</div><div class="detail-action">${actionBtn}</div>`,[{label:'다른 꾸미기 보기',action:openSkinSelector}],'skin-detail-overlay');
+  showActivityDialog(t(meta.nameKey),`${SPRITE_SKINS[name]?'<p>백·흑 킹·퀸·룩·비숍·나이트·폰 12종을 모두 살펴보세요.</p>':''}<div class="detail-grid">${grid}</div><div class="detail-action">${actionBtn}</div>`,[fromWorkshop?{label:'공방으로 돌아가기',action:()=>{}}:{label:'다른 꾸미기 보기',action:openSkinSelector}],'skin-detail-overlay');
 }
 
 function closeSkinDetail(){closeActivityDialog();openSkinSelector();}

@@ -81,13 +81,20 @@ function animateRoyalMove(board, fr, fc, tr, tc, piece, callback, cols, options 
     jelly:{lift:.29,squash:'1.22 .76',tilt:0},
     doodle:{lift:.12,squash:'1.02 .98',tilt:6},
     motor:{lift:.025,squash:'1.04 .96',tilt:-3},
-    cloud:{lift:.44,squash:'1.07 .95',tilt:3}
+    cloud:{lift:.44,squash:'1.07 .95',tilt:3},
+    pixel:{lift:.14,squash:'1 1',tilt:0,rigid:true},
+    neon:{lift:.08,squash:'1 1',tilt:0,rigid:true},
+    ink:{lift:.07,squash:'1.01 .99',tilt:-2},
+    tangram:{lift:.1,squash:'1 1',tilt:0,rigid:true},
+    comic:{lift:.26,squash:'1.08 .96',tilt:-5}
   }[theme.motion];
   const jump=piece[1]==='N',travel=capture?310:theme.motion==='motor'?400:360;
   const up=board.classList.contains('flipped')?1:-1;
   const lift=cellSize*(jump ? .7 : movement?.lift ?? (theme.motion==='float' ? .36 : theme.motion==='wave' ? .26 : .17))*up;
-  play(ghost,[{transform:'translate(0,0)'},{transform:`translate(${dx*.48}px,${dy*.48+lift}px)`,offset:.48},{transform:`translate(${dx}px,${dy}px)`}],travel,theme.motion==='doodle'?{easing:'steps(6,end)'}:{});
-  play(svg,[{scale:'1 1'},{scale:movement?.squash??(theme.motion==='fold'?'1.08 .7':theme.motion==='bounce'?'1.12 .88':jump?'1.04 .96':'1.02 .98'),offset:.45},{scale:'.94 1.06',offset:.8},{scale:'1 1'}],travel);
+  const stepped=['doodle','pixel','tangram'].includes(theme.motion);
+  play(ghost,[{transform:'translate(0,0)'},{transform:`translate(${dx*.48}px,${dy*.48+lift}px)`,offset:.48},{transform:`translate(${dx}px,${dy}px)`}],travel,stepped?{easing:'steps(6,end)'}:{});
+  play(svg,[{scale:'1 1'},{scale:movement?.squash??(theme.motion==='fold'?'1.08 .7':theme.motion==='bounce'?'1.12 .88':jump?'1.04 .96':'1.02 .98'),offset:.45},{scale:movement?.rigid?'1 1':'.94 1.06',offset:.8},{scale:'1 1'}],travel);
+  if(theme.motion==='neon')play(svg,[{opacity:1},{opacity:.65,offset:.4},{opacity:1}],travel);
   if(movement?.tilt)play(svg,[{rotate:'0deg'},{rotate:movement.tilt+'deg',offset:.3},{rotate:(-movement.tilt*.6)+'deg',offset:.7},{rotate:'0deg'}],travel);
   if(capture){
     royalSetPose(svg,'attack');
@@ -109,7 +116,7 @@ function animateRoyalMove(board, fr, fc, tr, tc, piece, callback, cols, options 
     },travel-35);
   }
   const total=capture?travel+250:travel+110;
-  later(()=>{royalSetPose(svg,'idle');play(svg,[{scale:'1 1'},{scale:'1.1 .9',offset:.35},{scale:'1 1'}],100);},capture?travel+140:travel);
+  later(()=>{royalSetPose(svg,'idle');play(svg,[{scale:'1 1'},{scale:movement?.rigid?'1 1':'1.1 .9',offset:.35},{scale:'1 1'}],100);},capture?travel+140:travel);
   // Complete in background tabs too, where animation completion events may pause.
   later(()=>finish(true),total+15);
 }

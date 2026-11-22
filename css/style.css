@@ -2302,9 +2302,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 /* 나의 체스 공방 */
 .workshop-screen{gap:12px}
 .workshop-preview{width:100%;max-width:560px;display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:var(--card-radius);background:#fff;box-shadow:var(--shadow-1)}
-.workshop-board{flex:none;display:grid;grid-template-columns:repeat(4,1fr);width:min(44vw,180px);aspect-ratio:1;border:5px solid;border-radius:10px;overflow:hidden}
-.workshop-board span{display:flex;align-items:center;justify-content:center}
+.workshop-board{flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));width:min(44vw,180px);aspect-ratio:1;border:5px solid;border-radius:10px;overflow:hidden}
+.workshop-board span{display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
 .workshop-board span svg{width:86%;height:86%}
+.workshop-preview-open{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;color:var(--ink-2);font:inherit;cursor:pointer}
+.workshop-preview-caption{font-size:.68rem;font-weight:800;line-height:1.4}
+.workshop-preview-open:focus-visible{outline:3px solid #158577;outline-offset:5px;border-radius:10px}
 .workshop-tag{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .workshop-tag strong{font-size:1.1rem;font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .workshop-avatar{font-size:1.6rem}
@@ -2459,3 +2462,24 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 @keyframes royalSpark{from{scale:.7;opacity:1;rotate:0deg}to{scale:1.4;opacity:0;rotate:35deg}}
 @media(prefers-reduced-motion:reduce){.board-cell.selected .royal-piece{animation:none}}
 .reduced-motion .board-cell.selected .royal-piece{animation:none}
+
+/* Graphic media keep their own edges and material, including during movement. */
+.royal-piece[data-sprite-skin=pixel],.royal-piece[data-sprite-skin=pixel] image{image-rendering:pixelated;filter:none}
+.royal-piece[data-sprite-skin=ink],.royal-piece[data-sprite-skin=tangram],.royal-piece[data-sprite-skin=comic]{filter:drop-shadow(0 1px 1px rgba(30,30,35,.12))}
+.royal-piece[data-sprite-skin=neon]{filter:none}
+.board-cell.selected .royal-piece[data-sprite-skin=pixel]{animation:pixelBob .9s steps(2,end) infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=neon]{animation:neonBreathe 2s ease-in-out infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=ink]{animation:inkSway 3s ease-in-out infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=tangram]{animation:pixelBob 1.6s steps(2,end) infinite}
+.board-cell.selected .royal-piece[data-sprite-skin=comic]{animation:comicReady 1.5s ease-in-out infinite}
+@keyframes pixelBob{0%,100%{translate:0 0}50%{translate:0 -2px}}
+@keyframes neonBreathe{0%,100%{opacity:.85}50%{opacity:1}}
+@keyframes inkSway{0%,100%{rotate:-1deg}50%{rotate:1deg}}
+@keyframes comicReady{0%,100%{rotate:0deg}50%{rotate:-2deg;scale:1.03}}
+.royal-mover[data-motion=pixel]::after{height:9%;border-radius:0;filter:none;animation-timing-function:steps(3,end)}
+.royal-mover[data-motion=neon]::after{height:4%;width:65%;border-radius:0;background:var(--motion-color)}
+.royal-mover[data-motion=ink]::after{height:6%;width:60%;rotate:-12deg;filter:none;border-radius:80% 20% 70% 30%}
+.royal-mover[data-motion=tangram]::after{height:12%;width:12%;rotate:45deg;border-radius:0;filter:none}
+.royal-mover[data-motion=comic]::after{width:45%;height:45%;bottom:3%;filter:none;clip-path:polygon(50% 0,60% 30%,90% 8%,75% 40%,100% 50%,72% 60%,90% 92%,60% 75%,50% 100%,40% 72%,8% 92%,25% 60%,0 50%,28% 40%,10% 8%,40% 28%)}
+@media(prefers-reduced-motion:reduce){.board-cell.selected .royal-piece[data-sprite-skin]{animation:none}}
+.reduced-motion .board-cell.selected .royal-piece[data-sprite-skin]{animation:none}

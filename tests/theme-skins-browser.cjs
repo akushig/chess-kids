@@ -21,8 +21,9 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
    const allThemes=await page.evaluate(()=>[{id:'royal',name:'로열 클래식'},...FREE_SPRITE_THEMES.map(({id,name})=>({id,name}))]);
    const wanted=process.env.CHESS_THEME_IDS?.split(',');
    const themes=wanted?allThemes.filter(theme=>wanted.includes(theme.id)):allThemes;
-   assert.equal(allThemes.length,16);
-   await page.evaluate(()=>goWorkshop('skin'));assert.equal(await page.locator('.workshop-card').count(),16);assert.equal(await page.evaluate(()=>getAllStars()),0);
+   if(wanted)assert.equal(themes.length,wanted.length,'every requested skin must exist');
+   assert.equal(allThemes.length,21);
+   await page.evaluate(()=>goWorkshop('skin'));assert.equal(await page.locator('.workshop-card').count(),21);assert.equal(await page.evaluate(()=>getAllStars()),0);
    if(width===360){
     await page.evaluate(()=>Promise.all(Object.values(SPRITE_SKINS).map(async theme=>{const im=new Image();im.src=theme.atlas;await im.decode();})));
     await page.screenshot({path:path.join(output,'workshop-mobile.png'),fullPage:true,animations:'disabled'});
@@ -31,6 +32,17 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
     await page.evaluate(()=>goWorkshop('skin'));
     await page.getByRole('button',{name:new RegExp('^'+theme.name+'(?: · 사용 중)?$')}).click();
     assert.equal(await page.evaluate(()=>currentSkin),theme.id);assert.equal(await page.evaluate(id=>isSkinUnlocked(id),theme.id),true);
+    const preview=page.locator('.workshop-board');
+    assert.deepEqual((await preview.locator('[data-piece]').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece))).sort(),['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP'].sort());
+    assert.equal(await preview.evaluate(board=>{
+     const rect=board.getBoundingClientRect();
+     return [...board.querySelectorAll('svg')].every(svg=>{const r=svg.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=rect.left&&r.top>=rect.top&&r.right<=rect.right+.5&&r.bottom<=rect.bottom+.5;});
+    }),true,'all 12 preview images are visible inside the board');
+    await page.getByRole('button',{name:new RegExp('^'+theme.name+' 말 12종 크게 보기$')}).click();
+    assert.equal(await page.locator('#skin-detail-overlay .detail-piece').count(),12);
+    assert.deepEqual((await page.locator('#skin-detail-overlay [data-royal-piece]').evaluateAll(nodes=>nodes.map(n=>n.dataset.royalPiece))).sort(),['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP'].sort());
+    await page.getByRole('button',{name:'공방으로 돌아가기',exact:true}).click();
+    assert.equal(await page.evaluate(()=>state.screen),'workshop');assert.equal(await page.evaluate(()=>currentSkin),theme.id);
     // Verify all 36 cells contain real, padded sprites in the decoded runtime image.
     const occupied=await page.evaluate(async id=>{
      const im=new Image();im.src=SPRITE_SKINS[id].atlas;await im.decode();
@@ -58,11 +70,11 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
     await page.waitForFunction(()=>!state.animating);assert.equal(await page.evaluate(()=>state.game.board[3][3]),'wN');
     assert.equal(await page.locator('.royal-mover,.royal-victim,.royal-impact').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    if(width===360&&['plush','jelly','crayon','motors','clouds'].includes(theme.id))await page.screenshot({path:path.join(output,theme.id+'-mobile.png'),fullPage:true,animations:'disabled'});
+    if(width===360&&['pixel','neon','ink','tangram','comic','clouds'].includes(theme.id))await page.screenshot({path:path.join(output,theme.id+'-mobile.png'),fullPage:true,animations:'disabled'});
     results.push({width,skin:theme.id,passed:true});
    }
-   await page.evaluate(()=>{goWorkshop();openSkinSelector();});assert.equal(await page.locator('.skin-card').count(),16);await page.locator('.dialog-close').click();
-   await page.evaluate(()=>goReward());assert.equal(await page.locator('.roadmap-item').count(),16);
+   await page.evaluate(()=>{goWorkshop();openSkinSelector();});assert.equal(await page.locator('.skin-card').count(),21);await page.locator('.dialog-close').click();
+   await page.evaluate(()=>goReward());assert.equal(await page.locator('.roadmap-item').count(),21);
    await page.evaluate(()=>{safeStore.setItem('skin','classic');});await page.reload({waitUntil:'domcontentloaded'});
    assert.equal(await page.evaluate(()=>currentSkin),'royal');
    assert.equal(await page.evaluate(()=>safeStore.getItem('skin')),'royal');
@@ -77,7 +89,7 @@ const url=process.env.CHESS_TEST_URL||'http://127.0.0.1:8765/',output=process.en
    const ids=SKIN_ORDER.filter(workshopSkinVisible);
    for(const id of ids){const im=new Image();im.src=SPRITE_SKINS[id].atlas;await im.decode();if(im.naturalWidth!==1536)throw Error('Missing offline '+id);}
    return ids.length;
-  });assert.equal(decoded,16);await context.close();
+  });assert.equal(decoded,21);await context.close();
   const gallery=await browser.newPage({viewport:{width:1240,height:1500},serviceWorkers:'block'});
   await gallery.goto(new URL('docs/theme-skins/gallery.html',url).href);await gallery.evaluate(()=>Promise.all([...document.images].map(im=>im.decode())));
   await gallery.screenshot({path:path.join(output,'gallery.jpg'),fullPage:true,quality:90});await gallery.close();
