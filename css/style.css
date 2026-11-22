@@ -2300,7 +2300,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .play-coach-link{display:block;margin:6px auto 0}
 
 /* 나의 체스 공방 */
+/* Let the viewport, rather than #app's overflow, anchor the sticky preview. */
+#app:has(#screen-workshop.active){overflow:clip}
 .workshop-screen{gap:12px}
+.workshop-preview-dock{position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:10;width:100%;max-width:560px;display:flex;flex-direction:column;gap:8px;padding:8px 0;background:#d5eef7;border-radius:var(--card-radius)}
 .workshop-preview{width:100%;max-width:560px;display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:var(--card-radius);background:#fff;box-shadow:var(--shadow-1)}
 .workshop-board{flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));width:min(44vw,180px);aspect-ratio:1;border:5px solid;border-radius:10px;overflow:hidden}
 .workshop-board span{display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
@@ -2312,7 +2315,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .workshop-tag strong{font-size:1.1rem;font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .workshop-avatar{font-size:1.6rem}
 .workshop-title-badge{padding:3px 10px;border-radius:999px;background:#fff1c9;font-size:.84rem;font-weight:800}
-.workshop-tabs{width:100%;max-width:560px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px;border-radius:16px;background:#ffffffb3;border:1px solid var(--line)}
+.workshop-tabs{width:100%;max-width:560px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px;border-radius:16px;background:#f4fafd;border:1px solid var(--line)}
 .workshop-tab{min-height:44px;border:0;border-radius:12px;background:transparent;color:var(--ink);font:inherit;font-weight:800;cursor:pointer}
 .workshop-tab.active{background:#fff;box-shadow:0 0 0 2px #2c8a55}
 .workshop-grid{width:100%;max-width:560px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -2326,6 +2329,21 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .workshop-pieces{display:flex;gap:2px;height:44px;align-items:center}
 .workshop-swatch{display:grid;grid-template-columns:1fr 1fr;width:44px;height:44px;border:4px solid;border-radius:8px;overflow:hidden}
 .workshop-emoji{font-size:2rem;line-height:44px;height:44px}
+@media(max-height:600px){
+  .workshop-preview{padding:8px;gap:10px}
+  .workshop-board{width:min(30vw,108px)}
+  .workshop-avatar,.workshop-title-badge{display:none}
+  .workshop-tag{gap:4px}
+  .workshop-tag strong{font-size:.9rem}
+  .workshop-preview-dock{gap:6px;padding:6px 0}
+  .workshop-preview .workshop-effect-btn{min-height:36px;padding:4px 8px;font-size:.75rem}
+}
+@media(max-height:450px) and (min-width:520px){
+  .workshop-board{width:90px}
+  .workshop-preview-caption{display:none}
+  .workshop-tag{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .workshop-tag strong{grid-column:1/-1}
+}
 /* 성공 효과 */
 .confetti.confetti-emoji{width:auto;height:auto;background:none!important;font-size:22px;line-height:1}
 .confetti.confetti-bubble{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffffcc,#9fd8ff66)!important;border:2px solid #7cc4f2aa}

@@ -1,5 +1,5 @@
 importScripts('./js/version.js');
-const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-graphic-1';
+const CACHE_NAME = 'chess-kids-' + CHESS_BUILD + '-workshop-sticky-1';
 const ASSETS = [
   "./",
   "./index.html",
