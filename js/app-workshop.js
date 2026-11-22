@@ -55,7 +55,7 @@ function workshopHas(need) {
   return false;
 }
 function workshopBoardOpen(b) { return getAllStars() >= b.stars; }
-function workshopSkinVisible(name) { return !SKIN_META[name]?.licensed || storeMode() !== 'native'; }
+function workshopSkinVisible(name) { return !!SKIN_META[name] && !SKIN_META[name].hidden && (!SKIN_META[name].licensed || storeMode() !== 'native'); }
 // 새로 열린 꾸미기를 찾아 홈에서 알려 준다(한 번만).
 function workshopUnlockCheck() {
   try {
@@ -69,10 +69,11 @@ function workshopUnlockCheck() {
   } catch {}
 }
 function applyWorkshop() {
+  if (!workshopSkinVisible(currentSkin)) setSkin(DEFAULT_SKIN);
+  if (SKIN_META[readData('pending_skin',null)]?.hidden) safeStore.removeItem('pending_skin');
   const root = document.documentElement; if (!root?.style?.setProperty) return;
   const d = workshopData(), b = WORKSHOP_BOARDS.find(x => x.id === d.board) || WORKSHOP_BOARDS[0], open = workshopBoardOpen(b) ? b : WORKSHOP_BOARDS[0];
   root.style.setProperty('--board-light', open.light); root.style.setProperty('--board-dark', open.dark); root.style.setProperty('--board-border', open.border);
-  if (!workshopSkinVisible(currentSkin)) setSkin('cute');
 }
 function workshopEffect() { const d = workshopData(), e = WORKSHOP_EFFECTS.find(x => x.id === d.effect); return e && workshopHas(e.need) ? e.id : 'confetti'; }
 function workshopTitle() { const d = workshopData(), t = WORKSHOP_TITLES.find(x => x.id === d.title); return t && workshopHas(t.need) ? t : WORKSHOP_TITLES[0]; }
@@ -88,16 +89,16 @@ function workshopPreviewHTML() {
   const d = workshopData(), b = WORKSHOP_BOARDS.find(x => x.id === d.board && workshopBoardOpen(x)) || WORKSHOP_BOARDS[0], title = workshopTitle(), p = profileInfo();
   const layout = [['bR', null, 'bK', null], [null, 'bN', null, 'bP'], ['wP', null, 'wB', null], [null, 'wQ', null, 'wK']];
   const cells = layout.flatMap((row, r) => row.map((pc, c) => `<span style="background:${(r + c) % 2 ? b.dark : b.light}">${pc ? getPieceSVG(pc, 40) : ''}</span>`)).join('');
-  return `<section class="workshop-preview" aria-label="지금 꾸민 체스 세트"><div class="workshop-board" style="border-color:${b.border}" role="img" aria-label="${b.name} 위의 ${t(SKIN_META[currentSkin]?.nameKey || 'skinCute')} 말">${cells}</div><div class="workshop-tag"><span class="workshop-avatar" aria-hidden="true">${p.icon}</span><strong>${profileText(p.name)}</strong><span class="workshop-title-badge">${title.icon} ${title.name}</span><button class="play-chip workshop-effect-btn" onclick="workshopPlayEffect()">▶ 효과 보기</button>${currentSkin==='royal'?'<button class="play-chip workshop-effect-btn" onclick="royalOpenPreview()">♞ 말 모션 보기</button>':''}</div></section>`;
+  return `<section class="workshop-preview" aria-label="지금 꾸민 체스 세트"><div class="workshop-board" style="border-color:${b.border}" role="img" aria-label="${b.name} 위의 ${t(SKIN_META[currentSkin]?.nameKey || 'skinRoyal')} 말">${cells}</div><div class="workshop-tag"><span class="workshop-avatar" aria-hidden="true">${p.icon}</span><strong>${profileText(p.name)}</strong><span class="workshop-title-badge">${title.icon} ${title.name}</span><button class="play-chip workshop-effect-btn" onclick="workshopPlayEffect()">▶ 효과 보기</button>${SPRITE_SKINS[currentSkin]?'<button class="play-chip workshop-effect-btn" onclick="royalOpenPreview()">♞ 말 모션 보기</button>':''}</div></section>`;
 }
-function workshopCard({ id, selected, open, label, sub, preview, action }) {
-  return `<button class="workshop-card${selected ? ' active' : ''}${open ? '' : ' locked'}" aria-pressed="${selected}" aria-label="${label}${selected ? ' · 사용 중' : open ? '' : ' · 잠김 · ' + sub}" onclick="${action}">${preview}<strong>${label}</strong><small>${selected ? '✓ 사용 중' : open ? '눌러서 쓰기' : '🔒 ' + sub}</small></button>`;
+function workshopCard({ id, selected, open, label, sub, preview, action, availableLabel = '눌러서 쓰기' }) {
+  return `<button class="workshop-card${selected ? ' active' : ''}${open ? '' : ' locked'}" aria-pressed="${selected}" aria-label="${label}${selected ? ' · 사용 중' : open ? '' : ' · 잠김 · ' + sub}" onclick="${action}">${preview}<strong>${label}</strong><small>${selected ? '✓ 사용 중' : open ? availableLabel : '🔒 ' + sub}</small></button>`;
 }
 function renderWorkshop() {
   const d = workshopData(), stars = getAllStars();
   const tabs = [['skin', '말'], ['board', '판'], ['effect', '효과'], ['title', '칭호']];
   let grid = '';
-  if (workshopTab === 'skin') grid = SKIN_ORDER.filter(workshopSkinVisible).map(name => workshopCard({ id: name, selected: currentSkin === name, open: isSkinUnlocked(name), label: t(SKIN_META[name].nameKey), sub: `별 ${SKIN_UNLOCK[name] || 0}개`, preview: `<span class="workshop-pieces">${['wK', 'wQ', 'bN'].map(pc => getPieceSVGForSkin(name, pc, 30)).join('')}</span>`, action: isSkinUnlocked(name) ? `workshopPick('skin','${name}')` : `openSkinDetail('${name}')` })).join('');
+  if (workshopTab === 'skin') grid = SKIN_ORDER.filter(workshopSkinVisible).map(name => workshopCard({ id: name, selected: currentSkin === name, open: isSkinUnlocked(name), label: t(SKIN_META[name].nameKey), availableLabel: '무료 · 모션 포함', sub: `별 ${SKIN_UNLOCK[name] || 0}개`, preview: `<span class="workshop-pieces">${['wK', 'wQ', 'bN'].map(pc => getPieceSVGForSkin(name, pc, 30)).join('')}</span>`, action: isSkinUnlocked(name) ? `workshopPick('skin','${name}')` : `openSkinDetail('${name}')` })).join('');
   if (workshopTab === 'board') grid = WORKSHOP_BOARDS.map(b => workshopCard({ id: b.id, selected: d.board === b.id, open: workshopBoardOpen(b), label: b.name, sub: `별 ${b.stars}개 (지금 ${stars})`, preview: `<span class="workshop-swatch" style="border-color:${b.border}"><i style="background:${b.light}"></i><i style="background:${b.dark}"></i><i style="background:${b.dark}"></i><i style="background:${b.light}"></i></span>`, action: workshopBoardOpen(b) ? `workshopPick('board','${b.id}')` : `workshopLocked('별 ${b.stars}개를 모으면 열려요. 지금 ${stars}개예요.')` })).join('');
   if (workshopTab === 'effect') grid = WORKSHOP_EFFECTS.map(e => workshopCard({ id: e.id, selected: d.effect === e.id, open: workshopHas(e.need), label: e.name, sub: WORKSHOP_NEED_TEXT[e.need] || '', preview: `<span class="workshop-emoji" aria-hidden="true">${e.icon}</span>`, action: workshopHas(e.need) ? `workshopPick('effect','${e.id}')` : `workshopLocked('${WORKSHOP_NEED_TEXT[e.need]}을(를) 하면 열려요.')` })).join('');
   if (workshopTab === 'title') grid = WORKSHOP_TITLES.map(x => workshopCard({ id: x.id, selected: d.title === x.id, open: workshopHas(x.need), label: x.name, sub: WORKSHOP_NEED_TEXT[x.need] || '', preview: `<span class="workshop-emoji" aria-hidden="true">${x.icon}</span>`, action: workshopHas(x.need) ? `workshopPick('title','${x.id}')` : `workshopLocked('${WORKSHOP_NEED_TEXT[x.need]}을(를) 하면 받아요.')` })).join('');
@@ -105,7 +106,7 @@ function renderWorkshop() {
   document.getElementById('screen-workshop').innerHTML = `<div class="screen-wrap workshop-screen"><div class="screen-header">${back}<h2>나의 체스 공방</h2></div>${workshopPreviewHTML()}
     <div class="workshop-tabs" role="tablist" aria-label="꾸밀 것">${tabs.map(([id, label]) => `<button role="tab" aria-selected="${workshopTab === id}" class="workshop-tab${workshopTab === id ? ' active' : ''}" onclick="workshopTab='${id}';renderWorkshop()">${label}</button>`).join('')}</div>
     <div class="workshop-grid" role="tabpanel">${grid}</div>
-    <p class="section-note">⭐ ${stars} · 꾸미기는 놀이와 배움으로 열어요. 돈으로 사는 꾸미기는 없어요.</p></div>`;
+    <p class="section-note">말 스킨은 모두 무료예요. 판·효과·칭호는 놀이와 배움으로 열어요.</p></div>`;
 }
 function workshopPick(kind, id) {
   if (kind === 'skin') { if (!isSkinUnlocked(id) || !workshopSkinVisible(id)) return; setSkin(id); }

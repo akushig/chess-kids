@@ -98,9 +98,9 @@ test('공방: 판 색은 별로, 효과·칭호는 배움 기록으로 열린다
   h.run("workshopPick('title','stage1')"); assert.equal(h.run('workshopTitle().name'), '두 수 박사');
   h.run('workshopUnlockCheck()'); assert.match(J(h.run, "readData('workshop_new',[])").join(' '), /두 수 박사|불꽃놀이/);
   h.run('showScreen("home");renderHome()'); assert.match(h.elements.get('screen-home').innerHTML, /두 수 박사/);
-  assert.equal(h.run("SKIN_ORDER.filter(workshopSkinVisible).length"), 8, '웹 미리보기는 모두');
+  assert.equal(h.run("SKIN_ORDER.filter(workshopSkinVisible).length"), 11, '웹 미리보기는 모두');
   h.run("window.ChessKidsStore={purchase(){},getOwned(){return Promise.resolve([])}}");
-  assert.deepEqual(J(h.run, 'SKIN_ORDER.filter(workshopSkinVisible)'), ['cute', 'classic', 'royal', 'dino', 'robot']);
+  assert.deepEqual(J(h.run, 'SKIN_ORDER.filter(workshopSkinVisible)'), ['royal', 'cosmic', 'dragon', 'ocean', 'forest', 'animals', 'sweets', 'elements', 'egypt', 'ghosts', 'origami']);
   const file = h.run('JSON.stringify(createProfileBackup())'); assert.ok(JSON.parse(file).version < 7, '공방 기록만 있으면 파일 형식을 올리지 않는다');
   const b = harness(); b.run(`switchProfile(importProfileBackup(parseProfileBackup(${JSON.stringify(file)})).id)`); assert.equal(J(b.run, 'workshopData()').title, 'stage1');
 });

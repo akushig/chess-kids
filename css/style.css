@@ -2429,8 +2429,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .board-cell.selected .royal-piece{animation:royalReady 1.8s ease-in-out infinite}
 @keyframes royalReady{0%,100%{scale:1}50%{scale:1.04 1.02}}
 .royal-impact{position:absolute;z-index:14;pointer-events:none;display:grid;place-items:center}
-.royal-impact::before{content:'';width:46%;height:46%;border:2px solid #ffe6a1;border-radius:50%;box-shadow:0 0 12px #ffd675,inset 0 0 8px #fff2c8;animation:royalImpact .24s ease-out both}
-.royal-impact::after{content:'✧';position:absolute;color:#fff5d4;font-size:1.6rem;text-shadow:0 0 8px #c09030;animation:royalSpark .24s ease-out both}
+.royal-impact::before{content:'';width:46%;height:46%;border:2px solid var(--impact-color,#ffe6a1);border-radius:50%;box-shadow:0 0 12px var(--impact-color,#ffd675),inset 0 0 8px #fff2c8;animation:royalImpact .24s ease-out both}
+.royal-impact::after{content:var(--impact-symbol,'✧');position:absolute;color:var(--impact-color,#fff5d4);font-size:1.6rem;text-shadow:0 0 8px var(--impact-color,#c09030);animation:royalSpark .24s ease-out both}
+.royal-mover[data-motion]:not([data-motion=classic])::after{content:'';position:absolute;bottom:8%;width:30%;height:8%;border-radius:50%;background:var(--motion-color);filter:blur(2px);box-shadow:0 0 8px var(--motion-color);z-index:-1;animation:spriteTrail .3s ease-out infinite}
+.royal-mover[data-motion=jet]::after{height:20%;bottom:0;background:linear-gradient(transparent,var(--motion-color),transparent)}
+.royal-mover[data-motion=wave]::after,.royal-mover[data-motion=float]::after{background:transparent;border:2px solid var(--motion-color);height:18%;width:50%}
+.royal-mover[data-motion=leaf]::after{border-radius:80% 0 80% 0;rotate:-20deg}
+.royal-mover[data-motion=fold]::after{border-radius:0;rotate:45deg;filter:none;opacity:.45}
+@keyframes spriteTrail{from{scale:.5;opacity:.8}to{scale:1.4;opacity:0}}
 @keyframes royalImpact{from{scale:.35;opacity:1}to{scale:1.6;opacity:0}}
 @keyframes royalSpark{from{scale:.7;opacity:1;rotate:0deg}to{scale:1.4;opacity:0;rotate:35deg}}
 @media(prefers-reduced-motion:reduce){.board-cell.selected .royal-piece{animation:none}}

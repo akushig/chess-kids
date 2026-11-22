@@ -100,7 +100,7 @@ function animateMove(boardEl, fromR, fromC, toR, toC, pieceKey, callback, gridSi
     return;
   }
 
-  if(currentSkin==='royal'&&typeof boardEl.animate==='function')return animateRoyalMove(boardEl,fromR,fromC,toR,toC,pieceKey,callback,cols,options);
+  if(SPRITE_SKINS[currentSkin]&&typeof boardEl.animate==='function')return animateRoyalMove(boardEl,fromR,fromC,toR,toC,pieceKey,callback,cols,options);
 
   const ghost = document.createElement('div');
   ghost.className = 'move-anim pc-' + pieceKey[0];

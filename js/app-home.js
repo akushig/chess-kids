@@ -73,11 +73,12 @@ function openSkinSelector() {
   const next = getNextLockedSkin();
   const nextHint = next ? `<div class="skin-next-hint">⭐ ${next.remaining}${t('rewardStarsNeeded')} → ${t(SKIN_META[next.name].nameKey)}</div>` : '';
 
-  showActivityDialog(t('skinSelectTitle'),`<p>⭐ ${allStars} · 놀이로 모은 별로 꾸며요.</p>${nextHint}<div class="skin-grid">${cards}</div>`,[{label:'꾸미기 마치기',action:()=>{}}],'skin-overlay');
+  showActivityDialog(t('skinSelectTitle'),`<p>모든 말 스킨을 무료로 선택할 수 있어요.</p>${nextHint}<div class="skin-grid">${cards}</div>`,[{label:'꾸미기 마치기',action:()=>{}}],'skin-overlay');
 }
 
 // ===== 스킨 상세보기 모달 =====
 function openSkinDetail(name) {
+  if (!workshopSkinVisible(name)) return;
   closeSkinSelector();
   const meta = SKIN_META[name];
   const isActive = currentSkin === name;
@@ -112,7 +113,7 @@ function openSkinDetail(name) {
     actionBtn = `<button class="detail-equip-btn" onclick="selectSkin('${name}')">${t('skinEquip')}</button>`;
   }
 
-  showActivityDialog(t(meta.nameKey),`${name==='royal'?'<p>무료 스킨 · 입체 체스말과 이동·공격·피격 모션을 즐겨요.</p>':''}<div class="detail-grid">${grid}</div><div class="detail-action">${actionBtn}</div>`,[{label:'다른 꾸미기 보기',action:openSkinSelector}],'skin-detail-overlay');
+  showActivityDialog(t(meta.nameKey),`${SPRITE_SKINS[name]?'<p>무료 스킨 · 입체 체스말과 이동·공격·피격 모션을 즐겨요.</p>':''}<div class="detail-grid">${grid}</div><div class="detail-action">${actionBtn}</div>`,[{label:'다른 꾸미기 보기',action:openSkinSelector}],'skin-detail-overlay');
 }
 
 function closeSkinDetail(){closeActivityDialog();openSkinSelector();}

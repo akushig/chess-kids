@@ -1,9 +1,10 @@
 // One generated texture, 12 pieces × 3 poses. SVG is only the clipping viewport.
 const ROYAL_COLUMNS = ['K','Q','R','B','N','P'];
-function royalPieceSVG(piece, size, pose = 'idle') {
+const SPRITE_SKINS = {royal:{atlas:'icons/skins/royal-classic/atlas.webp',effect:['#ffe6a1','#d3dcf0','✧'],motion:'classic'}};
+function royalPieceSVG(piece, size, pose = 'idle', skinName = 'royal') {
   const col = ROYAL_COLUMNS.indexOf(piece[1]);
   const row = (piece[0] === 'b' ? 1 : 0) + ({idle:0,attack:2,hit:4}[pose] || 0);
-  return `<svg class="royal-piece" data-royal-piece="${piece}" data-pose="${pose}" viewBox="${col*256} ${row*256} 256 256" width="${size}" height="${size}" overflow="hidden"><image href="icons/skins/royal-classic/atlas.webp" width="1536" height="1536"/></svg>`;
+  return `<svg class="royal-piece" data-sprite-skin="${skinName}" data-royal-piece="${piece}" data-pose="${pose}" viewBox="${col*256} ${row*256} 256 256" width="${size}" height="${size}" overflow="hidden"><image href="${SPRITE_SKINS[skinName].atlas}" width="1536" height="1536"/></svg>`;
 }
 SKINS.royal = Object.fromEntries(['w','b'].flatMap(side => ROYAL_COLUMNS.map(type => [side+type, size => royalPieceSVG(side+type,size)])));
 
@@ -22,7 +23,7 @@ function cancelRoyalAnimations() {
 }
 
 function royalOpenPreview() {
-  showActivityDialog('로열 클래식 · 말 모션',`<p>나이트가 점프해서 폰을 잡아요.</p><div id="royal-demo" class="chess-board royal-demo-board" role="img" aria-label="나이트의 이동·공격과 폰의 피격 모션"></div><button class="play-chip" onclick="royalPlayPreview()">▶ 다시 보기</button>`,[{label:'닫기',action:cancelRoyalAnimations}],'royal-preview-overlay',cancelRoyalAnimations);
+  showActivityDialog(t(SKIN_META[currentSkin].nameKey)+' · 말 모션',`<p>나이트가 점프해서 폰을 잡아요.</p><div id="royal-demo" class="chess-board royal-demo-board" role="img" aria-label="나이트의 이동·공격과 폰의 피격 모션"></div><button class="play-chip" onclick="royalPlayPreview()">▶ 다시 보기</button>`,[{label:'닫기',action:cancelRoyalAnimations}],'royal-preview-overlay',cancelRoyalAnimations);
   royalPlayPreview();
 }
 function royalPlayPreview() {
@@ -31,7 +32,7 @@ function royalPlayPreview() {
   function draw(finished) {
     board.innerHTML=Array.from({length:16},(_,i)=>{
       const piece=i===(finished?5:12)?'wN':!finished&&i===5?'bP':null;
-      return `<div class="board-cell ${(Math.floor(i/4)+i%4)%2?'dark':'light'}">${piece?getPieceSVGForSkin('royal',piece,56).replace('<svg ','<svg data-piece="'+piece+'" '):''}</div>`;
+      return `<div class="board-cell ${(Math.floor(i/4)+i%4)%2?'dark':'light'}">${piece?getPieceSVGForSkin(currentSkin,piece,56).replace('<svg ','<svg data-piece="'+piece+'" '):''}</div>`;
     }).join('');
   }
   draw(false);
@@ -40,6 +41,7 @@ function royalPlayPreview() {
 }
 
 function animateRoyalMove(board, fr, fc, tr, tc, piece, callback, cols, options = {}) {
+  const skinName=currentSkin,theme=SPRITE_SKINS[skinName];
   const epoch = screenEpoch, cellSize = board.clientWidth / cols;
   const cells = board.querySelectorAll('.board-cell');
   const origin = cells[fr*cols+fc]?.querySelector('svg');
@@ -52,7 +54,9 @@ function animateRoyalMove(board, fr, fc, tr, tc, piece, callback, cols, options 
   const ghost = document.createElement('div');
   ghost.className = 'move-anim royal-mover pc-'+piece[0];
   ghost.setAttribute('aria-hidden','true');
-  ghost.innerHTML = royalPieceSVG(piece,Math.round(cellSize*.88));
+  ghost.dataset.motion=theme.motion;
+  ghost.style.setProperty('--motion-color',theme.effect[piece[0]==='b'?1:0]);
+  ghost.innerHTML = royalPieceSVG(piece,Math.round(cellSize*.88),'idle',skinName);
   Object.assign(ghost.style,{width:cellSize+'px',height:cellSize+'px',left:fc*cellSize+'px',top:fr*cellSize+'px'});
   board.appendChild(ghost);
   const svg = ghost.querySelector('svg'),transients=[ghost];
@@ -74,9 +78,9 @@ function animateRoyalMove(board, fr, fc, tr, tc, piece, callback, cols, options 
   const dx=(tc-fc)*cellSize,dy=(tr-fr)*cellSize;
   const jump=piece[1]==='N',travel=capture?310:360;
   const up=board.classList.contains('flipped')?1:-1;
-  const lift=cellSize*(jump ? .7 : .17)*up;
+  const lift=cellSize*(jump ? .7 : theme.motion==='float' ? .36 : theme.motion==='wave' ? .26 : .17)*up;
   play(ghost,[{transform:'translate(0,0)'},{transform:`translate(${dx*.48}px,${dy*.48+lift}px)`,offset:.48},{transform:`translate(${dx}px,${dy}px)`}],travel);
-  play(svg,[{scale:'1 1'},{scale:jump?'1.04 .96':'1.02 .98',offset:.45},{scale:'.94 1.06',offset:.8},{scale:'1 1'}],travel);
+  play(svg,[{scale:'1 1'},{scale:theme.motion==='fold'?'1.08 .7':theme.motion==='bounce'?'1.12 .88':jump?'1.04 .96':'1.02 .98',offset:.45},{scale:'.94 1.06',offset:.8},{scale:'1 1'}],travel);
   if(capture){
     royalSetPose(svg,'attack');
     later(()=>{
@@ -85,9 +89,11 @@ function animateRoyalMove(board, fr, fc, tr, tc, piece, callback, cols, options 
       recoil.className='move-anim royal-victim pc-'+victim[0];recoil.setAttribute('aria-hidden','true');
       const vr=options.capture?.row??tr,vc=options.capture?.col??tc;
       Object.assign(recoil.style,{width:cellSize+'px',height:cellSize+'px',top:vr*cellSize+'px',left:vc*cellSize+'px'});
-      recoil.innerHTML=royalPieceSVG(victim,Math.round(cellSize*.88),'hit');board.appendChild(recoil);transients.push(recoil);
+      recoil.innerHTML=royalPieceSVG(victim,Math.round(cellSize*.88),'hit',skinName);board.appendChild(recoil);transients.push(recoil);
       const sx=Math.sign(dx||1),sy=Math.sign(dy||-1);
       const impact=document.createElement('span');impact.className='royal-impact';impact.setAttribute('aria-hidden','true');
+      impact.style.setProperty('--impact-color',theme.effect[piece[0]==='b'?1:0]);
+      impact.style.setProperty('--impact-symbol',JSON.stringify(theme.effect[2]));
       Object.assign(impact.style,{width:cellSize+'px',height:cellSize+'px',top:vr*cellSize+'px',left:vc*cellSize+'px'});board.appendChild(impact);transients.push(impact);
       play(recoil,[{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${sx*cellSize*.17}px,${sy*cellSize*.17}px) scale(.94)`,opacity:1,offset:.3},{transform:`translate(${sx*cellSize*.28}px,${sy*cellSize*.28}px) scale(.3)`,opacity:0}],230);
       play(svg,[{translate:'0 0'},{translate:`${sx*cellSize*.12}px ${sy*cellSize*.12}px`,offset:.35},{translate:'0 0'}],180);

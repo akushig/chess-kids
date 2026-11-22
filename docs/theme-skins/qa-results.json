@@ -1,0 +1,173 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "skin": "royal",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "cosmic",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "dragon",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "ocean",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "forest",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "animals",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "sweets",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "elements",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "egypt",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "ghosts",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "skin": "origami",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "royal",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "cosmic",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "dragon",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "ocean",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "forest",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "animals",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "sweets",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "elements",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "egypt",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "ghosts",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "skin": "origami",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "royal",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "cosmic",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "dragon",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "ocean",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "forest",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "animals",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "sweets",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "elements",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "egypt",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "ghosts",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "skin": "origami",
+      "passed": true
+    }
+  ],
+  "offline": 11,
+  "migration": true,
+  "default": "royal",
+  "errors": []
+}

@@ -11,7 +11,7 @@ const output=process.env.CHESS_ROYAL_QA_OUTPUT||'/tmp/chess-royal-qa';
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('https://fonts.googleapis.com/**',r=>r.abort());await page.goto(url,{waitUntil:'domcontentloaded'});
    await page.evaluate(()=>goWorkshop('skin'));
-   await page.getByRole('button',{name:'로열 클래식',exact:true}).click();
+   await page.getByRole('button',{name:/^로열 클래식(?: · 사용 중)?$/}).click();
    assert.equal(await page.evaluate(()=>currentSkin),'royal');assert.equal(await page.evaluate(()=>getAllStars()),0);
    assert.equal(await page.evaluate(()=>isSkinUnlocked('royal')),true);
    assert.deepEqual(await page.evaluate(async()=>{const im=new Image();im.src='icons/skins/royal-classic/atlas.webp';await im.decode();return [im.naturalWidth,im.naturalHeight];}),[1536,1536]);
@@ -75,10 +75,10 @@ const output=process.env.CHESS_ROYAL_QA_OUTPUT||'/tmp/chess-royal-qa';
     assert.equal(await page.locator('.royal-mover').count(),0);assert.equal(await page.evaluate(()=>state.animating),false);
     await page.emulateMedia({reducedMotion:'no-preference'});
    }
-   // Existing skins still use their original movement path.
+   // Selecting a hidden legacy skin migrates safely to the default.
    await setup('4k3/8/8/8/8/8/P7/4K3 w - - 0 1');
    await page.evaluate(()=>{setSkin('cute');renderPlay();playCommitMove([6,0,5,0]);});
-   assert.equal(await page.locator('.move-anim:not(.royal-mover)').count(),1);await page.waitForFunction(()=>!state.animating);
+   assert.equal(await page.evaluate(()=>currentSkin),'royal');assert.equal(await page.locator('.royal-mover').count(),1);await page.waitForFunction(()=>!state.animating);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    // Persist the free selection across reloads.
    await page.evaluate(()=>setSkin('royal'));await page.reload({waitUntil:'domcontentloaded'});assert.equal(await page.evaluate(()=>currentSkin),'royal');

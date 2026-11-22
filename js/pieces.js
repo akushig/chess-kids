@@ -1,16 +1,19 @@
 // ===== 기물 스킨 시스템 =====
-let currentSkin = safeStore.getItem('skin') || 'cute';
+const DEFAULT_SKIN = 'royal';
+const LEGACY_SKINS = ['cute','classic','hellocarbot','dino','tiniping','robot','baemin'];
+let currentSkin = safeStore.getItem('skin') || DEFAULT_SKIN;
+if (LEGACY_SKINS.includes(currentSkin)) { currentSkin=DEFAULT_SKIN;safeStore.setItem('skin',currentSkin); }
 
 function setSkin(name) {
   if (SKINS[name]) {
-    currentSkin = name;
-    safeStore.setItem('skin', name);
+    currentSkin = SKIN_META[name]?.hidden ? DEFAULT_SKIN : name;
+    safeStore.setItem('skin', currentSkin);
   }
 }
 
 function getPieceSVG(piece, size) {
   size = size || 40;
-  const skin = SKINS[currentSkin] || SKINS['cute'];
+  const skin = SKINS[currentSkin] || SKINS[DEFAULT_SKIN];
   const fn = skin[piece];
   return fn ? fn(size).replace('<svg ', '<svg data-piece="'+piece+'" aria-hidden="true" focusable="false" ') : '';
 }
@@ -24,18 +27,19 @@ function getPieceSVGForSkin(skinName, piece, size) {
 }
 
 const SKIN_META = {
-  cute:        { nameKey: 'skinCute' },
-  classic:     { nameKey: 'skinClassic' },
+  cute:        { nameKey: 'skinCute', hidden: true },
+  classic:     { nameKey: 'skinClassic', hidden: true },
   royal:       { nameKey: 'skinRoyal' },
   // licensed: 다른 회사의 캐릭터·상표. 앱(인앱 결제) 판에서는 보이지 않는다(웹 미리보기에서만).
-  hellocarbot: { nameKey: 'skinHellocarbot', licensed: true },
-  dino:        { nameKey: 'skinDino' },
-  tiniping:    { nameKey: 'skinTiniping', licensed: true },
-  robot:       { nameKey: 'skinRobot' },
-  baemin:      { nameKey: 'skinBaemin', licensed: true },
+  hellocarbot: { nameKey: 'skinHellocarbot', licensed: true, hidden: true },
+  dino:        { nameKey: 'skinDino', hidden: true },
+  tiniping:    { nameKey: 'skinTiniping', licensed: true, hidden: true },
+  robot:       { nameKey: 'skinRobot', hidden: true },
+  baemin:      { nameKey: 'skinBaemin', licensed: true, hidden: true },
 };
 
-const SKIN_ORDER = ['cute', 'classic', 'royal', 'hellocarbot', 'dino', 'tiniping', 'robot', 'baemin'];
+// Keep legacy IDs for backup compatibility; the UI filters hidden metadata.
+const SKIN_ORDER = ['royal', ...LEGACY_SKINS];
 
 // ===== 스킨 해금 시스템 =====
 const SKIN_UNLOCK = {
@@ -50,7 +54,7 @@ const SKIN_UNLOCK = {
 };
 
 function isSkinUnlocked(name) {
-  if (name === 'cute') return true;
+  if (SKIN_META[name]?.hidden) return false;
   const required = SKIN_UNLOCK[name];
   if (required === undefined) return false;
   return getAllStars() >= required;
@@ -65,6 +69,7 @@ function getNextLockedSkin() {
   let next = null;
   let minRequired = Infinity;
   for (const name of SKIN_ORDER) {
+    if (SKIN_META[name]?.hidden) continue;
     const req = SKIN_UNLOCK[name];
     if (req > stars && req < minRequired) {
       minRequired = req;

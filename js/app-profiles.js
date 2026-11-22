@@ -1,7 +1,7 @@
 // Profiles are names for independent local saves. Every profile has the same features.
 function profileText(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function profileInfo(id=activeProfile){return allProfiles().find(p=>p.id===id)||{id:activeProfile,name:'플레이어',icon:PROFILE_ICONS[0]};}
-function refreshProfileView(){currentSkin=safeStore.getItem('skin')||'cute';applyPreferences();state.game=null;state.play=null;closeActivityDialog(false);showScreen('home');renderHome();}
+function refreshProfileView(){setSkin(safeStore.getItem('skin')||DEFAULT_SKIN);applyPreferences();state.game=null;state.play=null;closeActivityDialog(false);showScreen('home');renderHome();}
 function switchProfile(id){
  if(!allProfiles().some(p=>p.id===id))return;
  leaveActivity();activeProfile=id;try{localStorage.setItem('chess_active_profile',id);}catch{storageUnavailable=true;}

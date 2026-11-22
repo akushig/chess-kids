@@ -748,7 +748,7 @@ function goReward() {
   `;
 
   // 스킨 보상 로드맵
-  const sortedSkins = Object.entries(SKIN_UNLOCK).sort((a,b) => a[1] - b[1]);
+  const sortedSkins = Object.entries(SKIN_UNLOCK).filter(([name])=>workshopSkinVisible(name)).sort((a,b) => a[1] - b[1]);
   const roadmap = sortedSkins.map(([name, req]) => {
     const unlocked = allStars >= req;
     const isActive = currentSkin === name;

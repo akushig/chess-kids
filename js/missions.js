@@ -206,7 +206,7 @@ function awardStars(section,id,stars,completed=true) {
   if(completed)p.completions[id]={completedAt:Date.now(),assisted,joint,independent:previous.independent||(!assisted&&!joint),count:(previous.count||0)+1};
   writeData('progress_v3',p);
   const after=getAllStars();
-  if(typeof SKIN_UNLOCK!=='undefined')for(const [name,required]of Object.entries(SKIN_UNLOCK))if(before<required&&after>=required)writeData('pending_skin',name);
+  if(typeof SKIN_UNLOCK!=='undefined')for(const [name,required]of Object.entries(SKIN_UNLOCK))if(!SKIN_META[name]?.hidden&&before<required&&after>=required)writeData('pending_skin',name);
 }
 function getMissionProgress() {
   const ledger=progressLedger();return Object.fromEntries(Object.entries(MISSIONS).map(([piece,ms])=>[piece,Object.fromEntries(ms.map((m,i)=>[i,ledger.missions[m.id]||0]))]));
